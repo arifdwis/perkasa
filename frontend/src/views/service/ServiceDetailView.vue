@@ -22,6 +22,7 @@ const fetchServiceDetail = async () => {
     const slug = route.params.slug
     const response = await axios.get(`/services/${slug}`)
     service.value = response.data.service
+    await checkAuthAndFavorites()
   } catch (err) {
     console.error(err)
     toast.add({
@@ -35,8 +36,54 @@ const fetchServiceDetail = async () => {
   }
 }
 
-onMounted(() => {
-  fetchServiceDetail()
+const isLoggedIn = ref(false)
+const isVerified = ref(false)
+const isFavorited = ref(false)
+
+const checkAuthAndFavorites = async () => {
+  const token = localStorage.getItem('token')
+  isLoggedIn.value = !!token
+  if (token) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    isVerified.value = user.profile?.status_verifikasi === 'verified'
+    
+    if (isVerified.value && service.value) {
+      try {
+        const response = await axios.get('/favorites')
+        const favoritedServices = response.data.services || []
+        isFavorited.value = favoritedServices.some(s => s.id === service.value.id)
+      } catch (err) {
+        console.error('Failed to fetch favorites', err)
+      }
+    }
+  }
+}
+
+const toggleFavorite = async () => {
+  if (!isLoggedIn.value) {
+    toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
+    return
+  }
+  if (!isVerified.value) {
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya akun alumni terverifikasi yang dapat menggunakan fitur favorit.', life: 3500 })
+    return
+  }
+
+  try {
+    const response = await axios.post('/favorites/toggle', {
+      favoritable_id: service.value.id,
+      favoritable_type: 'service'
+    })
+    isFavorited.value = response.data.favorited
+    toast.add({ severity: 'success', summary: 'Favorit', detail: response.data.message, life: 2000 })
+  } catch (err) {
+    console.error(err)
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal men-toggle favorit.', life: 2000 })
+  }
+}
+
+onMounted(async () => {
+  await fetchServiceDetail()
 })
 
 const store = computed(() => service.value?.store || null)
@@ -170,9 +217,9 @@ const whatsappUrl = computed(() => {
                   </div>
                 </div>
 
-                <!-- CTA: WhatsApp Inquiry -->
-                <div class="pt-2">
-                  <a :href="whatsappUrl" target="_blank" class="no-underline block">
+                <!-- CTA: WhatsApp Inquiry & Favorite -->
+                <div class="pt-2 flex gap-3">
+                  <a :href="whatsappUrl" target="_blank" class="no-underline flex-grow">
                     <Button 
                       label="Tanya via WhatsApp" 
                       icon="pi pi-whatsapp" 
@@ -180,6 +227,14 @@ const whatsappUrl = computed(() => {
                       :disabled="service.status === 'inactive'"
                     />
                   </a>
+                  <Button 
+                    :icon="isFavorited ? 'pi pi-star-fill' : 'pi pi-star'" 
+                    :severity="isFavorited ? 'warn' : 'secondary'"
+                    outlined
+                    class="h-12 w-12 rounded-xl flex-shrink-0"
+                    title="Tambah ke Favorit"
+                    @click="toggleFavorite"
+                  />
                 </div>
 
               </div>

@@ -26,10 +26,10 @@
 - [ ] Tidak ada komisi marketplace.
 - [ ] Tidak ada ekspedisi eksternal pada MVP.
 - [ ] Komunikasi awal dapat menggunakan WhatsApp.
-- [ ] Filter katalog berdasarkan program studi tersedia.
-- [ ] Filter katalog berdasarkan angkatan atau tahun masuk tersedia.
-- [ ] Filter katalog berdasarkan tahun lulus tersedia.
-- [ ] Filter identitas alumni berlaku untuk produk, jasa, toko, dan alumni.
+- [x] Filter katalog berdasarkan program studi tersedia.
+- [x] Filter katalog berdasarkan angkatan atau tahun masuk tersedia.
+- [x] Filter katalog berdasarkan tahun lulus tersedia.
+- [x] Filter identitas alumni berlaku untuk produk, jasa, toko, dan alumni.
 
 ## 2. Backend Checklist
 
@@ -47,14 +47,14 @@
 - [x] Import Excel/CSV menggunakan Laravel Excel.
 - [x] Semua tabel utama memakai UUID.
 - [x] UUID v7 digunakan atau diprioritaskan untuk tabel utama.
-- [ ] Foreign key utama memiliki index yang tepat.
-- [ ] Index `alumni_profiles(program_studi, tahun_masuk, tahun_lulus)` tersedia.
-- [ ] Endpoint sensitif memakai auth middleware.
-- [ ] Endpoint khusus alumni verified memakai verified middleware.
-- [ ] Endpoint admin memakai role/permission middleware.
-- [ ] Aksi penting memakai Policy Authorization.
-- [ ] Validasi input memakai Form Request.
-- [ ] Response API memakai API Resource.
+- [x] Foreign key utama memiliki index yang tepat.
+- [x] Index `alumni_profiles(program_studi, tahun_masuk, tahun_lulus)` tersedia.
+- [x] Endpoint sensitif memakai auth middleware.
+- [x] Endpoint khusus alumni verified memakai verified middleware.
+- [x] Endpoint admin memakai role/permission middleware.
+- [x] Aksi penting memakai Policy Authorization.
+- [x] Validasi input memakai Form Request.
+- [x] Response API memakai API Resource.
 - [x] Proses bisnis utama berada di Service Layer.
 - [x] Query kompleks memakai Repository bila diperlukan.
 - [ ] Rate limiting aktif pada endpoint login.
@@ -169,36 +169,36 @@
 
 ## 8. Catalog dan Favorite Checklist
 
-- [ ] Katalog produk menampilkan produk active.
-- [ ] Katalog jasa menampilkan jasa active.
-- [ ] Katalog toko menampilkan toko active.
-- [ ] Katalog alumni menampilkan alumni sesuai aturan privasi.
-- [ ] Endpoint `GET /api/catalog` tersedia.
-- [ ] Search global berjalan.
-- [ ] Filter program studi berjalan.
-- [ ] Filter angkatan atau tahun masuk berjalan.
-- [ ] Filter tahun lulus berjalan.
-- [ ] Filter kota berjalan.
-- [ ] Filter kategori berjalan.
-- [ ] Filter harga berjalan.
-- [ ] Filter harga minimum berjalan.
-- [ ] Filter harga maksimum berjalan.
-- [ ] Query produk join ke toko dan alumni profile.
-- [ ] Query jasa join ke toko dan alumni profile.
-- [ ] Query toko join ke alumni profile.
-- [ ] Sorting terbaru berjalan.
-- [ ] Sorting terlaris berjalan.
-- [ ] Sorting rating tertinggi berjalan.
-- [ ] Sorting harga terendah berjalan.
-- [ ] Sorting harga tertinggi berjalan.
-- [ ] Alumni verified dapat menyimpan produk favorit.
-- [ ] Alumni verified dapat menyimpan jasa favorit.
-- [ ] Alumni verified dapat menyimpan toko favorit.
-- [ ] Toggle favorit berjalan dari katalog.
-- [ ] Toggle favorit berjalan dari detail.
-- [ ] Drawer filter katalog tersedia di mobile.
-- [ ] Sidebar filter katalog tersedia di desktop.
-- [ ] Filter chips tampil untuk filter aktif.
+- [x] Katalog produk menampilkan produk active.
+- [x] Katalog jasa menampilkan jasa active.
+- [x] Katalog toko menampilkan toko active.
+- [x] Katalog alumni menampilkan alumni sesuai aturan privasi.
+- [x] Endpoint `GET /api/catalog` tersedia.
+- [x] Search global berjalan.
+- [x] Filter program studi berjalan.
+- [x] Filter angkatan atau tahun masuk berjalan.
+- [x] Filter tahun lulus berjalan.
+- [x] Filter kota berjalan.
+- [x] Filter kategori berjalan.
+- [x] Filter harga berjalan.
+- [x] Filter harga minimum berjalan.
+- [x] Filter harga maksimum berjalan.
+- [x] Query produk join ke toko dan alumni profile.
+- [x] Query jasa join ke toko dan alumni profile.
+- [x] Query toko join ke alumni profile.
+- [x] Sorting terbaru berjalan.
+- [x] Sorting terlaris berjalan.
+- [x] Sorting rating tertinggi berjalan.
+- [x] Sorting harga terendah berjalan.
+- [x] Sorting harga tertinggi berjalan.
+- [x] Alumni verified dapat menyimpan produk favorit.
+- [x] Alumni verified dapat menyimpan jasa favorit.
+- [x] Alumni verified dapat menyimpan toko favorit.
+- [x] Toggle favorit berjalan dari katalog.
+- [x] Toggle favorit berjalan dari detail.
+- [x] Drawer filter katalog tersedia di mobile.
+- [x] Sidebar filter katalog tersedia di desktop.
+- [x] Filter chips tampil untuk filter aktif.
 
 ## 9. Cart dan Checkout Checklist
 
@@ -292,15 +292,15 @@
 - [x] Warna status sesuai standar diterapkan.
 - [x] Toast global tersedia.
 - [x] ConfirmDialog global tersedia.
-- [ ] DataTable digunakan untuk admin data.
-- [ ] Dialog digunakan untuk form/modal yang sesuai.
-- [ ] Drawer atau Sidebar tersedia untuk navigasi.
-- [ ] Badge digunakan untuk alumni verified.
-- [ ] Tag digunakan untuk status.
+- [x] DataTable digunakan untuk admin data.
+- [x] Dialog digunakan untuk form/modal yang sesuai.
+- [x] Drawer atau Sidebar tersedia untuk navigasi.
+- [x] Badge digunakan untuk alumni verified.
+- [x] Tag digunakan untuk status.
 - [ ] Timeline digunakan untuk pesanan.
 - [ ] Chart digunakan untuk dashboard.
 - [ ] Rating digunakan untuk ulasan.
-- [ ] FileUpload digunakan untuk upload file.
+- [x] FileUpload digunakan untuk upload file.
 - [ ] Avatar digunakan untuk profil.
 - [ ] Menubar digunakan untuk navigasi desktop bila sesuai.
 
@@ -370,8 +370,8 @@
 - [x] Product policy test lulus.
 - [x] Service CRUD test lulus.
 - [x] Service policy test lulus.
-- [ ] Catalog filter test lulus.
-- [ ] Favorite test lulus.
+- [x] Catalog filter test lulus.
+- [x] Favorite test lulus.
 - [ ] Cart test lulus.
 - [ ] Checkout COD test lulus.
 - [ ] Order status test lulus.
