@@ -137,22 +137,22 @@
 
 ## 6. Product Checklist
 
-- [ ] Seller dapat membuat produk.
-- [ ] Seller dapat mengubah produk miliknya.
-- [ ] Seller dapat menghapus atau menonaktifkan produk miliknya.
-- [ ] Seller tidak dapat mengubah produk toko lain.
-- [ ] Produk memiliki slug unik.
-- [ ] Produk memiliki kategori.
-- [ ] Produk memiliki harga valid.
-- [ ] Produk memiliki stok valid.
-- [ ] Produk memiliki foto utama.
-- [ ] Produk dapat memiliki galeri foto.
-- [ ] Status active berjalan.
-- [ ] Status inactive berjalan.
-- [ ] Status out of stock berjalan.
+- [x] Seller dapat membuat produk.
+- [x] Seller dapat mengubah produk miliknya.
+- [x] Seller dapat menghapus atau menonaktifkan produk miliknya.
+- [x] Seller tidak dapat mengubah produk toko lain.
+- [x] Produk memiliki slug unik.
+- [x] Produk memiliki kategori.
+- [x] Produk memiliki harga valid.
+- [x] Produk memiliki stok valid.
+- [x] Produk memiliki foto utama.
+- [x] Produk dapat memiliki galeri foto.
+- [x] Status active berjalan.
+- [x] Status inactive berjalan.
+- [x] Status out of stock berjalan.
 - [ ] Produk out of stock tidak dapat checkout.
-- [ ] Produk inactive tidak tampil di katalog.
-- [ ] Badge alumni tampil pada detail produk.
+- [x] Produk inactive tidak tampil di katalog.
+- [x] Badge alumni tampil pada detail produk.
 
 ## 7. Service Checklist
 
@@ -366,8 +366,8 @@
 - [ ] Alumni import test lulus.
 - [ ] Store approval test lulus.
 - [ ] Store policy test lulus.
-- [ ] Product CRUD test lulus.
-- [ ] Product policy test lulus.
+- [x] Product CRUD test lulus.
+- [x] Product policy test lulus.
 - [ ] Service CRUD test lulus.
 - [ ] Service policy test lulus.
 - [ ] Catalog filter test lulus.
@@ -383,8 +383,8 @@
 - [ ] Delivery fee per wilayah test lulus.
 - [ ] Report export test lulus.
 - [ ] API validation test lulus.
-- [ ] Frontend build berhasil.
-- [ ] Backend test suite berhasil.
+- [x] Frontend build berhasil.
+- [x] Backend test suite berhasil.
 
 ## 19. API Documentation Checklist
 

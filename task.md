@@ -139,30 +139,30 @@
 
 ## Fase 6: Produk
 
-- [ ] Buat migration `products`.
-- [ ] Buat migration `product_images`.
-- [ ] Buat model product.
-- [ ] Buat model product image.
-- [ ] Buat form request create produk.
-- [ ] Buat form request update produk.
-- [ ] Buat policy produk.
-- [ ] Buat endpoint CRUD produk seller.
-- [ ] Buat endpoint upload foto utama.
-- [ ] Buat endpoint upload galeri foto.
-- [ ] Buat endpoint hapus foto produk.
-- [ ] Buat slug otomatis.
-- [ ] Buat status `active`.
-- [ ] Buat status `inactive`.
-- [ ] Buat status `out_of_stock`.
-- [ ] Buat fitur produk unggulan.
-- [ ] Buat validasi stok.
-- [ ] Buat validasi harga.
-- [ ] Pastikan hanya pemilik toko yang dapat mengubah produk.
-- [ ] Pastikan hanya toko active yang dapat membuat produk active.
-- [ ] Buat halaman daftar produk seller.
-- [ ] Buat halaman form produk.
-- [ ] Buat halaman detail produk publik.
-- [ ] Tampilkan badge toko dan alumni terverifikasi pada produk.
+- [x] Buat migration `products`.
+- [x] Buat migration `product_images`.
+- [x] Buat model product.
+- [x] Buat model product image.
+- [x] Buat form request create produk.
+- [x] Buat form request update produk.
+- [x] Buat policy produk.
+- [x] Buat endpoint CRUD produk seller.
+- [x] Buat endpoint upload foto utama.
+- [x] Buat endpoint upload galeri foto.
+- [x] Buat endpoint hapus foto produk.
+- [x] Buat slug otomatis.
+- [x] Buat status `active`.
+- [x] Buat status `inactive`.
+- [x] Buat status `out_of_stock`.
+- [x] Buat fitur produk unggulan.
+- [x] Buat validasi stok.
+- [x] Buat validasi harga.
+- [x] Pastikan hanya pemilik toko yang dapat mengubah produk.
+- [x] Pastikan hanya toko active yang dapat membuat produk active.
+- [x] Buat halaman daftar produk seller.
+- [x] Buat halaman form produk.
+- [x] Buat halaman detail produk publik.
+- [x] Tampilkan badge toko dan alumni terverifikasi pada produk.
 
 ## Fase 7: Jasa
 

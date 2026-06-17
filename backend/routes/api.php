@@ -11,6 +11,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/stores/{id}', [\App\Http\Controllers\Api\StoreController::class, 'show']);
 Route::get('/product-categories', [\App\Http\Controllers\Api\ProductCategoryController::class, 'index']);
 Route::get('/service-categories', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'index']);
+Route::get('/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/products/{slug}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -30,6 +32,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/stores/my-store', [\App\Http\Controllers\Api\StoreController::class, 'updateMyStore']);
         Route::post('/stores/my-store/logo', [\App\Http\Controllers\Api\StoreController::class, 'uploadLogo']);
         Route::post('/stores/my-store/banner', [\App\Http\Controllers\Api\StoreController::class, 'uploadBanner']);
+
+        // Seller Products
+        Route::get('/seller/products', [\App\Http\Controllers\Api\ProductController::class, 'sellerProducts']);
+        Route::post('/seller/products', [\App\Http\Controllers\Api\ProductController::class, 'store']);
+        Route::get('/seller/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'sellerShow']);
+        Route::put('/seller/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'update']);
+        Route::delete('/seller/products/{id}', [\App\Http\Controllers\Api\ProductController::class, 'destroy']);
+        Route::post('/seller/products/{id}/image', [\App\Http\Controllers\Api\ProductController::class, 'uploadImage']);
+        Route::post('/seller/products/{id}/gallery', [\App\Http\Controllers\Api\ProductController::class, 'uploadGallery']);
+        Route::delete('/seller/products/{productId}/images/{imageId}', [\App\Http\Controllers\Api\ProductController::class, 'deleteImage']);
     });
 
     // Admin routes

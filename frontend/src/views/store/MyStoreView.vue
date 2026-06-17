@@ -460,6 +460,27 @@ const handleBannerUpload = async (event) => {
           </template>
         </Card>
 
+        <!-- Store Navigation Tabs -->
+        <div class="flex gap-2 border-b border-slate-200 pb-2">
+          <button 
+            class="px-4 py-2 text-sm font-bold rounded-lg bg-primary text-white shadow-sm"
+          >
+            <i class="pi pi-cog mr-1"></i> Pengaturan Toko
+          </button>
+          <button 
+            class="px-4 py-2 text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            @click="router.push({ name: 'SellerProducts' })"
+          >
+            <i class="pi pi-box mr-1"></i> Kelola Produk
+          </button>
+          <button 
+            class="px-4 py-2 text-sm font-bold rounded-lg text-slate-400 cursor-not-allowed"
+            disabled
+          >
+            <i class="pi pi-wrench mr-1"></i> Kelola Jasa (Fase 7)
+          </button>
+        </div>
+
         <!-- Configuration Settings & Delivery Fees Tab -->
         <Card class="shadow-sm border border-slate-100">
           <template #title>

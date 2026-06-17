@@ -67,6 +67,29 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/my-store/products',
+    name: 'SellerProducts',
+    component: () => import('../views/store/product/ProductListView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-store/products/create',
+    name: 'SellerProductCreate',
+    component: () => import('../views/store/product/ProductFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-store/products/:id/edit',
+    name: 'SellerProductEdit',
+    component: () => import('../views/store/product/ProductFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/products/:slug',
+    name: 'ProductDetail',
+    component: () => import('../views/product/ProductDetailView.vue')
+  },
+  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')
