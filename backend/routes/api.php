@@ -5,9 +5,10 @@ use App\Http\Controllers\Api\AdminRoleController;
 use App\Http\Controllers\Api\AlumniVerificationController;
 use Illuminate\Support\Facades\Route;
 
-// Public auth routes
+// Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/stores/{id}', [\App\Http\Controllers\Api\StoreController::class, 'show']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -19,6 +20,15 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Email verification resend
     Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail']);
+
+    // Store Owner routes (requires verified alumni status)
+    Route::middleware('verified_alumni')->group(function () {
+        Route::post('/stores', [\App\Http\Controllers\Api\StoreController::class, 'register']);
+        Route::get('/stores/my-store', [\App\Http\Controllers\Api\StoreController::class, 'myStore']);
+        Route::put('/stores/my-store', [\App\Http\Controllers\Api\StoreController::class, 'updateMyStore']);
+        Route::post('/stores/my-store/logo', [\App\Http\Controllers\Api\StoreController::class, 'uploadLogo']);
+        Route::post('/stores/my-store/banner', [\App\Http\Controllers\Api\StoreController::class, 'uploadBanner']);
+    });
 
     // Admin routes
     Route::middleware('admin')->group(function () {
@@ -35,5 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/alumni', [AlumniVerificationController::class, 'index']);
         Route::get('/admin/alumni/{id}', [AlumniVerificationController::class, 'show']);
         Route::post('/admin/alumni/{id}/verify', [AlumniVerificationController::class, 'verify']);
+
+        // Admin Store Management
+        Route::get('/admin/stores', [\App\Http\Controllers\Api\AdminStoreController::class, 'index']);
+        Route::post('/admin/stores/{id}/verify', [\App\Http\Controllers\Api\AdminStoreController::class, 'verify']);
     });
 });

@@ -119,21 +119,21 @@
 
 ## 5. Store Checklist
 
-- [ ] Hanya alumni verified yang dapat mengajukan toko.
-- [ ] Satu alumni hanya dapat memiliki satu toko pada MVP.
-- [ ] Toko baru berstatus pending.
-- [ ] Admin dapat approve toko.
-- [ ] Admin dapat suspend toko.
-- [ ] Toko active dapat membuat produk.
-- [ ] Toko active dapat membuat jasa.
-- [ ] Toko pending tidak dapat menjual.
-- [ ] Toko suspended tidak dapat menjual.
-- [ ] Profil toko menampilkan pemilik alumni.
-- [ ] Profil toko menampilkan badge alumni pemilik.
-- [ ] Tarif antar tetap per toko tersedia.
-- [ ] Tarif antar per wilayah tersedia.
-- [ ] Biaya antar otomatis dihitung dari `store_delivery_fees`.
-- [ ] Policy pemilik toko berjalan.
+- [x] Hanya alumni verified yang dapat mengajukan toko.
+- [x] Satu alumni hanya dapat memiliki satu toko pada MVP.
+- [x] Toko baru berstatus pending.
+- [x] Admin dapat approve toko.
+- [x] Admin dapat suspend toko.
+- [x] Toko active dapat membuat produk.
+- [x] Toko active dapat membuat jasa.
+- [x] Toko pending tidak dapat menjual.
+- [x] Toko suspended tidak dapat menjual.
+- [x] Profil toko menampilkan pemilik alumni.
+- [x] Profil toko menampilkan badge alumni pemilik.
+- [x] Tarif antar tetap per toko tersedia.
+- [x] Tarif antar per wilayah tersedia.
+- [x] Biaya antar otomatis dihitung dari `store_delivery_fees`.
+- [x] Policy pemilik toko berjalan.
 
 ## 6. Product Checklist
 

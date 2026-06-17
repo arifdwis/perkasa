@@ -208,6 +208,7 @@ const handleLogout = async () => {
             icon="pi pi-plus" 
             size="small" 
             :disabled="authStore.user?.profile?.status_verifikasi !== 'verified'"
+            @click="router.push({ name: 'MyStore' })"
           />
         </div>
 
@@ -222,6 +223,7 @@ const handleLogout = async () => {
           <div class="flex gap-2 pt-1">
             <Button label="Verifikasi Alumni" icon="pi pi-verified" severity="warn" size="small" class="text-xs" @click="router.push({ name: 'AlumniList' })" />
             <Button label="Matriks Role" icon="pi pi-key" severity="warn" size="small" class="text-xs" @click="router.push({ name: 'AdminRoles' })" />
+            <Button label="Moderasi Toko" icon="pi pi-shopping-bag" severity="warn" size="small" class="text-xs" @click="router.push({ name: 'AdminStores' })" />
           </div>
         </div>
       </section>

@@ -99,29 +99,29 @@
 
 ## Fase 4: Toko Alumni
 
-- [ ] Buat migration `stores`.
-- [ ] Buat migration `store_delivery_fees`.
-- [ ] Buat model store.
-- [ ] Buat model store delivery fee.
-- [ ] Buat form request pengajuan toko.
-- [ ] Buat form request update toko.
-- [ ] Buat policy store.
-- [ ] Buat endpoint pengajuan toko.
-- [ ] Buat endpoint update toko oleh pemilik.
-- [ ] Buat endpoint detail toko.
-- [ ] Buat endpoint admin daftar toko.
-- [ ] Buat endpoint admin approve toko.
-- [ ] Buat endpoint admin suspend toko.
-- [ ] Buat tarif antar tetap per toko.
-- [ ] Buat tarif antar per wilayah.
-- [ ] Buat perhitungan biaya antar otomatis dari `store_delivery_fees`.
-- [ ] Batasi satu alumni satu toko pada MVP.
-- [ ] Pastikan hanya alumni verified yang dapat mengajukan toko.
-- [ ] Pastikan hanya toko active yang dapat menjual.
-- [ ] Buat halaman pengajuan toko.
-- [ ] Buat halaman profil toko.
-- [ ] Buat halaman admin verifikasi toko.
-- [ ] Tampilkan badge alumni pemilik toko.
+- [x] Buat migration `stores`.
+- [x] Buat migration `store_delivery_fees`.
+- [x] Buat model store.
+- [x] Buat model store delivery fee.
+- [x] Buat form request pengajuan toko.
+- [x] Buat form request update toko.
+- [x] Buat policy store.
+- [x] Buat endpoint pengajuan toko.
+- [x] Buat endpoint update toko oleh pemilik.
+- [x] Buat endpoint detail toko.
+- [x] Buat endpoint admin daftar toko.
+- [x] Buat endpoint admin approve toko.
+- [x] Buat endpoint admin suspend toko.
+- [x] Buat tarif antar tetap per toko.
+- [x] Buat tarif antar per wilayah.
+- [x] Buat perhitungan biaya antar otomatis dari `store_delivery_fees`.
+- [x] Batasi satu alumni satu toko pada MVP.
+- [x] Pastikan hanya alumni verified yang dapat mengajukan toko.
+- [x] Pastikan hanya toko active yang dapat menjual.
+- [x] Buat halaman pengajuan toko.
+- [x] Buat halaman profil toko.
+- [x] Buat halaman admin verifikasi toko.
+- [x] Tampilkan badge alumni pemilik toko.
 
 ## Fase 5: Kategori Produk dan Jasa
 

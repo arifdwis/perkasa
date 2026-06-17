@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasUuid7;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class AlumniProfile extends Model
 {
@@ -33,5 +34,13 @@ class AlumniProfile extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the store owned by the alumni profile.
+     */
+    public function store(): HasOne
+    {
+        return $this->hasOne(Store::class);
     }
 }

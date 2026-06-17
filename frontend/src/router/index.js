@@ -44,6 +44,23 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/my-store',
+    name: 'MyStore',
+    component: () => import('../views/store/MyStoreView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/stores/:id',
+    name: 'StoreProfile',
+    component: () => import('../views/store/StoreProfileView.vue')
+  },
+  {
+    path: '/admin/stores',
+    name: 'AdminStores',
+    component: () => import('../views/admin/AdminStoreListView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')
