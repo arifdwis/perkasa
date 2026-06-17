@@ -66,36 +66,36 @@
 
 ## Fase 3: Data Alumni dan Verifikasi
 
-- [ ] Buat migration `alumni_profiles`.
-- [ ] Buat migration `imported_alumni_records`.
-- [ ] Buat migration `alumni_verifications`.
-- [ ] Buat model alumni profile.
-- [ ] Buat model imported alumni record.
-- [ ] Buat model alumni verification.
-- [ ] Tambahkan index `alumni_profiles(program_studi, tahun_masuk, tahun_lulus)`.
-- [ ] Buat form request registrasi alumni.
-- [ ] Buat form request update profil alumni.
-- [ ] Buat form request import alumni.
-- [ ] Buat service import Excel/CSV.
-- [ ] Buat validasi kolom import wajib.
-- [ ] Buat validasi duplikasi NIM.
-- [ ] Buat validasi duplikasi email.
-- [ ] Buat preview hasil import.
-- [ ] Buat confirm import.
-- [ ] Buat matching NIM dan email saat registrasi.
-- [ ] Buat status verifikasi `pending`.
-- [ ] Buat status verifikasi `verified`.
-- [ ] Buat status verifikasi `rejected`.
-- [ ] Buat status verifikasi `suspended`.
-- [ ] Buat endpoint admin approve alumni.
-- [ ] Buat endpoint admin reject alumni.
-- [ ] Buat endpoint admin suspend alumni.
-- [ ] Buat badge alumni terverifikasi.
-- [ ] Buat halaman admin daftar alumni.
-- [ ] Buat halaman admin detail alumni.
-- [ ] Buat halaman admin import alumni.
-- [ ] Buat halaman profil alumni.
-- [ ] Buat activity log untuk aksi verifikasi.
+- [x] Buat migration `alumni_profiles`.
+- [x] Buat migration `imported_alumni_records`.
+- [x] Buat migration `alumni_verifications`.
+- [x] Buat model alumni profile.
+- [x] Buat model imported alumni record.
+- [x] Buat model alumni verification.
+- [x] Tambahkan index `alumni_profiles(program_studi, tahun_masuk, tahun_lulus)`.
+- [x] Buat form request registrasi alumni.
+- [x] Buat form request update profil alumni.
+- [x] Buat form request import alumni.
+- [x] Buat service import Excel/CSV.
+- [x] Buat validasi kolom import wajib.
+- [x] Buat validasi duplikasi NIM.
+- [x] Buat validasi duplikasi email.
+- [x] Buat preview hasil import.
+- [x] Buat confirm import.
+- [x] Buat matching NIM dan email saat registrasi.
+- [x] Buat status verifikasi `pending`.
+- [x] Buat status verifikasi `verified`.
+- [x] Buat status verifikasi `rejected`.
+- [x] Buat status verifikasi `suspended`.
+- [x] Buat endpoint admin approve alumni.
+- [x] Buat endpoint admin reject alumni.
+- [x] Buat endpoint admin suspend alumni.
+- [x] Buat badge alumni terverifikasi.
+- [x] Buat halaman admin daftar alumni.
+- [x] Buat halaman admin detail alumni.
+- [x] Buat halaman admin import alumni.
+- [x] Buat halaman profil alumni.
+- [x] Buat activity log untuk aksi verifikasi.
 
 ## Fase 4: Toko Alumni
 

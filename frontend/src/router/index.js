@@ -32,6 +32,18 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/alumni/import',
+    name: 'AlumniImport',
+    component: () => import('../views/admin/AlumniImportView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/alumni/:id',
+    name: 'AlumniDetail',
+    component: () => import('../views/admin/AlumniDetailView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')

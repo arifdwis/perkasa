@@ -96,26 +96,26 @@
 
 ## 4. Alumni Verification Checklist
 
-- [ ] Tabel alumni profile tersedia.
-- [ ] Tabel imported alumni records tersedia.
-- [ ] Tabel alumni verifications tersedia.
-- [ ] Admin dapat upload Excel.
-- [ ] Admin dapat upload CSV.
-- [ ] Sistem memvalidasi kolom wajib import.
-- [ ] Sistem mendeteksi NIM duplikat.
-- [ ] Sistem mendeteksi email duplikat.
-- [ ] Sistem menyediakan preview import.
-- [ ] Sistem menyimpan import setelah dikonfirmasi.
-- [ ] Sistem mencocokkan registrasi dengan NIM.
-- [ ] Sistem mencocokkan registrasi dengan email.
-- [ ] Admin dapat approve alumni.
-- [ ] Admin dapat reject alumni.
-- [ ] Admin dapat suspend alumni.
-- [ ] Status pending berjalan.
-- [ ] Status verified berjalan.
-- [ ] Status rejected berjalan.
-- [ ] Status suspended berjalan.
-- [ ] Activity log mencatat aksi verifikasi.
+- [x] Tabel alumni profile tersedia.
+- [x] Tabel imported alumni records tersedia.
+- [x] Tabel alumni verifications tersedia.
+- [x] Admin dapat upload Excel.
+- [x] Admin dapat upload CSV.
+- [x] Sistem memvalidasi kolom wajib import.
+- [x] Sistem mendeteksi NIM duplikat.
+- [x] Sistem mendeteksi email duplikat.
+- [x] Sistem menyediakan preview import.
+- [x] Sistem menyimpan import setelah dikonfirmasi.
+- [x] Sistem mencocokkan registrasi dengan NIM.
+- [x] Sistem mencocokkan registrasi dengan email.
+- [x] Admin dapat approve alumni.
+- [x] Admin dapat reject alumni.
+- [x] Admin dapat suspend alumni.
+- [x] Status pending berjalan.
+- [x] Status verified berjalan.
+- [x] Status rejected berjalan.
+- [x] Status suspended berjalan.
+- [x] Activity log mencatat aksi verifikasi.
 
 ## 5. Store Checklist
 
