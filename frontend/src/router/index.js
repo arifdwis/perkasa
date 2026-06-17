@@ -127,6 +127,18 @@ const routes = [
     name: 'Favorites',
     component: () => import('../views/FavoritesView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/cart',
+    name: 'Cart',
+    component: () => import('../views/CartView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('../views/CheckoutView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

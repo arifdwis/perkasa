@@ -59,6 +59,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // Favorites
         Route::post('/favorites/toggle', [\App\Http\Controllers\Api\FavoriteController::class, 'toggle']);
         Route::get('/favorites', [\App\Http\Controllers\Api\FavoriteController::class, 'index']);
+
+        // Cart
+        Route::get('/cart', [\App\Http\Controllers\Api\CartController::class, 'index']);
+        Route::post('/cart/items', [\App\Http\Controllers\Api\CartController::class, 'addItem']);
+        Route::put('/cart/items/{id}', [\App\Http\Controllers\Api\CartController::class, 'updateItem']);
+        Route::delete('/cart/items/{id}', [\App\Http\Controllers\Api\CartController::class, 'deleteItem']);
+        Route::delete('/cart', [\App\Http\Controllers\Api\CartController::class, 'clear']);
+
+        // Checkout
+        Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'checkout']);
     });
 
     // Admin routes

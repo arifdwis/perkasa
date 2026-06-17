@@ -202,23 +202,23 @@
 
 ## 9. Cart dan Checkout Checklist
 
-- [ ] Produk active dapat masuk keranjang.
-- [ ] Produk inactive tidak dapat masuk keranjang.
-- [ ] Produk out of stock tidak dapat masuk keranjang.
-- [ ] Quantity tidak dapat melebihi stok.
-- [ ] User dapat mengubah quantity.
-- [ ] User dapat menghapus item.
-- [ ] User dapat clear cart.
-- [ ] Subtotal dihitung benar.
-- [ ] Biaya jasa antar dihitung benar.
-- [ ] Tarif per wilayah dihitung benar jika dipakai toko.
-- [ ] Total bayar dihitung benar.
-- [ ] Checkout hanya tersedia untuk alumni verified.
-- [ ] Checkout menggunakan COD.
-- [ ] Checkout memvalidasi ulang stok.
-- [ ] Checkout membuat order per toko.
-- [ ] Stok berkurang setelah order dibuat.
-- [ ] Checkout gagal menampilkan pesan jelas.
+- [x] Produk active dapat masuk keranjang.
+- [x] Produk inactive tidak dapat masuk keranjang.
+- [x] Produk out of stock tidak dapat masuk keranjang.
+- [x] Quantity tidak dapat melebihi stok.
+- [x] User dapat mengubah quantity.
+- [x] User dapat menghapus item.
+- [x] User dapat clear cart.
+- [x] Subtotal dihitung benar.
+- [x] Biaya jasa antar dihitung benar.
+- [x] Tarif per wilayah dihitung benar jika dipakai toko.
+- [x] Total bayar dihitung benar.
+- [x] Checkout hanya tersedia untuk alumni verified.
+- [x] Checkout menggunakan COD.
+- [x] Checkout memvalidasi ulang stok.
+- [x] Checkout membuat order per toko.
+- [x] Stok berkurang setelah order dibuat.
+- [x] Checkout gagal menampilkan pesan jelas.
 
 ## 10. Order Checklist
 
@@ -372,8 +372,8 @@
 - [x] Service policy test lulus.
 - [x] Catalog filter test lulus.
 - [x] Favorite test lulus.
-- [ ] Cart test lulus.
-- [ ] Checkout COD test lulus.
+- [x] Cart test lulus.
+- [x] Checkout COD test lulus.
 - [ ] Order status test lulus.
 - [ ] Review test lulus.
 - [ ] Dashboard endpoint test lulus.

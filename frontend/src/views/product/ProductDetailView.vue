@@ -7,10 +7,14 @@ import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
+import { useCartStore } from '../../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const cartStore = useCartStore()
+
+const quantity = ref(1)
 
 const product = ref(null)
 const loading = ref(true)
@@ -82,8 +86,27 @@ const toggleFavorite = async () => {
   }
 }
 
+const addToCart = async () => {
+  if (!isLoggedIn.value) {
+    toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
+    return
+  }
+  if (!isVerified.value) {
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya akun alumni terverifikasi yang dapat membeli produk.', life: 3500 })
+    return
+  }
+
+  const res = await cartStore.addToCart(product.value.id, quantity.value)
+  if (res.success) {
+    toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
+  } else {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
+  }
+}
+
 onMounted(async () => {
   await fetchProductDetail()
+  cartStore.fetchCart()
 })
 
 const store = computed(() => product.value?.store || null)
@@ -152,7 +175,19 @@ const whatsappUrl = computed(() => {
             <p class="text-[10px] text-primary-soft">Marketplace Alumni</p>
           </div>
         </div>
-        <Button label="Kembali ke Beranda" icon="pi pi-home" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Home' })" />
+        <div class="flex items-center gap-2">
+          <Button 
+            v-if="isLoggedIn"
+            :label="'Keranjang (' + cartStore.cartCount + ')'" 
+            icon="pi pi-shopping-cart" 
+            severity="success" 
+            size="small" 
+            outlined
+            class="text-white border-white/20 hover:bg-white/10"
+            @click="router.push({ name: 'Cart' })" 
+          />
+          <Button label="Kembali ke Beranda" icon="pi pi-home" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Home' })" />
+        </div>
       </div>
     </header>
 
@@ -230,6 +265,41 @@ const whatsappUrl = computed(() => {
                   <strong class="text-3xl font-black text-primary">
                     Rp{{ parseFloat(product.price).toLocaleString('id-ID') }}
                   </strong>
+                </div>
+
+                <!-- Quantity Selector & Add to Cart -->
+                <div class="flex items-center gap-3 pt-2" v-if="product.status === 'active' && product.stock > 0">
+                  <div class="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-100 flex-shrink-0">
+                    <Button 
+                      icon="pi pi-minus" 
+                      severity="secondary" 
+                      text 
+                      rounded
+                      size="small"
+                      class="w-8 h-8"
+                      :disabled="quantity <= 1"
+                      @click="quantity--" 
+                    />
+                    <span class="w-8 text-center text-sm font-bold text-slate-800">{{ quantity }}</span>
+                    <Button 
+                      icon="pi pi-plus" 
+                      severity="secondary" 
+                      text 
+                      rounded
+                      size="small"
+                      class="w-8 h-8"
+                      :disabled="quantity >= product.stock"
+                      @click="quantity++" 
+                    />
+                  </div>
+                  
+                  <Button 
+                    label="Tambah ke Keranjang" 
+                    icon="pi pi-shopping-cart" 
+                    class="flex-grow text-xs font-bold h-11"
+                    severity="primary"
+                    @click="addToCart"
+                  />
                 </div>
 
                 <!-- CTA: WhatsApp Inquiry & Favorite -->

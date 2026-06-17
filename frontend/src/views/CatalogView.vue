@@ -11,10 +11,12 @@ import Select from 'primevue/select'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Drawer from 'primevue/drawer'
+import { useCartStore } from '../stores/cart'
 
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const cartStore = useCartStore()
 
 const activeTab = ref('product') // 'product' | 'service' | 'store' | 'alumni'
 const items = ref([])
@@ -201,6 +203,24 @@ const toggleFavorite = async (event, item, type) => {
   }
 }
 
+const addToCart = async (item) => {
+  if (!isLoggedIn.value) {
+    toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
+    return
+  }
+  if (!isVerified.value) {
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya akun alumni terverifikasi yang dapat membeli produk.', life: 3500 })
+    return
+  }
+
+  const res = await cartStore.addToCart(item.id, 1)
+  if (res.success) {
+    toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
+  } else {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
+  }
+}
+
 onMounted(async () => {
   checkAuth()
   
@@ -212,6 +232,7 @@ onMounted(async () => {
 
   await fetchCategories()
   await fetchFavorites()
+  cartStore.fetchCart()
   fetchCatalog()
 })
 
@@ -251,6 +272,16 @@ const navigateToDetail = (item) => {
             outlined
             class="text-white border-white/20 hover:bg-white/10"
             @click="router.push({ name: 'Favorites' })" 
+          />
+          <Button 
+            v-if="isLoggedIn"
+            :label="'Keranjang (' + cartStore.cartCount + ')'" 
+            icon="pi pi-shopping-cart" 
+            severity="success" 
+            size="small" 
+            outlined
+            class="text-white border-white/20 hover:bg-white/10"
+            @click="router.push({ name: 'Cart' })" 
           />
           <Button label="Kembali ke Beranda" icon="pi pi-home" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Home' })" />
         </div>
@@ -462,9 +493,20 @@ const navigateToDetail = (item) => {
                       </strong>
                     </div>
 
-                    <div class="text-right">
-                      <span class="block text-[9px] font-bold text-slate-700">{{ item.store?.name }}</span>
-                      <span class="block text-[8px] text-slate-400 font-medium"><i class="pi pi-map-marker text-[8px]"></i> {{ item.store?.kota }}</span>
+                    <div class="flex items-center gap-2">
+                      <Button 
+                        v-if="activeTab === 'product'"
+                        icon="pi pi-plus" 
+                        severity="primary" 
+                        size="small"
+                        class="p-1 w-8 h-8 rounded-xl flex items-center justify-center"
+                        title="Tambah ke Keranjang"
+                        @click.stop="addToCart(item)"
+                      />
+                      <div class="text-right">
+                        <span class="block text-[9px] font-bold text-slate-700">{{ item.store?.name }}</span>
+                        <span class="block text-[8px] text-slate-400 font-medium"><i class="pi pi-map-marker text-[8px]"></i> {{ item.store?.kota }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

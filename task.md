@@ -225,25 +225,25 @@
 
 ## Fase 9: Keranjang dan Checkout
 
-- [ ] Buat migration `carts`.
-- [ ] Buat migration `cart_items`.
-- [ ] Buat model cart.
-- [ ] Buat model cart item.
-- [ ] Buat endpoint tambah produk ke keranjang.
-- [ ] Buat endpoint ubah quantity.
-- [ ] Buat endpoint hapus item.
-- [ ] Buat endpoint clear cart.
-- [ ] Buat validasi stok saat tambah cart.
-- [ ] Buat validasi stok saat update cart.
-- [ ] Buat validasi hanya produk active yang bisa masuk cart.
-- [ ] Buat halaman keranjang.
-- [ ] Buat halaman checkout.
-- [ ] Buat form data penerima.
-- [ ] Buat perhitungan subtotal.
-- [ ] Buat perhitungan biaya jasa antar.
-- [ ] Buat pemilihan wilayah antar jika toko memakai tarif per wilayah.
-- [ ] Buat perhitungan total bayar.
-- [ ] Pastikan metode pembayaran hanya COD.
+- [x] Buat migration `carts`.
+- [x] Buat migration `cart_items`.
+- [x] Buat model cart.
+- [x] Buat model cart item.
+- [x] Buat endpoint tambah produk ke keranjang.
+- [x] Buat endpoint ubah quantity.
+- [x] Buat endpoint hapus item.
+- [x] Buat endpoint clear cart.
+- [x] Buat validasi stok saat tambah cart.
+- [x] Buat validasi stok saat update cart.
+- [x] Buat validasi hanya produk active yang bisa masuk cart.
+- [x] Buat halaman keranjang.
+- [x] Buat halaman checkout.
+- [x] Buat form data penerima.
+- [x] Buat perhitungan subtotal.
+- [x] Buat perhitungan biaya jasa antar.
+- [x] Buat pemilihan wilayah antar jika toko memakai tarif per wilayah.
+- [x] Buat perhitungan total bayar.
+- [x] Pastikan metode pembayaran hanya COD.
 
 ## Fase 10: Pesanan
 
