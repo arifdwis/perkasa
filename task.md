@@ -26,7 +26,7 @@
 - [x] Konfigurasi Scheduler.
 - [x] Buat struktur folder service layer.
 - [x] Buat struktur folder repository untuk modul yang membutuhkan query kompleks.
-- [ ] Tetapkan UUID v7 untuk semua tabel utama.
+- [x] Tetapkan UUID v7 untuk semua tabel utama.
 - [x] Buat `.env.example` lengkap.
 - [x] Isi `.env.example` dengan konfigurasi database default `perkasa`.
 - [x] Buat dokumentasi setup lokal.

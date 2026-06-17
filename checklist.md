@@ -45,8 +45,8 @@
 - [x] Role dan permission menggunakan Spatie Laravel Permission.
 - [x] Activity log menggunakan Spatie Activity Log.
 - [x] Import Excel/CSV menggunakan Laravel Excel.
-- [ ] Semua tabel utama memakai UUID.
-- [ ] UUID v7 digunakan atau diprioritaskan untuk tabel utama.
+- [x] Semua tabel utama memakai UUID.
+- [x] UUID v7 digunakan atau diprioritaskan untuk tabel utama.
 - [ ] Foreign key utama memiliki index yang tepat.
 - [ ] Index `alumni_profiles(program_studi, tahun_masuk, tahun_lulus)` tersedia.
 - [ ] Endpoint sensitif memakai auth middleware.
