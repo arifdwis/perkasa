@@ -21,14 +21,25 @@ const stats = ref([
 ])
 
 const programStudiList = ref([
-  { label: 'S1 Manajemen', value: 'manajemen' },
-  { label: 'S1 Akuntansi', value: 'akuntansi' },
-  { label: 'S1 Ekonomi Pembangunan', value: 'ekonomi_pembangunan' }
+  { label: 'S1 Manajemen', value: 'S1 Manajemen' },
+  { label: 'S1 Akuntansi', value: 'S1 Akuntansi' },
+  { label: 'S1 Ekonomi Pembangunan', value: 'S1 Ekonomi Pembangunan' }
 ])
 
 const selectedProdi = ref(null)
 const angkatan = ref('')
 const searchKeyword = ref('')
+
+const handleSearch = () => {
+  router.push({
+    name: 'Catalog',
+    query: {
+      search: searchKeyword.value || undefined,
+      program_studi: selectedProdi.value || undefined,
+      tahun_masuk: angkatan.value || undefined
+    }
+  })
+}
 
 const fetchProfile = async () => {
   try {
@@ -128,8 +139,10 @@ const handleLogout = async () => {
               v-model="selectedProdi" 
               :options="programStudiList" 
               optionLabel="label" 
+              optionValue="value"
               placeholder="Pilih Prodi" 
               class="w-full" 
+              showClear
             />
           </div>
 
@@ -139,7 +152,7 @@ const handleLogout = async () => {
           </div>
 
           <div class="flex flex-col gap-1.5 justify-end">
-            <Button label="Terapkan Filter" icon="pi pi-filter" class="w-full" />
+            <Button label="Terapkan Filter" icon="pi pi-filter" class="w-full" @click="handleSearch" />
           </div>
         </div>
       </section>

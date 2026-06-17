@@ -116,6 +116,17 @@ const routes = [
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')
+  },
+  {
+    path: '/catalog',
+    name: 'Catalog',
+    component: () => import('../views/CatalogView.vue')
+  },
+  {
+    path: '/favorites',
+    name: 'Favorites',
+    component: () => import('../views/FavoritesView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

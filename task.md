@@ -188,40 +188,40 @@
 
 ## Fase 8: Katalog dan Favorit
 
-- [ ] Buat endpoint `GET /api/catalog`.
-- [ ] Buat endpoint katalog produk.
-- [ ] Buat endpoint katalog jasa.
-- [ ] Buat endpoint katalog toko.
-- [ ] Buat endpoint katalog alumni.
-- [ ] Buat endpoint pencarian global.
-- [ ] Buat filter program studi.
-- [ ] Buat filter angkatan atau tahun masuk.
-- [ ] Buat filter tahun lulus.
-- [ ] Buat filter kota.
-- [ ] Buat filter kategori.
-- [ ] Buat filter harga.
-- [ ] Buat filter harga minimum.
-- [ ] Buat filter harga maksimum.
-- [ ] Buat join produk ke toko lalu alumni profile untuk filter identitas alumni.
-- [ ] Buat join jasa ke toko lalu alumni profile untuk filter identitas alumni.
-- [ ] Buat join toko ke alumni profile untuk filter identitas alumni.
-- [ ] Buat sorting terbaru.
-- [ ] Buat sorting terlaris.
-- [ ] Buat sorting rating tertinggi.
-- [ ] Buat sorting harga terendah.
-- [ ] Buat sorting harga tertinggi.
-- [ ] Buat migration `favorites`.
-- [ ] Buat model favorite.
-- [ ] Buat endpoint toggle favorit produk.
-- [ ] Buat endpoint toggle favorit jasa.
-- [ ] Buat endpoint toggle favorit toko.
-- [ ] Buat endpoint daftar favorit.
-- [ ] Buat halaman katalog mobile-first.
-- [ ] Buat filter drawer untuk mobile.
-- [ ] Buat filter sidebar untuk desktop.
-- [ ] Buat filter chips untuk filter aktif.
-- [ ] Buat halaman pencarian.
-- [ ] Buat halaman favorit.
+- [x] Buat endpoint `GET /api/catalog`.
+- [x] Buat endpoint katalog produk.
+- [x] Buat endpoint katalog jasa.
+- [x] Buat endpoint katalog toko.
+- [x] Buat endpoint katalog alumni.
+- [x] Buat endpoint pencarian global.
+- [x] Buat filter program studi.
+- [x] Buat filter angkatan atau tahun masuk.
+- [x] Buat filter tahun lulus.
+- [x] Buat filter kota.
+- [x] Buat filter kategori.
+- [x] Buat filter harga.
+- [x] Buat filter harga minimum.
+- [x] Buat filter harga maksimum.
+- [x] Buat join produk ke toko lalu alumni profile untuk filter identitas alumni.
+- [x] Buat join jasa ke toko lalu alumni profile untuk filter identitas alumni.
+- [x] Buat join toko ke alumni profile untuk filter identitas alumni.
+- [x] Buat sorting terbaru.
+- [x] Buat sorting terlaris.
+- [x] Buat sorting rating tertinggi.
+- [x] Buat sorting harga terendah.
+- [x] Buat sorting harga tertinggi.
+- [x] Buat migration `favorites`.
+- [x] Buat model favorite.
+- [x] Buat endpoint toggle favorit produk.
+- [x] Buat endpoint toggle favorit jasa.
+- [x] Buat endpoint toggle favorit toko.
+- [x] Buat endpoint daftar favorit.
+- [x] Buat halaman katalog mobile-first.
+- [x] Buat filter drawer untuk mobile.
+- [x] Buat filter sidebar untuk desktop.
+- [x] Buat filter chips untuk filter aktif.
+- [x] Buat halaman pencarian.
+- [x] Buat halaman favorit.
 
 ## Fase 9: Keranjang dan Checkout
 

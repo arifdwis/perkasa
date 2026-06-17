@@ -40,4 +40,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasOne(AlumniProfile::class);
     }
+
+    /**
+     * Get all favorites for the user.
+     */
+    public function favorites(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Favorite::class);
+    }
 }

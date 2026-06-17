@@ -15,6 +15,7 @@ Route::get('/products', [\App\Http\Controllers\Api\ProductController::class, 'in
 Route::get('/products/{slug}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
 Route::get('/services', [\App\Http\Controllers\Api\ServiceController::class, 'index']);
 Route::get('/services/{slug}', [\App\Http\Controllers\Api\ServiceController::class, 'show']);
+Route::get('/catalog', [\App\Http\Controllers\Api\CatalogController::class, 'index']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -54,6 +55,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/seller/services/{id}/image', [\App\Http\Controllers\Api\ServiceController::class, 'uploadImage']);
         Route::post('/seller/services/{id}/portfolio', [\App\Http\Controllers\Api\ServiceController::class, 'uploadPortfolio']);
         Route::delete('/seller/services/{serviceId}/images/{imageId}', [\App\Http\Controllers\Api\ServiceController::class, 'deleteImage']);
+
+        // Favorites
+        Route::post('/favorites/toggle', [\App\Http\Controllers\Api\FavoriteController::class, 'toggle']);
+        Route::get('/favorites', [\App\Http\Controllers\Api\FavoriteController::class, 'index']);
     });
 
     // Admin routes
