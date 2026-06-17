@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -22,9 +23,9 @@ const form = ref({
 })
 
 const programStudiList = ref([
-  { label: 'S1 Manajemen', value: 'manajemen' },
-  { label: 'S1 Akuntansi', value: 'akuntansi' },
-  { label: 'S1 Ekonomi Pembangunan', value: 'ekonomi_pembangunan' }
+  { label: 'S1 Manajemen', value: 'S1 Manajemen' },
+  { label: 'S1 Akuntansi', value: 'S1 Akuntansi' },
+  { label: 'S1 Ekonomi Pembangunan', value: 'S1 Ekonomi Pembangunan' }
 ])
 
 const error = ref('')
@@ -48,16 +49,47 @@ const handleRegister = async () => {
 
   isLoading.value = true
 
-  // Mock registration for Fase 1 (Project Setup)
-  setTimeout(() => {
-    isLoading.value = false
-    success.value = 'Registrasi berhasil! Menunggu pencocokan data Perkasa.'
+  try {
+    const response = await axios.post('/register', {
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+      nim: form.value.nim,
+      program_studi: form.value.programStudi.value,
+      tahun_masuk: parseInt(form.value.tahunMasuk),
+      tahun_lulus: parseInt(form.value.tahunLulus),
+      whatsapp: form.value.whatsapp
+    })
+
+    success.value = response.data.message || 'Registrasi berhasil! Menunggu verifikasi.'
     
-    // Redirect to login page after 2 seconds
+    // Reset form
+    form.value = {
+      nim: '',
+      name: '',
+      programStudi: null,
+      tahunMasuk: '',
+      tahunLulus: '',
+      email: '',
+      whatsapp: '',
+      password: '',
+      confirmPassword: ''
+    }
+
+    // Redirect to login page after 2.5 seconds
     setTimeout(() => {
       router.push({ name: 'Login' })
-    }, 2000)
-  }, 1000)
+    }, 2500)
+  } catch (err) {
+    if (err.response?.data?.errors) {
+      const firstErrorKey = Object.keys(err.response.data.errors)[0]
+      error.value = err.response.data.errors[firstErrorKey][0]
+    } else {
+      error.value = err.response?.data?.message || 'Registrasi gagal. Coba lagi nanti.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

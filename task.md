@@ -33,16 +33,16 @@
 
 ## Fase 2: Auth dan Role
 
-- [ ] Buat migration `users`.
-- [ ] Tambahkan UUID pada user.
-- [ ] Buat endpoint register alumni.
-- [ ] Buat endpoint login.
-- [ ] Buat endpoint logout.
-- [ ] Buat endpoint `me`.
+- [x] Buat migration `users`.
+- [x] Tambahkan UUID pada user.
+- [x] Buat endpoint register alumni.
+- [x] Buat endpoint login.
+- [x] Buat endpoint logout.
+- [x] Buat endpoint `me`.
 - [ ] Buat email verification.
-- [ ] Buat strong password validation.
-- [ ] Buat seeder role.
-- [ ] Buat seeder permission.
+- [x] Buat strong password validation.
+- [x] Buat seeder role.
+- [x] Buat seeder permission.
 - [ ] Buat CRUD role admin.
 - [ ] Buat CRUD permission admin.
 - [ ] Buat permission matrix Role x Permission.
@@ -50,17 +50,17 @@
 - [ ] Lindungi role Super Admin agar tidak dapat dihapus.
 - [ ] Jalankan `forgetCachedPermissions()` setelah perubahan role/permission.
 - [ ] Catat perubahan role/permission ke Activity Log.
-- [ ] Kirim permission efektif pada endpoint login dan `me`.
-- [ ] Assign role default `alumni_pembeli` saat registrasi.
-- [ ] Buat middleware auth Sanctum.
-- [ ] Buat middleware verified alumni.
+- [x] Kirim permission efektif pada endpoint login dan `me`.
+- [x] Assign role default `alumni_pembeli` saat registrasi.
+- [x] Buat middleware auth Sanctum.
+- [x] Buat middleware verified alumni.
 - [ ] Buat middleware role admin.
 - [ ] Buat policy dasar untuk user dan profile.
-- [ ] Buat halaman login frontend.
-- [ ] Buat halaman register frontend.
-- [ ] Buat state auth di Pinia.
-- [ ] Simpan permission efektif user di Pinia.
-- [ ] Buat helper frontend `can()`.
+- [x] Buat halaman login frontend.
+- [x] Buat halaman register frontend.
+- [x] Buat state auth di Pinia.
+- [x] Simpan permission efektif user di Pinia.
+- [x] Buat helper frontend `can()`.
 - [ ] Buat route guard frontend.
 - [ ] Buat render menu dan tombol berbasis permission dinamis.
 

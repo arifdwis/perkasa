@@ -69,16 +69,16 @@
 
 ## 3. Auth dan Role Checklist
 
-- [ ] Alumni dapat registrasi.
-- [ ] Alumni dapat login.
-- [ ] Alumni dapat logout.
-- [ ] Endpoint `me` mengembalikan user aktif.
+- [x] Alumni dapat registrasi.
+- [x] Alumni dapat login.
+- [x] Alumni dapat logout.
+- [x] Endpoint `me` mengembalikan user aktif.
 - [ ] Email verification tersedia.
-- [ ] Password policy kuat diterapkan.
-- [ ] Role `super_admin` tersedia.
-- [ ] Role `admin_marketplace` tersedia.
-- [ ] Role `alumni_penjual` tersedia.
-- [ ] Role `alumni_pembeli` tersedia.
+- [x] Password policy kuat diterapkan.
+- [x] Role `super_admin` tersedia.
+- [x] Role `admin_marketplace` tersedia.
+- [x] Role `alumni_penjual` tersedia.
+- [x] Role `alumni_pembeli` tersedia.
 - [ ] Role dapat dikelola dari admin UI.
 - [ ] Permission dapat dikelola dari admin UI.
 - [ ] Permission matrix Role x Permission tersedia.
@@ -86,13 +86,13 @@
 - [ ] Role Super Admin terlindungi dari penghapusan.
 - [ ] `forgetCachedPermissions()` dijalankan setelah perubahan role/permission.
 - [ ] Perubahan role/permission tercatat di Activity Log.
-- [ ] Endpoint login mengirim permission efektif user.
-- [ ] Endpoint `me` mengirim permission efektif user.
-- [ ] Pinia menyimpan permission efektif user.
-- [ ] Frontend memiliki helper `can()`.
-- [ ] User baru mendapat role default yang benar.
-- [ ] Route guard frontend berjalan.
-- [ ] Token invalid ditangani dengan logout otomatis.
+- [x] Endpoint login mengirim permission efektif user.
+- [x] Endpoint `me` mengirim permission efektif user.
+- [x] Pinia menyimpan permission efektif user.
+- [x] Frontend memiliki helper `can()`.
+- [x] User baru mendapat role default yang benar.
+- [x] Route guard frontend berjalan.
+- [x] Token invalid ditangani dengan logout otomatis.
 
 ## 4. Alumni Verification Checklist
 

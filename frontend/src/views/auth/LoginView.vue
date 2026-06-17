@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import axios from 'axios'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
@@ -24,15 +25,23 @@ const handleLogin = async () => {
 
   isLoading.value = true
   
-  // Mock login for Fase 1 (Project Setup & Verification)
-  // Backend auth will be fully integrated in Fase 2
-  setTimeout(() => {
-    isLoading.value = false
-    authStore.setToken('mock-jwt-token-fase-1')
-    authStore.setUser({ name: 'Alumni Mulawarman', email: email.value })
-    authStore.setPermissions(['super_admin']) // Mock super_admin for testing
+  try {
+    const response = await axios.post('/login', {
+      email: email.value,
+      password: password.value
+    })
+
+    const data = response.data
+    authStore.setToken(data.access_token)
+    authStore.setUser(data.user)
+    authStore.setPermissions(data.permissions)
+    
     router.push({ name: 'Home' })
-  }, 1000)
+  } catch (err) {
+    error.value = err.response?.data?.message || 'Gagal masuk. Silakan cek koneksi Anda.'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 

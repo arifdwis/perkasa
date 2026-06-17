@@ -41,6 +41,17 @@ const FEBPreset = definePreset(Aura, {
 
 app.use(createPinia())
 app.use(router)
+
+// Global authorization helper
+import { useAuthStore } from './stores/auth'
+app.config.globalProperties.$can = (permission) => {
+  try {
+    const authStore = useAuthStore()
+    return authStore.hasPermission(permission)
+  } catch (e) {
+    return false
+  }
+}
 app.use(PrimeVue, {
   theme: {
     preset: FEBPreset,

@@ -1,11 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import axios from 'axios'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
+import Tag from 'primevue/tag'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -28,9 +30,30 @@ const selectedProdi = ref(null)
 const angkatan = ref('')
 const searchKeyword = ref('')
 
-const handleLogout = () => {
-  authStore.clearAuth()
-  router.push({ name: 'Login' })
+const fetchProfile = async () => {
+  try {
+    const response = await axios.get('/me')
+    authStore.setUser(response.data.user)
+    authStore.setPermissions(response.data.permissions)
+  } catch (err) {
+    authStore.clearAuth()
+    router.push({ name: 'Login' })
+  }
+}
+
+onMounted(() => {
+  fetchProfile()
+})
+
+const handleLogout = async () => {
+  try {
+    await axios.post('/logout')
+  } catch (err) {
+    // Ignore error and clear anyway
+  } finally {
+    authStore.clearAuth()
+    router.push({ name: 'Login' })
+  }
 }
 </script>
 
@@ -51,7 +74,7 @@ const handleLogout = () => {
         
         <div class="flex items-center gap-4">
           <span class="hidden md:inline-block text-sm font-medium text-primary-soft">
-            Selamat datang, <strong class="text-white">Alumni</strong>
+            Selamat datang, <strong class="text-white">{{ authStore.user?.name || 'Alumni' }}</strong>
           </span>
           <Button 
             icon="pi pi-sign-out" 
@@ -139,19 +162,53 @@ const handleLogout = () => {
       </section>
 
       <!-- Welcome Board / Dashboard -->
-      <section class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 text-center space-y-6">
-        <div class="max-w-md mx-auto space-y-4">
-          <div class="inline-flex p-4 bg-primary-soft text-primary rounded-full">
-            <i class="pi pi-cog text-4xl animate-spin-slow"></i>
+      <section class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-2xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-slate-100">
+          <div class="w-20 h-20 rounded-full bg-primary-soft text-primary flex items-center justify-center text-3xl font-black shadow-sm">
+            {{ authStore.user?.name?.substring(0, 2).toUpperCase() || 'AL' }}
           </div>
-          <h3 class="text-xl font-bold text-slate-800">Proyek Sedang Diinisialisasi</h3>
-          <p class="text-slate-500 text-sm leading-relaxed">
-            Fase 1: Setup Proyek berhasil diselesaikan. Backend API Laravel 13 dan Frontend Vue 3 + Tailwind 4 + PrimeVue 4 telah terhubung dengan baik.
-          </p>
-          <div class="flex justify-center gap-3">
-            <Button label="Lihat Profil" icon="pi pi-user" severity="secondary" size="small" />
-            <Button label="Mulai Jualan" icon="pi pi-plus" size="small" />
+          <div class="text-center sm:text-left space-y-2 flex-grow">
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+              <h3 class="text-xl font-black text-slate-800">{{ authStore.user?.name }}</h3>
+              <Tag 
+                :value="authStore.user?.profile?.status_verifikasi?.toUpperCase() || 'PENDING'" 
+                :severity="authStore.user?.profile?.status_verifikasi === 'verified' ? 'success' : (authStore.user?.profile?.status_verifikasi === 'pending' ? 'warn' : 'danger')" 
+                class="text-xs"
+              />
+            </div>
+            <p class="text-sm text-slate-500 font-medium">
+              {{ authStore.user?.email }}
+            </p>
           </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left text-sm text-slate-600">
+          <div class="space-y-1">
+            <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">NIM</span>
+            <span class="font-semibold text-slate-800">{{ authStore.user?.profile?.nim || '-' }}</span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">Program Studi</span>
+            <span class="font-semibold text-slate-800">{{ authStore.user?.profile?.program_studi || '-' }}</span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">Angkatan (Tahun Masuk)</span>
+            <span class="font-semibold text-slate-800">{{ authStore.user?.profile?.tahun_masuk || '-' }}</span>
+          </div>
+          <div class="space-y-1">
+            <span class="block text-xs text-slate-400 font-bold uppercase tracking-wider">Nomor WhatsApp</span>
+            <span class="font-semibold text-slate-800">{{ authStore.user?.profile?.whatsapp || '-' }}</span>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-center sm:justify-start gap-3">
+          <Button label="Edit Profil" icon="pi pi-user-edit" severity="secondary" size="small" />
+          <Button 
+            label="Mulai Jualan" 
+            icon="pi pi-plus" 
+            size="small" 
+            :disabled="authStore.user?.profile?.status_verifikasi !== 'verified'"
+          />
         </div>
       </section>
     </main>
