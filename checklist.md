@@ -413,7 +413,7 @@
 - [x] `.env.example` lengkap.
 - [x] `.env.example` memuat konfigurasi database `perkasa`.
 - [x] Migration dapat dijalankan dari database kosong.
-- [ ] Seeder role dan kategori tersedia.
+- [x] Seeder role dan kategori tersedia.
 - [ ] Storage link terdokumentasi.
 - [ ] Queue worker terdokumentasi.
 - [ ] Scheduler terdokumentasi.

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/stores/{id}', [\App\Http\Controllers\Api\StoreController::class, 'show']);
+Route::get('/product-categories', [\App\Http\Controllers\Api\ProductCategoryController::class, 'index']);
+Route::get('/service-categories', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'index']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -49,5 +51,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin Store Management
         Route::get('/admin/stores', [\App\Http\Controllers\Api\AdminStoreController::class, 'index']);
         Route::post('/admin/stores/{id}/verify', [\App\Http\Controllers\Api\AdminStoreController::class, 'verify']);
+
+        // Admin Category Management
+        Route::post('/admin/product-categories', [\App\Http\Controllers\Api\ProductCategoryController::class, 'store']);
+        Route::put('/admin/product-categories/{id}', [\App\Http\Controllers\Api\ProductCategoryController::class, 'update']);
+        Route::delete('/admin/product-categories/{id}', [\App\Http\Controllers\Api\ProductCategoryController::class, 'destroy']);
+
+        Route::post('/admin/service-categories', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'store']);
+        Route::put('/admin/service-categories/{id}', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'update']);
+        Route::delete('/admin/service-categories/{id}', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'destroy']);
     });
 });

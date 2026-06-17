@@ -125,17 +125,17 @@
 
 ## Fase 5: Kategori Produk dan Jasa
 
-- [ ] Buat migration `product_categories`.
-- [ ] Buat migration `service_categories`.
-- [ ] Buat model product category.
-- [ ] Buat model service category.
-- [ ] Buat seeder kategori produk default.
-- [ ] Buat seeder kategori jasa default.
-- [ ] Buat endpoint CRUD kategori produk.
-- [ ] Buat endpoint CRUD kategori jasa.
-- [ ] Buat validasi kategori tidak dapat dihapus jika sedang digunakan data aktif.
-- [ ] Buat halaman admin kategori produk.
-- [ ] Buat halaman admin kategori jasa.
+- [x] Buat migration `product_categories`.
+- [x] Buat migration `service_categories`.
+- [x] Buat model product category.
+- [x] Buat model service category.
+- [x] Buat seeder kategori produk default.
+- [x] Buat seeder kategori jasa default.
+- [x] Buat endpoint CRUD kategori produk.
+- [x] Buat endpoint CRUD kategori jasa.
+- [x] Buat validasi kategori tidak dapat dihapus jika sedang digunakan data aktif.
+- [x] Buat halaman admin kategori produk.
+- [x] Buat halaman admin kategori jasa.
 
 ## Fase 6: Produk
 

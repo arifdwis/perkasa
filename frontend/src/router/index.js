@@ -61,6 +61,12 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
+    path: '/admin/categories',
+    name: 'AdminCategories',
+    component: () => import('../views/admin/AdminCategoryView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')
