@@ -73,19 +73,19 @@
 - [x] Alumni dapat login.
 - [x] Alumni dapat logout.
 - [x] Endpoint `me` mengembalikan user aktif.
-- [ ] Email verification tersedia.
+- [x] Email verification tersedia.
 - [x] Password policy kuat diterapkan.
 - [x] Role `super_admin` tersedia.
 - [x] Role `admin_marketplace` tersedia.
 - [x] Role `alumni_penjual` tersedia.
 - [x] Role `alumni_pembeli` tersedia.
-- [ ] Role dapat dikelola dari admin UI.
-- [ ] Permission dapat dikelola dari admin UI.
-- [ ] Permission matrix Role x Permission tersedia.
-- [ ] Role dapat di-assign ke user dari admin UI.
-- [ ] Role Super Admin terlindungi dari penghapusan.
-- [ ] `forgetCachedPermissions()` dijalankan setelah perubahan role/permission.
-- [ ] Perubahan role/permission tercatat di Activity Log.
+- [x] Role dapat dikelola dari admin UI.
+- [x] Permission dapat dikelola dari admin UI.
+- [x] Permission matrix Role x Permission tersedia.
+- [x] Role dapat di-assign ke user dari admin UI.
+- [x] Role Super Admin terlindungi dari penghapusan.
+- [x] `forgetCachedPermissions()` dijalankan setelah perubahan role/permission.
+- [x] Perubahan role/permission tercatat di Activity Log.
 - [x] Endpoint login mengirim permission efektif user.
 - [x] Endpoint `me` mengirim permission efektif user.
 - [x] Pinia menyimpan permission efektif user.

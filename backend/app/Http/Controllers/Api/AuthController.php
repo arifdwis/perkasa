@@ -30,7 +30,15 @@ class AuthController extends Controller
             'tahun_lulus' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 5)],
         ]);
 
-        $user = DB::transaction(function () use ($request) {
+        // Check if user is in imported records for auto-verification
+        $importedRecord = \App\Models\ImportedAlumniRecord::where('nim', $request->nim)->first();
+        
+        $isAutoVerified = false;
+        if ($importedRecord && strtolower(trim($importedRecord->email)) === strtolower(trim($request->email))) {
+            $isAutoVerified = true;
+        }
+
+        $user = DB::transaction(function () use ($request, $isAutoVerified) {
             // Create user credentials
             $user = User::create([
                 'name' => $request->name,
@@ -48,8 +56,8 @@ class AuthController extends Controller
                 'tahun_masuk' => $request->tahun_masuk,
                 'tahun_lulus' => $request->tahun_lulus,
                 'whatsapp' => $request->whatsapp,
-                'status_verifikasi' => 'pending',
-                'badge_verified' => false,
+                'status_verifikasi' => $isAutoVerified ? 'verified' : 'pending',
+                'badge_verified' => $isAutoVerified,
             ]);
 
             return $user;

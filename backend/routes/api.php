@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AdminRoleController;
+use App\Http\Controllers\Api\AlumniVerificationController;
 use Illuminate\Support\Facades\Route;
 
 // Public auth routes
@@ -21,11 +22,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Admin routes
     Route::middleware('admin')->group(function () {
+        // Roles & Permissions CRUD
         Route::get('/admin/roles', [AdminRoleController::class, 'getRoles']);
         Route::post('/admin/roles', [AdminRoleController::class, 'createRole']);
         Route::put('/admin/roles/{id}', [AdminRoleController::class, 'updateRole']);
         Route::delete('/admin/roles/{id}', [AdminRoleController::class, 'deleteRole']);
         Route::get('/admin/permissions', [AdminRoleController::class, 'getPermissions']);
         Route::post('/admin/users/{id}/assign-role', [AdminRoleController::class, 'assignRole']);
+        
+        // Alumni Verification CRUD & Excel Import
+        Route::post('/admin/alumni/import', [AlumniVerificationController::class, 'import']);
+        Route::get('/admin/alumni', [AlumniVerificationController::class, 'index']);
+        Route::get('/admin/alumni/{id}', [AlumniVerificationController::class, 'show']);
+        Route::post('/admin/alumni/{id}/verify', [AlumniVerificationController::class, 'verify']);
     });
 });

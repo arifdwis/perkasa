@@ -18,6 +18,23 @@ const routes = [
     name: 'Register',
     component: () => import('../views/auth/RegisterView.vue'),
     meta: { guestOnly: true }
+  },
+  {
+    path: '/admin/roles',
+    name: 'AdminRoles',
+    component: () => import('../views/admin/AdminRoleView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/alumni',
+    name: 'AlumniList',
+    component: () => import('../views/admin/AlumniListView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/email/verify/:id/:hash',
+    name: 'EmailVerify',
+    component: () => import('../views/auth/EmailVerifyView.vue')
   }
 ]
 

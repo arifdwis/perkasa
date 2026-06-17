@@ -23,6 +23,10 @@ class AlumniProfile extends Model
         'badge_verified',
     ];
 
+    protected $casts = [
+        'badge_verified' => 'boolean',
+    ];
+
     /**
      * Get the user that owns the profile.
      */

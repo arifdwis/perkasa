@@ -220,8 +220,8 @@ const handleLogout = async () => {
             Anda masuk sebagai administrator dengan hak akses khusus. Anda dapat memverifikasi alumni, mengelola matrik role & permission, dan melihat log audit aktivitas.
           </p>
           <div class="flex gap-2 pt-1">
-            <Button label="Verifikasi Alumni" icon="pi pi-verified" severity="warn" size="small" class="text-xs" />
-            <Button label="Matriks Role" icon="pi pi-key" severity="warn" size="small" class="text-xs" />
+            <Button label="Verifikasi Alumni" icon="pi pi-verified" severity="warn" size="small" class="text-xs" @click="router.push({ name: 'AlumniList' })" />
+            <Button label="Matriks Role" icon="pi pi-key" severity="warn" size="small" class="text-xs" @click="router.push({ name: 'AdminRoles' })" />
           </div>
         </div>
       </section>

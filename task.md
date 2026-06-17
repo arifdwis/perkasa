@@ -39,17 +39,17 @@
 - [x] Buat endpoint login.
 - [x] Buat endpoint logout.
 - [x] Buat endpoint `me`.
-- [ ] Buat email verification.
+- [x] Buat email verification.
 - [x] Buat strong password validation.
 - [x] Buat seeder role.
 - [x] Buat seeder permission.
-- [ ] Buat CRUD role admin.
-- [ ] Buat CRUD permission admin.
-- [ ] Buat permission matrix Role x Permission.
-- [ ] Buat endpoint assign role ke user.
-- [ ] Lindungi role Super Admin agar tidak dapat dihapus.
-- [ ] Jalankan `forgetCachedPermissions()` setelah perubahan role/permission.
-- [ ] Catat perubahan role/permission ke Activity Log.
+- [x] Buat CRUD role admin.
+- [x] Buat CRUD permission admin.
+- [x] Buat permission matrix Role x Permission.
+- [x] Buat endpoint assign role ke user.
+- [x] Lindungi role Super Admin agar tidak dapat dihapus.
+- [x] Jalankan `forgetCachedPermissions()` setelah perubahan role/permission.
+- [x] Catat perubahan role/permission ke Activity Log.
 - [x] Kirim permission efektif pada endpoint login dan `me`.
 - [x] Assign role default `alumni_pembeli` saat registrasi.
 - [x] Buat middleware auth Sanctum.
