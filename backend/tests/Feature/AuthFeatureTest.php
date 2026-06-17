@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class AuthFeatureTest extends TestCase
@@ -198,6 +199,123 @@ class AuthFeatureTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson([
             'message' => 'Berhasil keluar log (logout).'
+        ]);
+    }
+
+    /**
+     * Test email verification endpoint.
+     */
+    public function test_user_can_verify_email()
+    {
+        $user = User::create([
+            'name' => 'John Ver',
+            'email' => 'johnver@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $hash = sha1($user->getEmailForVerification());
+
+        $response = $this->getJson("/api/email/verify/{$user->id}/{$hash}");
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'message' => 'Email Anda berhasil diverifikasi.'
+        ]);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
+
+    /**
+     * Test non-admin is blocked from admin routes.
+     */
+    public function test_non_admin_blocked_from_admin_routes()
+    {
+        $user = User::create([
+            'name' => 'Regular Alumni',
+            'email' => 'regular@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+        $user->assignRole('alumni_pembeli');
+        
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->getJson('/api/admin/roles');
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test admin can perform CRUD on roles.
+     */
+    public function test_admin_can_perform_role_crud()
+    {
+        $admin = User::create([
+            'name' => 'Super Admin User',
+            'email' => 'superadmin@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+        $admin->assignRole('super_admin');
+        
+        $token = $admin->createToken('test_token')->plainTextToken;
+
+        // 1. Create Role
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->postJson('/api/admin/roles', [
+            'name' => 'custom_manager',
+            'permissions' => ['verify_alumni', 'verify_store']
+        ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseHas('roles', ['name' => 'custom_manager']);
+
+        // Get Role ID
+        $role = Role::findByName('custom_manager', 'web');
+
+        // 2. Update Role Permissions
+        $updateResponse = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->putJson("/api/admin/roles/{$role->id}", [
+            'name' => 'custom_manager_updated',
+            'permissions' => ['verify_alumni']
+        ]);
+
+        $updateResponse->assertStatus(200);
+        $this->assertDatabaseHas('roles', ['name' => 'custom_manager_updated']);
+
+        // 3. Delete Role
+        $deleteResponse = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->deleteJson("/api/admin/roles/{$role->id}");
+
+        $deleteResponse->assertStatus(200);
+        $this->assertDatabaseMissing('roles', ['name' => 'custom_manager_updated']);
+    }
+
+    /**
+     * Test Super Admin role is protected from deletion.
+     */
+    public function test_super_admin_role_cannot_be_deleted()
+    {
+        $admin = User::create([
+            'name' => 'Super Admin User',
+            'email' => 'superadmin@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+        $admin->assignRole('super_admin');
+        
+        $token = $admin->createToken('test_token')->plainTextToken;
+        $superAdminRole = Role::findByName('super_admin', 'web');
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->deleteJson("/api/admin/roles/{$superAdminRole->id}");
+
+        $response->assertStatus(403);
+        $response->assertJson([
+            'message' => 'Role Super Admin dilindungi dan tidak dapat dihapus.'
         ]);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -53,8 +55,11 @@ class AuthController extends Controller
             return $user;
         });
 
+        // Trigger Registered event to auto-send Laravel verification email
+        event(new Registered($user));
+
         return response()->json([
-            'message' => 'Registrasi berhasil. Akun Anda terdaftar dan sedang menunggu verifikasi data Perkasa.',
+            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk melakukan verifikasi. Akun Anda sedang menunggu verifikasi data Perkasa.',
             'user' => $user->load('profile'),
         ], 201);
     }
@@ -131,6 +136,44 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user->load('profile'),
             'permissions' => $permissions
+        ]);
+    }
+
+    /**
+     * Verify email via API endpoint link.
+     */
+    public function verifyEmail(Request $request, $id, $hash)
+    {
+        $user = User::findOrFail($id);
+
+        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Tautan verifikasi tidak valid atau kedaluwarsa.'], 400);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email Anda sudah terverifikasi sebelumnya.']);
+        }
+
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
+        }
+
+        return response()->json(['message' => 'Email Anda berhasil diverifikasi.']);
+    }
+
+    /**
+     * Resend verification notification.
+     */
+    public function resendVerificationEmail(Request $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email Anda sudah terverifikasi.']);
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return response()->json([
+            'message' => 'Tautan verifikasi email baru telah dikirim ke alamat email Anda.'
         ]);
     }
 }

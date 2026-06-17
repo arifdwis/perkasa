@@ -54,15 +54,15 @@
 - [x] Assign role default `alumni_pembeli` saat registrasi.
 - [x] Buat middleware auth Sanctum.
 - [x] Buat middleware verified alumni.
-- [ ] Buat middleware role admin.
-- [ ] Buat policy dasar untuk user dan profile.
+- [x] Buat middleware role admin.
+- [x] Buat policy dasar untuk user dan profile.
 - [x] Buat halaman login frontend.
 - [x] Buat halaman register frontend.
 - [x] Buat state auth di Pinia.
 - [x] Simpan permission efektif user di Pinia.
 - [x] Buat helper frontend `can()`.
-- [ ] Buat route guard frontend.
-- [ ] Buat render menu dan tombol berbasis permission dinamis.
+- [x] Buat route guard frontend.
+- [x] Buat render menu dan tombol berbasis permission dinamis.
 
 ## Fase 3: Data Alumni dan Verifikasi
 

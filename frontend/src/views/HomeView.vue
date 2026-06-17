@@ -210,6 +210,20 @@ const handleLogout = async () => {
             :disabled="authStore.user?.profile?.status_verifikasi !== 'verified'"
           />
         </div>
+
+        <!-- Admin Control Panel (Spatie dynamic menu rendering) -->
+        <div v-if="$can('super_admin') || $can('verify_alumni')" class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-left space-y-2 mt-4">
+          <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="pi pi-shield text-base text-amber-600"></i> Panel Kontrol Admin
+          </h4>
+          <p class="text-xs text-amber-700 leading-relaxed">
+            Anda masuk sebagai administrator dengan hak akses khusus. Anda dapat memverifikasi alumni, mengelola matrik role & permission, dan melihat log audit aktivitas.
+          </p>
+          <div class="flex gap-2 pt-1">
+            <Button label="Verifikasi Alumni" icon="pi pi-verified" severity="warn" size="small" class="text-xs" />
+            <Button label="Matriks Role" icon="pi pi-key" severity="warn" size="small" class="text-xs" />
+          </div>
+        </div>
       </section>
     </main>
 

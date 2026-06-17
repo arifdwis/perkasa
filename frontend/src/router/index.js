@@ -29,10 +29,14 @@ const router = createRouter({
 // Navigation guard
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
+  const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+  const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
   
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
       next({ name: 'Login' })
+    } else if (to.matched.some(record => record.meta.requiresAdmin) && !isAdmin) {
+      next({ name: 'Home' })
     } else {
       next()
     }
