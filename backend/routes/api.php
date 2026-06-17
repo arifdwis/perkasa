@@ -16,6 +16,7 @@ Route::get('/products/{slug}', [\App\Http\Controllers\Api\ProductController::cla
 Route::get('/services', [\App\Http\Controllers\Api\ServiceController::class, 'index']);
 Route::get('/services/{slug}', [\App\Http\Controllers\Api\ServiceController::class, 'show']);
 Route::get('/catalog', [\App\Http\Controllers\Api\CatalogController::class, 'index']);
+Route::get('/reviews', [\App\Http\Controllers\Api\ReviewController::class, 'index']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -69,6 +70,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Checkout
         Route::post('/checkout', [\App\Http\Controllers\Api\CheckoutController::class, 'checkout']);
+
+        // Buyer Orders
+        Route::get('/orders', [\App\Http\Controllers\Api\OrderController::class, 'index']);
+        Route::get('/orders/{id}', [\App\Http\Controllers\Api\OrderController::class, 'show']);
+        Route::post('/orders/{id}/cancel', [\App\Http\Controllers\Api\OrderController::class, 'cancel']);
+
+        // Seller Orders
+        Route::get('/seller/orders', [\App\Http\Controllers\Api\SellerOrderController::class, 'index']);
+        Route::get('/seller/orders/{id}', [\App\Http\Controllers\Api\SellerOrderController::class, 'show']);
+        Route::put('/seller/orders/{id}/status', [\App\Http\Controllers\Api\SellerOrderController::class, 'updateStatus']);
+
+        // Reviews
+        Route::post('/reviews', [\App\Http\Controllers\Api\ReviewController::class, 'store']);
+        Route::post('/reviews/{id}/reply', [\App\Http\Controllers\Api\ReviewController::class, 'reply']);
+
+        // Notifications
+        Route::get('/notifications', [\App\Http\Controllers\Api\NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\NotificationController::class, 'markAllAsRead']);
+
+        // Dashboard
+        Route::get('/dashboard/admin', [\App\Http\Controllers\Api\DashboardController::class, 'admin']);
+        Route::get('/dashboard/seller', [\App\Http\Controllers\Api\DashboardController::class, 'seller']);
+        Route::get('/dashboard/buyer', [\App\Http\Controllers\Api\DashboardController::class, 'buyer']);
     });
 
     // Admin routes

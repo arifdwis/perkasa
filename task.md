@@ -247,96 +247,96 @@
 
 ## Fase 10: Pesanan
 
-- [ ] Buat migration `orders`.
-- [ ] Buat migration `order_items`.
-- [ ] Buat migration riwayat status pesanan jika diperlukan.
-- [ ] Buat model order.
-- [ ] Buat model order item.
-- [ ] Buat form request checkout.
-- [ ] Buat service checkout.
-- [ ] Buat endpoint create order COD.
-- [ ] Buat endpoint daftar pesanan pembeli.
-- [ ] Buat endpoint detail pesanan pembeli.
-- [ ] Buat endpoint daftar pesanan seller.
-- [ ] Buat endpoint detail pesanan seller.
-- [ ] Buat endpoint update status pesanan.
-- [ ] Buat status `menunggu_konfirmasi`.
-- [ ] Buat status `diproses`.
-- [ ] Buat status `dalam_pengantaran`.
-- [ ] Buat status `selesai`.
-- [ ] Buat status `dibatalkan`.
-- [ ] Buat timeline pesanan.
-- [ ] Kurangi stok setelah order dibuat.
-- [ ] Catat aktivitas status pesanan.
-- [ ] Kirim notifikasi pesanan baru.
-- [ ] Buat halaman pesanan pembeli.
-- [ ] Buat halaman pesanan seller.
-- [ ] Buat halaman detail pesanan dengan timeline.
+- [x] Buat migration `orders`.
+- [x] Buat migration `order_items`.
+- [x] Buat migration riwayat status pesanan jika diperlukan.
+- [x] Buat model order.
+- [x] Buat model order item.
+- [x] Buat form request checkout.
+- [x] Buat service checkout.
+- [x] Buat endpoint create order COD.
+- [x] Buat endpoint daftar pesanan pembeli.
+- [x] Buat endpoint detail pesanan pembeli.
+- [x] Buat endpoint daftar pesanan seller.
+- [x] Buat endpoint detail pesanan seller.
+- [x] Buat endpoint update status pesanan.
+- [x] Buat status `menunggu_konfirmasi`.
+- [x] Buat status `diproses`.
+- [x] Buat status `dalam_pengantaran`.
+- [x] Buat status `selesai`.
+- [x] Buat status `dibatalkan`.
+- [x] Buat timeline pesanan.
+- [x] Kurangi stok setelah order dibuat.
+- [x] Catat aktivitas status pesanan.
+- [x] Kirim notifikasi pesanan baru.
+- [x] Buat halaman pesanan pembeli.
+- [x] Buat halaman pesanan seller.
+- [x] Buat halaman detail pesanan dengan timeline.
 
 ## Fase 11: Rating dan Ulasan
 
-- [ ] Buat migration `reviews`.
-- [ ] Buat model review.
-- [ ] Buat form request create review.
-- [ ] Buat form request reply review.
-- [ ] Buat endpoint create review.
-- [ ] Buat endpoint reply review.
-- [ ] Buat validasi review hanya untuk order selesai.
-- [ ] Buat validasi satu item satu review.
-- [ ] Hitung rating produk.
-- [ ] Hitung rating jasa.
-- [ ] Hitung rating toko.
-- [ ] Buat halaman ulasan pembeli.
-- [ ] Buat komponen rating PrimeVue.
-- [ ] Tampilkan ulasan pada detail produk dan jasa.
+- [x] Buat migration `reviews`.
+- [x] Buat model review.
+- [x] Buat form request create review.
+- [x] Buat form request reply review.
+- [x] Buat endpoint create review.
+- [x] Buat endpoint reply review.
+- [x] Buat validasi review hanya untuk order selesai.
+- [x] Buat validasi satu item satu review.
+- [x] Hitung rating produk.
+- [x] Hitung rating jasa.
+- [x] Hitung rating toko.
+- [x] Buat halaman ulasan pembeli.
+- [x] Buat komponen rating PrimeVue.
+- [x] Tampilkan ulasan pada detail produk dan jasa.
 
 ## Fase 12: Notifikasi
 
-- [ ] Buat endpoint daftar notifikasi.
-- [ ] Buat endpoint mark as read.
-- [ ] Buat notifikasi registrasi.
-- [ ] Buat notifikasi verifikasi alumni.
-- [ ] Buat notifikasi verifikasi toko.
-- [ ] Buat notifikasi pesanan baru.
-- [ ] Buat notifikasi pesanan diproses.
-- [ ] Buat notifikasi pesanan dalam pengantaran.
-- [ ] Buat notifikasi pesanan selesai.
-- [ ] Buat notifikasi ulasan baru.
-- [ ] Buat in-app notification UI.
-- [ ] Buat email notification untuk event penting.
+- [x] Buat endpoint daftar notifikasi.
+- [x] Buat endpoint mark as read.
+- [x] Buat notifikasi registrasi.
+- [x] Buat notifikasi verifikasi alumni.
+- [x] Buat notifikasi verifikasi toko.
+- [x] Buat notifikasi pesanan baru.
+- [x] Buat notifikasi pesanan diproses.
+- [x] Buat notifikasi pesanan dalam pengantaran.
+- [x] Buat notifikasi pesanan selesai.
+- [x] Buat notifikasi ulasan baru.
+- [x] Buat in-app notification UI.
+- [x] Buat email notification untuk event penting.
 
 ## Fase 13: Chat
 
-- [ ] Buat tombol WhatsApp pada detail toko.
-- [ ] Buat tombol WhatsApp pada detail produk.
-- [ ] Buat tombol WhatsApp pada detail jasa.
-- [ ] Buat tombol WhatsApp pada detail pesanan.
-- [ ] Buat format pesan WhatsApp otomatis untuk tanya produk.
-- [ ] Buat format pesan WhatsApp otomatis untuk tanya jasa.
-- [ ] Buat format pesan WhatsApp otomatis untuk konfirmasi pesanan.
-- [ ] Rancang backlog chat internal untuk fase lanjutan.
+- [x] Buat tombol WhatsApp pada detail toko.
+- [x] Buat tombol WhatsApp pada detail produk.
+- [x] Buat tombol WhatsApp pada detail jasa.
+- [x] Buat tombol WhatsApp pada detail pesanan.
+- [x] Buat format pesan WhatsApp otomatis untuk tanya produk.
+- [x] Buat format pesan WhatsApp otomatis untuk tanya jasa.
+- [x] Buat format pesan WhatsApp otomatis untuk konfirmasi pesanan.
+- [x] Rancang backlog chat internal untuk fase lanjutan.
 
 ## Fase 14: Dashboard
 
-- [ ] Buat endpoint dashboard admin.
-- [ ] Buat endpoint dashboard seller.
-- [ ] Buat endpoint dashboard buyer.
-- [ ] Buat statistik total alumni.
-- [ ] Buat statistik alumni terverifikasi.
-- [ ] Buat statistik total toko.
-- [ ] Buat statistik total produk.
-- [ ] Buat statistik total jasa.
-- [ ] Buat statistik total pesanan.
-- [ ] Buat statistik transaksi COD tercatat.
-- [ ] Buat grafik statistik bulanan.
-- [ ] Buat daftar toko terlaris.
-- [ ] Buat daftar alumni teraktif.
-- [ ] Buat statistik produk seller.
-- [ ] Buat statistik jasa seller.
-- [ ] Buat statistik pesanan seller.
-- [ ] Buat statistik penjualan seller.
-- [ ] Buat dashboard buyer.
-- [ ] Buat tampilan dashboard mobile-friendly.
+- [x] Buat endpoint dashboard admin.
+- [x] Buat endpoint dashboard seller.
+- [x] Buat endpoint dashboard buyer.
+- [x] Buat statistik total alumni.
+- [x] Buat statistik alumni terverifikasi.
+- [x] Buat statistik total toko.
+- [x] Buat statistik total produk.
+- [x] Buat statistik total jasa.
+- [x] Buat statistik total pesanan.
+- [x] Buat statistik transaksi COD tercatat.
+- [x] Buat grafik statistik bulanan.
+- [x] Buat daftar toko terlaris.
+- [x] Buat daftar alumni teraktif.
+- [x] Buat statistik produk seller.
+- [x] Buat statistik jasa seller.
+- [x] Buat statistik pesanan seller.
+- [x] Buat statistik penjualan seller.
+- [x] Buat dashboard buyer.
+- [x] Buat tampilan dashboard mobile-friendly.
 
 ## Fase 15: Laporan dan Export
 
@@ -398,28 +398,28 @@
 
 ## Fase 18: Testing dan Hardening
 
-- [ ] Buat auth feature test.
-- [ ] Buat alumni verification test.
-- [ ] Buat import alumni test.
-- [ ] Buat store approval test.
-- [ ] Buat product CRUD test.
-- [ ] Buat service CRUD test.
-- [ ] Buat catalog filter test.
-- [ ] Buat favorite test.
-- [ ] Buat cart test.
-- [ ] Buat checkout COD test.
-- [ ] Buat order status test.
-- [ ] Buat review test.
+- [x] Buat auth feature test.
+- [x] Buat alumni verification test.
+- [x] Buat import alumni test.
+- [x] Buat store approval test.
+- [x] Buat product CRUD test.
+- [x] Buat service CRUD test.
+- [x] Buat catalog filter test.
+- [x] Buat favorite test.
+- [x] Buat cart test.
+- [x] Buat checkout COD test.
+- [x] Buat order status test.
+- [x] Buat review test.
 - [ ] Buat authorization test.
 - [ ] Buat dynamic role/permission test.
 - [ ] Buat catalog alumni identity filter test.
 - [ ] Buat delivery fee per wilayah test.
 - [ ] Buat report export test.
 - [ ] Buat validation test.
-- [ ] Buat dashboard endpoint test.
+- [x] Buat dashboard endpoint test.
 - [ ] Jalankan lint backend.
 - [ ] Jalankan lint frontend.
-- [ ] Jalankan build frontend.
+- [x] Jalankan build frontend.
 - [ ] Jalankan mobile responsive smoke test.
 - [ ] Audit rate limiting endpoint sensitif.
 - [ ] Audit policy semua modul utama.

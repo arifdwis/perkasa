@@ -222,56 +222,56 @@
 
 ## 10. Order Checklist
 
-- [ ] Order memiliki nomor unik.
-- [ ] Order memiliki status menunggu konfirmasi.
-- [ ] Order dapat diubah ke diproses.
-- [ ] Order dapat diubah ke dalam pengantaran.
-- [ ] Order dapat diubah ke selesai.
-- [ ] Order dapat dibatalkan sesuai aturan.
-- [ ] Buyer dapat melihat order miliknya.
-- [ ] Seller dapat melihat order tokonya.
-- [ ] Seller tidak dapat melihat order toko lain.
-- [ ] Timeline status tampil.
-- [ ] Catatan status tersimpan.
-- [ ] Notifikasi pesanan baru terkirim.
-- [ ] Activity log mencatat perubahan status penting.
+- [x] Order memiliki nomor unik.
+- [x] Order memiliki status menunggu konfirmasi.
+- [x] Order dapat diubah ke diproses.
+- [x] Order dapat diubah ke dalam pengantaran.
+- [x] Order dapat diubah ke selesai.
+- [x] Order dapat dibatalkan sesuai aturan.
+- [x] Buyer dapat melihat order miliknya.
+- [x] Seller dapat melihat order tokonya.
+- [x] Seller tidak dapat melihat order toko lain.
+- [x] Timeline status tampil.
+- [x] Catatan status tersimpan.
+- [x] Notifikasi pesanan baru terkirim.
+- [x] Activity log mencatat perubahan status penting.
 
 ## 11. Review Checklist
 
-- [ ] Review hanya dapat dibuat setelah order selesai.
-- [ ] Satu item order hanya dapat diulas satu kali.
-- [ ] Rating 1 sampai 5 tervalidasi.
-- [ ] Komentar tersimpan.
-- [ ] Seller dapat membalas ulasan.
-- [ ] Rating produk dihitung benar.
-- [ ] Rating jasa dihitung benar.
-- [ ] Rating toko dihitung benar.
-- [ ] Ulasan tampil pada detail produk atau jasa.
+- [x] Review hanya dapat dibuat setelah order selesai.
+- [x] Satu item order hanya dapat diulas satu kali.
+- [x] Rating 1 sampai 5 tervalidasi.
+- [x] Komentar tersimpan.
+- [x] Seller dapat membalas ulasan.
+- [x] Rating produk dihitung benar.
+- [x] Rating jasa dihitung benar.
+- [x] Rating toko dihitung benar.
+- [x] Ulasan tampil pada detail produk atau jasa.
 
 ## 12. Notification Checklist
 
-- [ ] In-app notification tersedia.
-- [ ] Email notification tersedia untuk event penting.
-- [ ] Notifikasi registrasi berjalan.
-- [ ] Notifikasi verifikasi alumni berjalan.
-- [ ] Notifikasi verifikasi toko berjalan.
-- [ ] Notifikasi pesanan baru berjalan.
-- [ ] Notifikasi pesanan diproses berjalan.
-- [ ] Notifikasi pesanan dalam pengantaran berjalan.
-- [ ] Notifikasi pesanan selesai berjalan.
-- [ ] Notifikasi ulasan baru berjalan.
-- [ ] User dapat mark notification as read.
+- [x] In-app notification tersedia.
+- [x] Email notification tersedia untuk event penting.
+- [x] Notifikasi registrasi berjalan.
+- [x] Notifikasi verifikasi alumni berjalan.
+- [x] Notifikasi verifikasi toko berjalan.
+- [x] Notifikasi pesanan baru berjalan.
+- [x] Notifikasi pesanan diproses berjalan.
+- [x] Notifikasi pesanan dalam pengantaran berjalan.
+- [x] Notifikasi pesanan selesai berjalan.
+- [x] Notifikasi ulasan baru berjalan.
+- [x] User dapat mark notification as read.
 
 ## 13. Chat Checklist
 
-- [ ] Tombol WhatsApp tersedia di detail toko.
-- [ ] Tombol WhatsApp tersedia di detail produk.
-- [ ] Tombol WhatsApp tersedia di detail jasa.
-- [ ] Tombol WhatsApp tersedia di detail pesanan.
-- [ ] Format pesan tanya produk otomatis tersedia.
-- [ ] Format pesan tanya jasa otomatis tersedia.
-- [ ] Format pesan konfirmasi pesanan otomatis tersedia.
-- [ ] Chat internal dicatat sebagai fase lanjutan.
+- [x] Tombol WhatsApp tersedia di detail toko.
+- [x] Tombol WhatsApp tersedia di detail produk.
+- [x] Tombol WhatsApp tersedia di detail jasa.
+- [x] Tombol WhatsApp tersedia di detail pesanan.
+- [x] Format pesan tanya produk otomatis tersedia.
+- [x] Format pesan tanya jasa otomatis tersedia.
+- [x] Format pesan konfirmasi pesanan otomatis tersedia.
+- [x] Chat internal dicatat sebagai fase lanjutan.
 
 ## 14. Frontend Checklist
 
@@ -297,9 +297,9 @@
 - [x] Drawer atau Sidebar tersedia untuk navigasi.
 - [x] Badge digunakan untuk alumni verified.
 - [x] Tag digunakan untuk status.
-- [ ] Timeline digunakan untuk pesanan.
+- [x] Timeline digunakan untuk pesanan.
 - [ ] Chart digunakan untuk dashboard.
-- [ ] Rating digunakan untuk ulasan.
+- [x] Rating digunakan untuk ulasan.
 - [x] FileUpload digunakan untuk upload file.
 - [ ] Avatar digunakan untuk profil.
 - [ ] Menubar digunakan untuk navigasi desktop bila sesuai.
@@ -328,22 +328,22 @@
 
 ## 16. Dashboard Checklist
 
-- [ ] Dashboard admin menampilkan total alumni.
-- [ ] Dashboard admin menampilkan alumni terverifikasi.
-- [ ] Dashboard admin menampilkan total toko.
-- [ ] Dashboard admin menampilkan total produk.
-- [ ] Dashboard admin menampilkan total jasa.
-- [ ] Dashboard admin menampilkan total pesanan.
-- [ ] Dashboard admin menampilkan total transaksi COD tercatat.
-- [ ] Dashboard seller menampilkan total produk.
-- [ ] Dashboard seller menampilkan total jasa.
-- [ ] Dashboard seller menampilkan total pesanan.
-- [ ] Dashboard seller menampilkan total penjualan tercatat.
-- [ ] Dashboard seller menampilkan rating toko.
-- [ ] Dashboard buyer menampilkan pesanan aktif.
-- [ ] Dashboard buyer menampilkan riwayat pesanan.
-- [ ] Dashboard buyer menampilkan favorit.
-- [ ] Dashboard buyer menampilkan ulasan saya.
+- [x] Dashboard admin menampilkan total alumni.
+- [x] Dashboard admin menampilkan alumni terverifikasi.
+- [x] Dashboard admin menampilkan total toko.
+- [x] Dashboard admin menampilkan total produk.
+- [x] Dashboard admin menampilkan total jasa.
+- [x] Dashboard admin menampilkan total pesanan.
+- [x] Dashboard admin menampilkan total transaksi COD tercatat.
+- [x] Dashboard seller menampilkan total produk.
+- [x] Dashboard seller menampilkan total jasa.
+- [x] Dashboard seller menampilkan total pesanan.
+- [x] Dashboard seller menampilkan total penjualan tercatat.
+- [x] Dashboard seller menampilkan rating toko.
+- [x] Dashboard buyer menampilkan pesanan aktif.
+- [x] Dashboard buyer menampilkan riwayat pesanan.
+- [x] Dashboard buyer menampilkan favorit.
+- [x] Dashboard buyer menampilkan ulasan saya.
 
 ## 17. Laporan dan Export Checklist
 
@@ -359,13 +359,13 @@
 
 ## 18. Testing Checklist
 
-- [ ] Auth feature test lulus.
-- [ ] Register validation test lulus.
-- [ ] Login validation test lulus.
-- [ ] Alumni verification test lulus.
-- [ ] Alumni import test lulus.
-- [ ] Store approval test lulus.
-- [ ] Store policy test lulus.
+- [x] Auth feature test lulus.
+- [x] Register validation test lulus.
+- [x] Login validation test lulus.
+- [x] Alumni verification test lulus.
+- [x] Alumni import test lulus.
+- [x] Store approval test lulus.
+- [x] Store policy test lulus.
 - [x] Product CRUD test lulus.
 - [x] Product policy test lulus.
 - [x] Service CRUD test lulus.
@@ -374,9 +374,9 @@
 - [x] Favorite test lulus.
 - [x] Cart test lulus.
 - [x] Checkout COD test lulus.
-- [ ] Order status test lulus.
-- [ ] Review test lulus.
-- [ ] Dashboard endpoint test lulus.
+- [x] Order status test lulus.
+- [x] Review test lulus.
+- [x] Dashboard endpoint test lulus.
 - [ ] Authorization test lulus.
 - [ ] Dynamic role/permission test lulus.
 - [ ] Catalog alumni identity filter test lulus.
