@@ -474,10 +474,10 @@ const handleBannerUpload = async (event) => {
             <i class="pi pi-box mr-1"></i> Kelola Produk
           </button>
           <button 
-            class="px-4 py-2 text-sm font-bold rounded-lg text-slate-400 cursor-not-allowed"
-            disabled
+            class="px-4 py-2 text-sm font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            @click="router.push({ name: 'SellerServices' })"
           >
-            <i class="pi pi-wrench mr-1"></i> Kelola Jasa (Fase 7)
+            <i class="pi pi-wrench mr-1"></i> Kelola Jasa
           </button>
         </div>
 

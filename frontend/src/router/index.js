@@ -90,6 +90,29 @@ const routes = [
     component: () => import('../views/product/ProductDetailView.vue')
   },
   {
+    path: '/my-store/services',
+    name: 'SellerServices',
+    component: () => import('../views/store/service/ServiceListView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-store/services/create',
+    name: 'SellerServiceCreate',
+    component: () => import('../views/store/service/ServiceFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-store/services/:id/edit',
+    name: 'SellerServiceEdit',
+    component: () => import('../views/store/service/ServiceFormView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/services/:slug',
+    name: 'ServiceDetail',
+    component: () => import('../views/service/ServiceDetailView.vue')
+  },
+  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')

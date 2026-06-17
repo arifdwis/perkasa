@@ -13,6 +13,8 @@ Route::get('/product-categories', [\App\Http\Controllers\Api\ProductCategoryCont
 Route::get('/service-categories', [\App\Http\Controllers\Api\ServiceCategoryController::class, 'index']);
 Route::get('/products', [\App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::get('/products/{slug}', [\App\Http\Controllers\Api\ProductController::class, 'show']);
+Route::get('/services', [\App\Http\Controllers\Api\ServiceController::class, 'index']);
+Route::get('/services/{slug}', [\App\Http\Controllers\Api\ServiceController::class, 'show']);
 
 // Email verification public link
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
@@ -42,6 +44,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/seller/products/{id}/image', [\App\Http\Controllers\Api\ProductController::class, 'uploadImage']);
         Route::post('/seller/products/{id}/gallery', [\App\Http\Controllers\Api\ProductController::class, 'uploadGallery']);
         Route::delete('/seller/products/{productId}/images/{imageId}', [\App\Http\Controllers\Api\ProductController::class, 'deleteImage']);
+
+        // Seller Services
+        Route::get('/seller/services', [\App\Http\Controllers\Api\ServiceController::class, 'sellerServices']);
+        Route::post('/seller/services', [\App\Http\Controllers\Api\ServiceController::class, 'store']);
+        Route::get('/seller/services/{id}', [\App\Http\Controllers\Api\ServiceController::class, 'sellerShow']);
+        Route::put('/seller/services/{id}', [\App\Http\Controllers\Api\ServiceController::class, 'update']);
+        Route::delete('/seller/services/{id}', [\App\Http\Controllers\Api\ServiceController::class, 'destroy']);
+        Route::post('/seller/services/{id}/image', [\App\Http\Controllers\Api\ServiceController::class, 'uploadImage']);
+        Route::post('/seller/services/{id}/portfolio', [\App\Http\Controllers\Api\ServiceController::class, 'uploadPortfolio']);
+        Route::delete('/seller/services/{serviceId}/images/{imageId}', [\App\Http\Controllers\Api\ServiceController::class, 'deleteImage']);
     });
 
     // Admin routes

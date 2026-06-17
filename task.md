@@ -166,25 +166,25 @@
 
 ## Fase 7: Jasa
 
-- [ ] Buat migration `services`.
-- [ ] Buat migration `service_images`.
-- [ ] Buat model service.
-- [ ] Buat model service image.
-- [ ] Buat form request create jasa.
-- [ ] Buat form request update jasa.
-- [ ] Buat policy jasa.
-- [ ] Buat endpoint CRUD jasa seller.
-- [ ] Buat endpoint upload portofolio.
-- [ ] Buat endpoint hapus portofolio.
-- [ ] Buat slug otomatis.
-- [ ] Buat fitur jasa unggulan.
-- [ ] Buat validasi harga mulai dari.
-- [ ] Pastikan hanya pemilik toko yang dapat mengubah jasa.
-- [ ] Pastikan hanya toko active yang dapat membuat jasa active.
-- [ ] Buat halaman daftar jasa seller.
-- [ ] Buat halaman form jasa.
-- [ ] Buat halaman detail jasa publik.
-- [ ] Tampilkan badge toko dan alumni terverifikasi pada jasa.
+- [x] Buat migration `services`.
+- [x] Buat migration `service_images`.
+- [x] Buat model service.
+- [x] Buat model service image.
+- [x] Buat form request create jasa.
+- [x] Buat form request update jasa.
+- [x] Buat policy jasa.
+- [x] Buat endpoint CRUD jasa seller.
+- [x] Buat endpoint upload portofolio.
+- [x] Buat endpoint hapus portofolio.
+- [x] Buat slug otomatis.
+- [x] Buat fitur jasa unggulan.
+- [x] Buat validasi harga mulai dari.
+- [x] Pastikan hanya pemilik toko yang dapat mengubah jasa.
+- [x] Pastikan hanya toko active yang dapat membuat jasa active.
+- [x] Buat halaman daftar jasa seller.
+- [x] Buat halaman form jasa.
+- [x] Buat halaman detail jasa publik.
+- [x] Tampilkan badge toko dan alumni terverifikasi pada jasa.
 
 ## Fase 8: Katalog dan Favorit
 

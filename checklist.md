@@ -156,16 +156,16 @@
 
 ## 7. Service Checklist
 
-- [ ] Seller dapat membuat jasa.
-- [ ] Seller dapat mengubah jasa miliknya.
-- [ ] Seller dapat menghapus atau menonaktifkan jasa miliknya.
-- [ ] Seller tidak dapat mengubah jasa toko lain.
-- [ ] Jasa memiliki slug unik.
-- [ ] Jasa memiliki kategori.
-- [ ] Jasa memiliki harga mulai dari yang valid.
-- [ ] Jasa dapat memiliki portofolio.
-- [ ] Jasa inactive tidak tampil di katalog.
-- [ ] Badge alumni tampil pada detail jasa.
+- [x] Seller dapat membuat jasa.
+- [x] Seller dapat mengubah jasa miliknya.
+- [x] Seller dapat menghapus atau menonaktifkan jasa miliknya.
+- [x] Seller tidak dapat mengubah jasa toko lain.
+- [x] Jasa memiliki slug unik.
+- [x] Jasa memiliki kategori.
+- [x] Jasa memiliki harga mulai dari yang valid.
+- [x] Jasa dapat memiliki portofolio.
+- [x] Jasa inactive tidak tampil di katalog.
+- [x] Badge alumni tampil pada detail jasa.
 
 ## 8. Catalog dan Favorite Checklist
 
@@ -368,8 +368,8 @@
 - [ ] Store policy test lulus.
 - [x] Product CRUD test lulus.
 - [x] Product policy test lulus.
-- [ ] Service CRUD test lulus.
-- [ ] Service policy test lulus.
+- [x] Service CRUD test lulus.
+- [x] Service policy test lulus.
 - [ ] Catalog filter test lulus.
 - [ ] Favorite test lulus.
 - [ ] Cart test lulus.
