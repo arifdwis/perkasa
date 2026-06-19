@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AlumniProfile;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\Store;
-use App\Models\AlumniProfile;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -17,7 +17,7 @@ class CatalogController extends Controller
     public function index(Request $request)
     {
         $request->validate([
-            'type' => ['required', 'string', 'in:product,service,store,alumni']
+            'type' => ['required', 'string', 'in:product,service,store,alumni'],
         ]);
 
         $type = $request->type;
@@ -50,10 +50,10 @@ class CatalogController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('store', function ($storeQuery) use ($search) {
-                      $storeQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('store', function ($storeQuery) use ($search) {
+                        $storeQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -128,10 +128,10 @@ class CatalogController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('store', function ($storeQuery) use ($search) {
-                      $storeQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('store', function ($storeQuery) use ($search) {
+                        $storeQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -145,9 +145,9 @@ class CatalogController extends Controller
             $kota = $request->kota;
             $query->where(function ($q) use ($kota) {
                 $q->where('lokasi_layanan', 'like', "%{$kota}%")
-                  ->orWhereHas('store', function ($storeQuery) use ($kota) {
-                      $storeQuery->where('kota', 'like', "%{$kota}%");
-                  });
+                    ->orWhereHas('store', function ($storeQuery) use ($kota) {
+                        $storeQuery->where('kota', 'like', "%{$kota}%");
+                    });
             });
         }
 
@@ -207,10 +207,10 @@ class CatalogController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhereHas('alumniProfile.user', function ($uQuery) use ($search) {
-                      $uQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('alumniProfile.user', function ($uQuery) use ($search) {
+                        $uQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -259,9 +259,9 @@ class CatalogController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nim', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uQuery) use ($search) {
-                      $uQuery->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($uQuery) use ($search) {
+                        $uQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 

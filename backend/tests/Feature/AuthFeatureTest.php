@@ -48,17 +48,17 @@ class AuthFeatureTest extends TestCase
                     'nim',
                     'program_studi',
                     'status_verifikasi',
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'john@example.com'
+            'email' => 'john@example.com',
         ]);
 
         $this->assertDatabaseHas('alumni_profiles', [
             'nim' => '1801015999',
-            'status_verifikasi' => 'pending'
+            'status_verifikasi' => 'pending',
         ]);
 
         // Assert role assignment
@@ -96,7 +96,7 @@ class AuthFeatureTest extends TestCase
             'access_token',
             'token_type',
             'user',
-            'permissions'
+            'permissions',
         ]);
     }
 
@@ -146,7 +146,7 @@ class AuthFeatureTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'Akses diblokir. Akun alumni Anda ditangguhkan (suspended). Hubungi admin.'
+            'message' => 'Akses diblokir. Akun alumni Anda ditangguhkan (suspended). Hubungi admin.',
         ]);
     }
 
@@ -198,7 +198,7 @@ class AuthFeatureTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJson([
-            'message' => 'Berhasil keluar log (logout).'
+            'message' => 'Berhasil keluar log (logout).',
         ]);
     }
 
@@ -219,7 +219,7 @@ class AuthFeatureTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJson([
-            'message' => 'Email Anda berhasil diverifikasi.'
+            'message' => 'Email Anda berhasil diverifikasi.',
         ]);
 
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
@@ -236,7 +236,7 @@ class AuthFeatureTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
         $user->assignRole('alumni_pembeli');
-        
+
         $token = $user->createToken('test_token')->plainTextToken;
 
         $response = $this->withHeaders([
@@ -257,7 +257,7 @@ class AuthFeatureTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
         $admin->assignRole('super_admin');
-        
+
         $token = $admin->createToken('test_token')->plainTextToken;
 
         // 1. Create Role
@@ -265,7 +265,7 @@ class AuthFeatureTest extends TestCase
             'Authorization' => "Bearer $token",
         ])->postJson('/api/admin/roles', [
             'name' => 'custom_manager',
-            'permissions' => ['verify_alumni', 'verify_store']
+            'permissions' => ['verify_alumni', 'verify_store'],
         ]);
 
         $response->assertStatus(201);
@@ -279,7 +279,7 @@ class AuthFeatureTest extends TestCase
             'Authorization' => "Bearer $token",
         ])->putJson("/api/admin/roles/{$role->id}", [
             'name' => 'custom_manager_updated',
-            'permissions' => ['verify_alumni']
+            'permissions' => ['verify_alumni'],
         ]);
 
         $updateResponse->assertStatus(200);
@@ -305,7 +305,7 @@ class AuthFeatureTest extends TestCase
             'password' => Hash::make('password123'),
         ]);
         $admin->assignRole('super_admin');
-        
+
         $token = $admin->createToken('test_token')->plainTextToken;
         $superAdminRole = Role::findByName('super_admin', 'web');
 
@@ -315,7 +315,29 @@ class AuthFeatureTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'Role Super Admin dilindungi dan tidak dapat dihapus.'
+            'message' => 'Role Super Admin dilindungi dan tidak dapat dihapus.',
         ]);
+    }
+
+    /**
+     * Test login rate limiting blocks after 5 requests.
+     */
+    public function test_login_rate_limiting_blocks_excessive_requests()
+    {
+        // We will make 5 attempts, which should return auth errors (401)
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->postJson('/api/login', [
+                'email' => 'ratelimit@example.com',
+                'password' => 'wrongpassword',
+            ]);
+            $response->assertStatus(401);
+        }
+
+        // The 6th attempt should return 429 Too Many Requests
+        $response = $this->postJson('/api/login', [
+            'email' => 'ratelimit@example.com',
+            'password' => 'wrongpassword',
+        ]);
+        $response->assertStatus(429);
     }
 }

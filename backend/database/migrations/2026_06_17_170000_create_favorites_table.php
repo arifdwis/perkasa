@@ -20,7 +20,7 @@ return new class extends Migration
 
             // Indexing for high-performance polymorphic lookups
             $table->index(['favoritable_id', 'favoritable_type']);
-            
+
             // Avoid duplicate favorites of the same model by the same user
             $table->unique(['user_id', 'favoritable_id', 'favoritable_type']);
         });

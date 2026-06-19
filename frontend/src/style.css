@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #006756;
-  --color-primary-dark: #00513f;
-  --color-primary-soft: #e6f1ee;
-  --color-accent: #d4a017;
+  --color-primary: #294B29;
+  --color-primary-dark: #50623A;
+  --color-primary-soft: #DBE7C9;
+  --color-accent: #789461;
   --color-ink: #1f2937;
   --color-muted-text: #6b7280;
   --color-surface: #f8faf9;
   --color-border-custom: #e2e8e5;
 
-  --color-status-verified: #006756;
-  --color-status-active: #006756;
-  --color-status-selesai: #006756;
+  --color-status-verified: #294B29;
+  --color-status-active: #294B29;
+  --color-status-selesai: #294B29;
   --color-status-pending: #f59e0b;
-  --color-status-diproses: #0ea5e9;
-  --color-status-delivery: #0ea5e9;
+  --color-status-diproses: #50623A;
+  --color-status-delivery: #50623A;
   --color-status-rejected: #dc2626;
   --color-status-suspended: #dc2626;
   --color-status-canceled: #dc2626;
@@ -29,3 +29,17 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
 }
+
+/* Custom premium backdrop overlay for Drawer */
+.p-drawer-mask, .p-drawer-overlay {
+  background-color: rgba(9, 20, 9, 0.4) !important;
+  backdrop-filter: blur(4px) !important;
+  transition: all 0.3s ease;
+}
+
+/* Admin slide-over shadow */
+.admin-slideover { box-shadow: -8px 0 30px rgba(15,23,42,.08); }
+
+/* Hide scrollbar but keep scrollability (tab strips, etc.) */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

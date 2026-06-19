@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\ProductCategory;
 use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,11 +14,17 @@ class CheckoutFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $buyer;
+
     protected $unverifiedBuyer;
+
     protected $seller1;
+
     protected $seller2;
+
     protected $product1;
+
     protected $product2;
+
     protected $category;
 
     protected function setUp(): void
@@ -30,7 +36,7 @@ class CheckoutFeatureTest extends TestCase
         $this->buyer = User::create([
             'name' => 'Buyer Verified',
             'email' => 'buyer@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->buyer->assignRole('alumni_pembeli');
         $this->buyer->profile()->create([
@@ -40,14 +46,14 @@ class CheckoutFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567890',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         // Unverified Buyer
         $this->unverifiedBuyer = User::create([
             'name' => 'Buyer Unverified',
             'email' => 'buyer2@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->unverifiedBuyer->assignRole('alumni_pembeli');
         $this->unverifiedBuyer->profile()->create([
@@ -57,14 +63,14 @@ class CheckoutFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567894',
             'status_verifikasi' => 'pending',
-            'badge_verified' => false
+            'badge_verified' => false,
         ]);
 
         // Seller 1 (Fixed delivery fee)
         $this->seller1 = User::create([
             'name' => 'Seller Satu',
             'email' => 'seller1@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->seller1->assignRole('alumni_pembeli');
         $profile1 = $this->seller1->profile()->create([
@@ -74,7 +80,7 @@ class CheckoutFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567891',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $store1 = $profile1->store()->create([
             'name' => 'Store Satu (Fixed)',
@@ -84,14 +90,14 @@ class CheckoutFeatureTest extends TestCase
             'status' => 'active',
             'delivery_type' => 'fixed',
             'fixed_delivery_fee' => 10000,
-            'tahun_berdiri' => 2024
+            'tahun_berdiri' => 2024,
         ]);
 
         // Seller 2 (Per wilayah delivery fee)
         $this->seller2 = User::create([
             'name' => 'Seller Dua',
             'email' => 'seller2@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->seller2->assignRole('alumni_pembeli');
         $profile2 = $this->seller2->profile()->create([
@@ -101,7 +107,7 @@ class CheckoutFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567892',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $store2 = $profile2->store()->create([
             'name' => 'Store Dua (Per Wilayah)',
@@ -110,18 +116,18 @@ class CheckoutFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'status' => 'active',
             'delivery_type' => 'per_wilayah',
-            'tahun_berdiri' => 2024
+            'tahun_berdiri' => 2024,
         ]);
         $store2->deliveryFees()->create([
             'wilayah' => 'Samarinda Ulu',
-            'fee' => 15000
+            'fee' => 15000,
         ]);
 
         // Category
         $this->category = ProductCategory::create([
             'name' => 'Makanan',
             'slug' => 'makanan',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         // Products
@@ -133,7 +139,7 @@ class CheckoutFeatureTest extends TestCase
             'description' => 'Baju kaos FEB keren',
             'price' => 50000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $this->product2 = Product::create([
@@ -144,7 +150,7 @@ class CheckoutFeatureTest extends TestCase
             'description' => 'Roti rasa manis',
             'price' => 10000,
             'stock' => 20,
-            'status' => 'active'
+            'status' => 'active',
         ]);
     }
 
@@ -156,7 +162,7 @@ class CheckoutFeatureTest extends TestCase
         $token = $this->unverifiedBuyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/checkout', [
             'nama_penerima' => 'Nama Penerima',
             'telepon_penerima' => '08123',
@@ -175,30 +181,30 @@ class CheckoutFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $cart->items()->create([
             'product_id' => $this->product1->id,
-            'quantity' => 2
+            'quantity' => 2,
         ]);
         $cart->items()->create([
             'product_id' => $this->product2->id,
-            'quantity' => 3
+            'quantity' => 3,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/checkout', [
             'nama_penerima' => 'John Doe',
             'telepon_penerima' => '081234567899',
             'alamat_penerima' => 'Jl. Mulawarman No 12',
-            'wilayah_antar' => 'Samarinda Ulu'
+            'wilayah_antar' => 'Samarinda Ulu',
         ]);
 
         $response->assertStatus(201);
         $response->assertJsonStructure([
             'message',
             'orders' => [
-                ['id', 'order_number', 'total']
-            ]
+                ['id', 'order_number', 'total'],
+            ],
         ]);
         $response->assertJsonCount(2, 'orders');
 
@@ -215,7 +221,7 @@ class CheckoutFeatureTest extends TestCase
             'store_id' => $this->product1->store_id,
             'subtotal' => 100000.00, // 50000 * 2
             'biaya_antar' => 10000.00, // fixed
-            'total' => 110000.00
+            'total' => 110000.00,
         ]);
 
         $this->assertDatabaseHas('orders', [
@@ -223,7 +229,7 @@ class CheckoutFeatureTest extends TestCase
             'store_id' => $this->product2->store_id,
             'subtotal' => 30000.00, // 10000 * 3
             'biaya_antar' => 15000.00, // Samarinda Ulu
-            'total' => 45000.00
+            'total' => 45000.00,
         ]);
     }
 
@@ -235,23 +241,100 @@ class CheckoutFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $cart->items()->create([
             'product_id' => $this->product2->id, // Store 2 using per_wilayah
-            'quantity' => 1
+            'quantity' => 1,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/checkout', [
             'nama_penerima' => 'John Doe',
             'telepon_penerima' => '081234567899',
             'alamat_penerima' => 'Jl. Mulawarman No 12',
-            'wilayah_antar' => 'Samarinda Seberang' // Store 2 doesn't serve Samarinda Seberang
+            'wilayah_antar' => 'Samarinda Seberang', // Store 2 doesn't serve Samarinda Seberang
         ]);
 
         $response->assertStatus(400);
         $response->assertJson([
-            'message' => 'Toko Store Dua (Per Wilayah) tidak melayani pengantaran ke wilayah Samarinda Seberang.'
+            'message' => 'Toko Store Dua (Per Wilayah) tidak melayani pengantaran ke wilayah Samarinda Seberang.',
+        ]);
+    }
+
+    /**
+     * Test successful direct checkout bypassing the cart.
+     */
+    public function test_successful_direct_checkout()
+    {
+        // Add one item to cart (this item should remain in cart after direct checkout!)
+        $cart = $this->buyer->cart()->create();
+        $cart->items()->create([
+            'product_id' => $this->product2->id,
+            'quantity' => 1,
+        ]);
+
+        $token = $this->buyer->createToken('auth_token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->postJson('/api/checkout', [
+            'nama_penerima' => 'John Doe Direct',
+            'telepon_penerima' => '081234567800',
+            'alamat_penerima' => 'Jl. Mulawarman No 15',
+            'wilayah_antar' => 'Samarinda Ulu',
+            'product_id' => $this->product1->id,
+            'quantity' => 2,
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonStructure([
+            'message',
+            'orders' => [
+                ['id', 'order_number', 'total'],
+            ],
+        ]);
+        $response->assertJsonCount(1, 'orders');
+
+        // Check stock reduction for product1
+        $this->assertEquals(8, $this->product1->fresh()->stock); // 10 - 2
+        // Product2 stock should be untouched
+        $this->assertEquals(20, $this->product2->fresh()->stock);
+
+        // Check cart NOT cleared (product2 remains in cart)
+        $this->assertCount(1, $cart->fresh()->items);
+
+        // Verify database records for orders
+        $this->assertDatabaseHas('orders', [
+            'user_id' => $this->buyer->id,
+            'store_id' => $this->product1->store_id,
+            'subtotal' => 100000.00, // 50000 * 2
+            'biaya_antar' => 10000.00, // fixed
+            'total' => 110000.00,
+        ]);
+    }
+
+    /**
+     * Test seller cannot buy their own product.
+     */
+    public function test_seller_cannot_checkout_own_product()
+    {
+        $token = $this->seller1->createToken('auth_token')->plainTextToken;
+
+        // Seller 1 owns product 1
+        $response = $this->withHeaders([
+            'Authorization' => "Bearer $token",
+        ])->postJson('/api/checkout', [
+            'nama_penerima' => 'Seller One self',
+            'telepon_penerima' => '081234567800',
+            'alamat_penerima' => 'Jl. Mulawarman No 15',
+            'wilayah_antar' => 'Samarinda Ulu',
+            'product_id' => $this->product1->id,
+            'quantity' => 1,
+        ]);
+
+        $response->assertStatus(400);
+        $response->assertJson([
+            'message' => 'Anda tidak dapat membeli produk dari toko Anda sendiri.',
         ]);
     }
 }

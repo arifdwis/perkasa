@@ -24,7 +24,7 @@ class CategorySeeder extends Seeder
             'Properti',
             'Otomotif',
             'Pertanian',
-            'UMKM'
+            'UMKM',
         ];
 
         foreach ($productCategories as $name) {
@@ -32,7 +32,7 @@ class CategorySeeder extends Seeder
                 ['slug' => Str::slug($name)],
                 [
                     'name' => $name,
-                    'is_active' => true
+                    'is_active' => true,
                 ]
             );
         }
@@ -50,7 +50,7 @@ class CategorySeeder extends Seeder
             'Desain Grafis',
             'Digital Marketing',
             'Notaris',
-            'Pengacara'
+            'Pengacara',
         ];
 
         foreach ($serviceCategories as $name) {
@@ -58,7 +58,7 @@ class CategorySeeder extends Seeder
                 ['slug' => Str::slug($name)],
                 [
                     'name' => $name,
-                    'is_active' => true
+                    'is_active' => true,
                 ]
             );
         }

@@ -11,7 +11,7 @@ class EnsureAlumniIsVerified
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -22,9 +22,9 @@ class EnsureAlumniIsVerified
             return $next($request);
         }
 
-        if (!$user || !$user->profile || $user->profile->status_verifikasi !== 'verified') {
+        if (! $user || ! $user->profile || $user->profile->status_verifikasi !== 'verified') {
             return response()->json([
-                'message' => 'Akses ditolak. Akun alumni Anda belum diverifikasi oleh admin.'
+                'message' => 'Akses ditolak. Akun alumni Anda belum diverifikasi oleh admin.',
             ], Response::HTTP_FORBIDDEN);
         }
 

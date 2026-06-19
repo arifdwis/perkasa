@@ -34,7 +34,7 @@ class AlumniVerificationTest extends TestCase
         $token = $admin->createToken('test_token')->plainTextToken;
 
         // Create a CSV mock with heading columns
-        $csvContent = "nim,nama,program_studi,tahun_masuk,tahun_lulus,email,whatsapp\n" .
+        $csvContent = "nim,nama,program_studi,tahun_masuk,tahun_lulus,email,whatsapp\n".
                       "1801015099,Official Alumni,S1 Manajemen,2018,2022,official@example.com,081234567899\n";
 
         $file = UploadedFile::fake()->createWithContent('alumni.csv', $csvContent);
@@ -42,14 +42,14 @@ class AlumniVerificationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => "Bearer $token",
         ])->postJson('/api/admin/alumni/import', [
-            'file' => $file
+            'file' => $file,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('imported_alumni_records', [
             'nim' => '1801015099',
             'name' => 'Official Alumni',
-            'email' => 'official@example.com'
+            'email' => 'official@example.com',
         ]);
     }
 
@@ -66,7 +66,7 @@ class AlumniVerificationTest extends TestCase
             'tahun_masuk' => 2018,
             'tahun_lulus' => 2022,
             'email' => 'official@example.com',
-            'whatsapp' => '081234567899'
+            'whatsapp' => '081234567899',
         ]);
 
         // 2. Register user with matching NIM and Email
@@ -141,7 +141,7 @@ class AlumniVerificationTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => "Bearer $token",
         ])->postJson("/api/admin/alumni/{$profile->id}/verify", [
-            'action' => 'approve'
+            'action' => 'approve',
         ]);
 
         $response->assertStatus(200);
@@ -152,7 +152,7 @@ class AlumniVerificationTest extends TestCase
         $this->assertDatabaseHas('alumni_verifications', [
             'alumni_profile_id' => $profile->id,
             'admin_user_id' => $admin->id,
-            'action' => 'approve'
+            'action' => 'approve',
         ]);
     }
 }

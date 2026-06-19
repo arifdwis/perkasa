@@ -1,0 +1,1236 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FEB Universitas Mulawarman Alumni Marketplace API",
+    "description": "Dokumentasi API lengkap untuk sistem marketplace jejaring alumni FEB Universitas Mulawarman. Platform ini memfasilitasi transaksi jual beli produk fisik dan jasa profesional antar alumni yang terverifikasi.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Tim IT FEB Universitas Mulawarman",
+      "email": "support@feb.unmul.ac.id"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api",
+      "description": "Server Pengembangan Lokal"
+    }
+  ],
+  "security": [
+    {
+      "sanctum": []
+    }
+  ],
+  "paths": {
+    "/register": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Registrasi Akun Alumni Baru",
+        "description": "Membuat akun pengguna baru dengan role default `alumni_pembeli`. NIM dan Email akan dicocokkan otomatis dengan data alumni yang diimpor admin.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password", "password_confirmation", "nim", "program_studi", "tahun_masuk", "tahun_lulus", "whatsapp"],
+                "properties": {
+                  "name": { "type": "string", "example": "Ahmad Dani" },
+                  "email": { "type": "string", "format": "email", "example": "ahmaddani@mail.com" },
+                  "password": { "type": "string", "format": "password", "example": "P@ssw0rdFEB" },
+                  "password_confirmation": { "type": "string", "format": "password", "example": "P@ssw0rdFEB" },
+                  "nim": { "type": "string", "example": "1801015099" },
+                  "program_studi": { "type": "string", "enum": ["S1 Manajemen", "S1 Akuntansi", "S1 Ekonomi Pembangunan"], "example": "S1 Manajemen" },
+                  "tahun_masuk": { "type": "integer", "example": 2018 },
+                  "tahun_lulus": { "type": "integer", "example": 2022 },
+                  "whatsapp": { "type": "string", "example": "081234567890" },
+                  "domisili": { "type": "string", "example": "Samarinda" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registrasi berhasil, silakan verifikasi email.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Registrasi berhasil. Silakan cek email Anda untuk melakukan verifikasi." },
+                    "user": { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validasi input gagal atau NIM sudah terdaftar."
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Masuk / Login Pengguna",
+        "description": "Mengautentikasi pengguna menggunakan email dan password, mengembalikan personal access token (Sanctum) serta daftar permission efektif user.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "ahmaddani@mail.com" },
+                  "password": { "type": "string", "format": "password", "example": "P@ssw0rdFEB" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login Berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string", "example": "1|laravel_sanctum_token_string" },
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "permissions": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "example": ["beli_produk", "favorit_produk"]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Kredensial tidak cocok."
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Keluar / Logout Pengguna",
+        "description": "Menghapus token akses saat ini dari database.",
+        "responses": {
+          "200": {
+            "description": "Logout berhasil.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Logged out successfully" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "tags": ["Autentikasi"],
+        "summary": "Dapatkan Profil Akun Aktif",
+        "description": "Mengembalikan data detail user yang sedang terautentikasi beserta permission efektifnya.",
+        "responses": {
+          "200": {
+            "description": "Data profil aktif.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "$ref": "#/components/schemas/User" },
+                    "permissions": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "example": ["beli_produk", "favorit_produk"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/resend": {
+      "post": {
+        "tags": ["Autentikasi"],
+        "summary": "Kirim Ulang Email Verifikasi",
+        "description": "Mengirimkan ulang email tautan verifikasi alamat email ke user.",
+        "responses": {
+          "200": {
+            "description": "Link verifikasi berhasil dikirim.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Verification link sent." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/email/verify/{id}/{hash}": {
+      "get": {
+        "tags": ["Autentikasi"],
+        "summary": "Verifikasi Alamat Email",
+        "description": "Menerima hash verifikasi email untuk mengaktifkan status verifikasi email pengguna.",
+        "security": [],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID Pengguna" },
+          { "name": "hash", "in": "path", "required": true, "schema": { "type": "string" }, "description": "Hash unik verifikasi email" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email berhasil diverifikasi.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Email successfully verified." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Tautan tidak valid atau kedaluwarsa."
+          }
+        }
+      }
+    },
+    "/product-categories": {
+      "get": {
+        "tags": ["Kategori"],
+        "summary": "Daftar Kategori Produk Fisik",
+        "description": "Mengembalikan semua daftar kategori aktif untuk produk fisik.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Daftar kategori produk.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service-categories": {
+      "get": {
+        "tags": ["Kategori"],
+        "summary": "Daftar Kategori Jasa Profesional",
+        "description": "Mengembalikan semua daftar kategori aktif untuk layanan/jasa profesional.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Daftar kategori jasa.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/{id}": {
+      "get": {
+        "tags": ["Toko"],
+        "summary": "Detail Profil Toko",
+        "description": "Mendapatkan profil publik sebuah toko beserta rincian pemilik toko (alumni) dan biaya pengiriman COD.",
+        "security": [],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID UUID Toko" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detail Toko ditemukan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "store": { "$ref": "#/components/schemas/Store" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Toko tidak ditemukan atau tidak aktif."
+          }
+        }
+      }
+    },
+    "/stores": {
+      "post": {
+        "tags": ["Toko"],
+        "summary": "Pendaftaran Toko Baru (Pengajuan Toko)",
+        "description": "Mengajukan pembuatan toko baru. Hanya alumni berstatus verifikasi `verified` yang dapat mengajukan toko. Status awal toko adalah `pending`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "kategori_usaha", "tahun_berdiri", "whatsapp", "kota", "delivery_type"],
+                "properties": {
+                  "name": { "type": "string", "example": "Varia Niaga Alumni" },
+                  "description": { "type": "string", "example": "Menyediakan aneka jajanan tradisional FEB." },
+                  "kategori_usaha": { "type": "string", "example": "Makanan dan Minuman" },
+                  "tahun_berdiri": { "type": "integer", "example": 2024 },
+                  "whatsapp": { "type": "string", "example": "081234567890" },
+                  "kota": { "type": "string", "example": "Samarinda" },
+                  "delivery_type": { "type": "string", "enum": ["fixed", "region"], "example": "fixed" },
+                  "fixed_delivery_fee": { "type": "number", "example": 10000 },
+                  "delivery_fees": {
+                    "type": "array",
+                    "description": "Hanya diisi jika delivery_type bernilai `region`",
+                    "items": {
+                      "type": "object",
+                      "required": ["wilayah", "fee"],
+                      "properties": {
+                        "wilayah": { "type": "string", "example": "Samarinda Ulu" },
+                        "fee": { "type": "number", "example": 15000 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pengajuan toko berhasil dibuat.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Pengajuan pendaftaran toko berhasil dikirim. Menunggu verifikasi admin." },
+                    "store": { "$ref": "#/components/schemas/Store" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Pengguna belum terverifikasi atau sudah memiliki toko." }
+        }
+      }
+    },
+    "/stores/my-store": {
+      "get": {
+        "tags": ["Toko"],
+        "summary": "Profil Toko Milik Sendiri",
+        "description": "Mengambil informasi profil toko milik alumni aktif yang sedang login.",
+        "responses": {
+          "200": {
+            "description": "Toko ditemukan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "store": { "$ref": "#/components/schemas/Store" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Toko"],
+        "summary": "Update Profil Toko Milik Sendiri",
+        "description": "Memperbarui data profil toko pemilik aktif.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Kios FEB Unggul" },
+                  "description": { "type": "string" },
+                  "kategori_usaha": { "type": "string" },
+                  "whatsapp": { "type": "string" },
+                  "kota": { "type": "string" },
+                  "delivery_type": { "type": "string", "enum": ["fixed", "region"] },
+                  "fixed_delivery_fee": { "type": "number" },
+                  "delivery_fees": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "wilayah": { "type": "string" },
+                        "fee": { "type": "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil toko berhasil diperbarui.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Profil toko berhasil diperbarui." },
+                    "store": { "$ref": "#/components/schemas/Store" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/my-store/logo": {
+      "post": {
+        "tags": ["Toko"],
+        "summary": "Upload Logo Toko",
+        "description": "Mengunggah file gambar logo untuk toko pemilik.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["logo"],
+                "properties": {
+                  "logo": { "type": "string", "format": "binary", "description": "File gambar logo (PNG/JPG, max 2MB)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logo berhasil diunggah.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logo_url": { "type": "string", "example": "/storage/stores/logos/filename.png" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stores/my-store/banner": {
+      "post": {
+        "tags": ["Toko"],
+        "summary": "Upload Banner Toko",
+        "description": "Mengunggah file gambar banner sampul untuk toko pemilik.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["banner"],
+                "properties": {
+                  "banner": { "type": "string", "format": "binary", "description": "File gambar banner (PNG/JPG, max 2MB)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Banner berhasil diunggah."
+          }
+        }
+      }
+    },
+    "/catalog": {
+      "get": {
+        "tags": ["Katalog Publik"],
+        "summary": "Pencarian dan Filter Katalog Global",
+        "description": "Menyajikan hasil data katalog produk, jasa, toko, dan alumni secara publik dengan fitur filter dinamis.",
+        "security": [],
+        "parameters": [
+          { "name": "type", "in": "query", "required": true, "schema": { "type": "string", "enum": ["product", "service", "store", "alumni"] }, "description": "Jenis item katalog" },
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Kata kunci pencarian nama/deskripsi" },
+          { "name": "program_studi", "in": "query", "schema": { "type": "string" }, "description": "Filter program studi alumni" },
+          { "name": "tahun_masuk", "in": "query", "schema": { "type": "integer" }, "description": "Filter angkatan (tahun masuk)" },
+          { "name": "tahun_lulus", "in": "query", "schema": { "type": "integer" }, "description": "Filter tahun kelulusan" },
+          { "name": "kota", "in": "query", "schema": { "type": "string" }, "description": "Filter domisili / kota" },
+          { "name": "kategori_id", "in": "query", "schema": { "type": "string" }, "description": "Filter kategori produk/jasa (UUID)" },
+          { "name": "kategori", "in": "query", "schema": { "type": "string" }, "description": "Filter kategori usaha toko (contoh: Fashion)" },
+          { "name": "harga_min", "in": "query", "schema": { "type": "number" }, "description": "Harga minimal (produk/jasa)" },
+          { "name": "harga_max", "in": "query", "schema": { "type": "number" }, "description": "Harga maksimal (produk/jasa)" },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["latest", "price_asc", "price_desc", "rating_desc"] }, "description": "Metode pengurutan" },
+          { "name": "page", "in": "query", "schema": { "type": "integer" }, "description": "Halaman paginasi" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Katalog ditemukan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "current_page": { "type": "integer", "example": 1 },
+                    "data": {
+                      "type": "array",
+                      "items": { "type": "object" }
+                    },
+                    "total": { "type": "integer", "example": 25 },
+                    "last_page": { "type": "integer", "example": 3 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seller/products": {
+      "get": {
+        "tags": ["Produk Seller"],
+        "summary": "Daftar Produk Milik Sendiri",
+        "description": "Menampilkan seluruh daftar produk fisik milik toko penjual aktif.",
+        "responses": {
+          "200": {
+            "description": "Daftar produk milik sendiri.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Product" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Produk Seller"],
+        "summary": "Tambah Produk Baru",
+        "description": "Membuat entri produk fisik baru di toko. Status default adalah `active`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "product_category_id", "price", "stock"],
+                "properties": {
+                  "name": { "type": "string", "example": "Buku Akuntansi Lanjutan" },
+                  "description": { "type": "string" },
+                  "product_category_id": { "type": "string", "format": "uuid", "description": "Kategori produk UUID" },
+                  "price": { "type": "number", "example": 75000 },
+                  "stock": { "type": "integer", "example": 20 },
+                  "is_featured": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Produk berhasil ditambahkan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Produk berhasil ditambahkan." },
+                    "product": { "$ref": "#/components/schemas/Product" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seller/products/{id}": {
+      "get": {
+        "tags": ["Produk Seller"],
+        "summary": "Detail Produk Sendiri",
+        "description": "Mengambil rincian detail produk seller berdasarkan ID.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Produk Seller"],
+        "summary": "Update Produk",
+        "description": "Mengubah data detail produk fisik milik seller.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "product_category_id": { "type": "string" },
+                  "price": { "type": "number" },
+                  "stock": { "type": "integer" },
+                  "status": { "type": "string", "enum": ["active", "inactive", "out_of_stock"] },
+                  "is_featured": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Produk berhasil diupdate." }
+        }
+      },
+      "delete": {
+        "tags": ["Produk Seller"],
+        "summary": "Hapus Produk",
+        "description": "Menghapus produk fisik permanen jika produk belum pernah ditransaksikan.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Produk berhasil dihapus." }
+        }
+      }
+    },
+    "/seller/products/{id}/image": {
+      "post": {
+        "tags": ["Produk Seller"],
+        "summary": "Upload Foto Utama Produk",
+        "description": "Mengunggah file foto utama produk.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image"],
+                "properties": {
+                  "image": { "type": "string", "format": "binary", "description": "File gambar utama (max 2MB)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Foto utama berhasil diperbarui." }
+        }
+      }
+    },
+    "/favorites/toggle": {
+      "post": {
+        "tags": ["Katalog Publik"],
+        "summary": "Toggle Favorit (Simpan/Hapus)",
+        "description": "Menyimpan atau menghapus item (produk, jasa, toko) ke/dari daftar favorit alumni.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["favoritable_id", "favoritable_type"],
+                "properties": {
+                  "favoritable_id": { "type": "string", "format": "uuid", "example": "4a7653bb-3918-4f2b-8a8b-117502bf0231" },
+                  "favoritable_type": { "type": "string", "enum": ["product", "service", "store"], "example": "product" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "favorited": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Item ditambahkan ke daftar favorit." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cart": {
+      "get": {
+        "tags": ["Keranjang Belanja"],
+        "summary": "Dapatkan Isi Keranjang Belanja",
+        "description": "Menampilkan seluruh item produk fisik yang dimasukkan pengguna ke keranjang belanja beserta kalkulasi subtotal dan jasa antar.",
+        "responses": {
+          "200": {
+            "description": "Keranjang berhasil diambil.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string" },
+                          "product": { "$ref": "#/components/schemas/Product" },
+                          "quantity": { "type": "integer", "example": 2 }
+                        }
+                      }
+                    },
+                    "subtotal": { "type": "number", "example": 150000 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Keranjang Belanja"],
+        "summary": "Bersihkan Keranjang",
+        "description": "Mengosongkan seluruh item dari keranjang belanja user.",
+        "responses": {
+          "200": { "description": "Keranjang belanja dibersihkan." }
+        }
+      }
+    },
+    "/cart/items": {
+      "post": {
+        "tags": ["Keranjang Belanja"],
+        "summary": "Tambah Produk Ke Keranjang",
+        "description": "Menambahkan produk fisik tertentu dengan kuantitas yang diinginkan ke keranjang.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id", "quantity"],
+                "properties": {
+                  "product_id": { "type": "string", "format": "uuid", "example": "3b2a1a09-90b8-4c91-a1b2-138402af0299" },
+                  "quantity": { "type": "integer", "minimum": 1, "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Item berhasil ditambahkan ke keranjang." },
+          "422": { "description": "Stok tidak mencukupi atau produk tidak aktif." }
+        }
+      }
+    },
+    "/cart/items/{id}": {
+      "put": {
+        "tags": ["Keranjang Belanja"],
+        "summary": "Ubah Kuantitas Item Keranjang",
+        "description": "Memperbarui jumlah kuantitas beli dari item tertentu di keranjang.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID Item Keranjang (UUID)" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["quantity"],
+                "properties": {
+                  "quantity": { "type": "integer", "minimum": 1, "example": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Kuantitas berhasil diperbarui." }
+        }
+      },
+      "delete": {
+        "tags": ["Keranjang Belanja"],
+        "summary": "Hapus Item Keranjang",
+        "description": "Menghapus item tertentu dari keranjang belanja.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Item berhasil dihapus dari keranjang." }
+        }
+      }
+    },
+    "/checkout": {
+      "post": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Proses Checkout COD",
+        "description": "Membuat pesanan baru dari seluruh item terpilih dalam keranjang belanja menggunakan pembayaran Cash On Delivery (COD).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nama_penerima", "alamat_penerima", "whatsapp_penerima"],
+                "properties": {
+                  "nama_penerima": { "type": "string", "example": "Ahmad Dani" },
+                  "alamat_penerima": { "type": "string", "example": "Jl. M. Yamin No. 12, Samarinda Ulu" },
+                  "whatsapp_penerima": { "type": "string", "example": "081234567890" },
+                  "wilayah_antar": { "type": "string", "description": "Diwajibkan jika toko menggunakan tarif ongkir wilayah", "example": "Samarinda Ulu" },
+                  "catatan": { "type": "string", "example": "Mohon antarkan sebelum jam 5 sore." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pesanan berhasil dibuat.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Checkout berhasil. Pesanan Anda telah dibuat." },
+                    "order": { "$ref": "#/components/schemas/Order" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Daftar Transaksi Pembeli",
+        "description": "Mendapatkan daftar riwayat transaksi pemesanan yang dilakukan oleh alumni aktif sebagai pembeli.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Detail Transaksi Pembeli",
+        "description": "Mendapatkan detail pesanan pembeli lengkap dengan rincian item, data pengiriman, dan riwayat status timeline.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Order" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}/cancel": {
+      "post": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Batalkan Pesanan (Pembeli)",
+        "description": "Membatalkan pesanan yang belum diproses oleh seller. Mengembalikan stok produk fisik.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pesanan berhasil dibatalkan." },
+          "400": { "description": "Pesanan tidak dapat dibatalkan (sudah diproses/dalam pengantaran)." }
+        }
+      }
+    },
+    "/seller/orders": {
+      "get": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Daftar Pesanan Toko (Seller)",
+        "description": "Menampilkan daftar pesanan masuk ke toko milik seller.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Order" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/seller/orders/{id}/status": {
+      "put": {
+        "tags": ["Checkout & Pesanan"],
+        "summary": "Update Status Pesanan (Seller)",
+        "description": "Mengubah status pengerjaan pesanan oleh penjual. Mengirimkan notifikasi event ke pembeli.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["diproses", "dalam_pengantaran", "selesai", "dibatalkan"], "example": "diproses" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status pesanan berhasil diperbarui." }
+        }
+      }
+    },
+    "/reviews": {
+      "post": {
+        "tags": ["Ulasan & Rating"],
+        "summary": "Kirim Ulasan Produk/Jasa",
+        "description": "Mengirimkan ulasan dan nilai bintang setelah order berstatus `selesai`. Satu item pesanan hanya bisa diulas sekali.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["order_item_id", "rating", "comment"],
+                "properties": {
+                  "order_item_id": { "type": "string", "format": "uuid", "example": "7b8a1c90-99b8-4c91-a1b2-138402af0299" },
+                  "rating": { "type": "integer", "minimum": 1, "maximum": 5, "example": 5 },
+                  "comment": { "type": "string", "example": "Buku dalam kondisi sangat bagus, recommended!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Ulasan berhasil dikirim." }
+        }
+      }
+    },
+    "/reviews/{id}/reply": {
+      "post": {
+        "tags": ["Ulasan & Rating"],
+        "summary": "Balas Ulasan (Seller)",
+        "description": "Membuat balasan tanggapan atas ulasan pembeli di toko milik seller.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID Ulasan (UUID)" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["reply"],
+                "properties": {
+                  "reply": { "type": "string", "example": "Terima kasih banyak atas feedback positifnya Kak!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Balasan ulasan berhasil dikirim." }
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifikasi"],
+        "summary": "Daftar Notifikasi Pengguna",
+        "description": "Mengambil semua daftar pesan notifikasi in-app untuk pengguna aktif.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": { "type": "string" },
+                      "title": { "type": "string", "example": "Pesanan Diproses" },
+                      "message": { "type": "string", "example": "Pesanan #ORD-2026061801 sedang diproses penjual." },
+                      "is_read": { "type": "boolean", "example": false },
+                      "created_at": { "type": "string", "format": "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/alumni/import": {
+      "post": {
+        "tags": ["Admin Alumni & Toko"],
+        "summary": "Impor Rekam Data Alumni dari Excel",
+        "description": "Mengimpor data daftar rekam identitas alumni dari berkas Excel/CSV untuk dicocokkan otomatis saat registrasi pendaftaran akun.",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "File template alumni Excel (.xlsx atau .csv)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Data alumni berhasil diimpor." },
+                    "imported_count": { "type": "integer", "example": 120 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/alumni/{id}/verify": {
+      "post": {
+        "tags": ["Admin Alumni & Toko"],
+        "summary": "Proses Verifikasi / Suspend Akun Alumni",
+        "description": "Menyetujui status verifikasi pendaftaran alumni, menolak pengajuan, suspend akun terdaftar, atau mengembalikan ke status pending.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID Profile Alumni (UUID)" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["verified", "rejected", "suspended", "pending"], "example": "verified" },
+                  "catatan_penolakan": { "type": "string", "description": "Alasan penolakan jika status `rejected`", "example": "NIM dan data ijazah tidak cocok." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status verifikasi alumni diperbarui.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Status verifikasi alumni berhasil diperbarui menjadi verified." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/stores/{id}/verify": {
+      "post": {
+        "tags": ["Admin Alumni & Toko"],
+        "summary": "Verifikasi Pengajuan Toko",
+        "description": "Menyetujui atau mensuspend pengajuan pembukaan toko alumni.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" }, "description": "ID Toko (UUID)" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": { "type": "string", "enum": ["active", "suspended"], "example": "active" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status verifikasi toko berhasil diperbarui." }
+        }
+      }
+    },
+    "/admin/reports/alumni/export": {
+      "get": {
+        "tags": ["Admin Laporan & Export"],
+        "summary": "Ekspor Laporan Alumni",
+        "description": "Mendownload file laporan data alumni terdaftar dalam format PDF, Excel, atau CSV.",
+        "parameters": [
+          { "name": "format", "in": "query", "required": true, "schema": { "type": "string", "enum": ["xlsx", "csv", "pdf"] } },
+          { "name": "program_studi", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "verified", "rejected", "suspended"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "File laporan ekspor berhasil diunduh.",
+            "headers": {
+              "Content-Disposition": { "schema": { "type": "string", "example": "attachment; filename=\"report.xlsx\"" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sanctum": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Masukkan Token Sanctum yang didapatkan dari respons login. Format: `Bearer {token}`"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "9a7b53bb-3918-4f2b-8a8b-117502bf0212" },
+          "name": { "type": "string", "example": "Ahmad Dani" },
+          "email": { "type": "string", "format": "email", "example": "ahmaddani@mail.com" },
+          "email_verified_at": { "type": "string", "format": "date-time", "nullable": true },
+          "profile": { "$ref": "#/components/schemas/AlumniProfile" }
+        }
+      },
+      "AlumniProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "5c9b1a09-90b8-4c91-a1b2-138402af0288" },
+          "nim": { "type": "string", "example": "1801015099" },
+          "program_studi": { "type": "string", "example": "S1 Manajemen" },
+          "tahun_masuk": { "type": "integer", "example": 2018 },
+          "tahun_lulus": { "type": "integer", "example": 2022 },
+          "whatsapp": { "type": "string", "example": "6281234567890" },
+          "domisili": { "type": "string", "example": "Samarinda" },
+          "status_verifikasi": { "type": "string", "enum": ["pending", "verified", "rejected", "suspended"], "example": "verified" }
+        }
+      },
+      "Store": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "1b2a1a09-90b8-4c91-a1b2-138402af0299" },
+          "name": { "type": "string", "example": "Varia Niaga Alumni" },
+          "description": { "type": "string", "example": "Menyediakan aneka jajanan tradisional FEB." },
+          "kategori_usaha": { "type": "string", "example": "Makanan dan Minuman" },
+          "logo": { "type": "string", "nullable": true, "example": "/storage/stores/logos/filename.png" },
+          "banner": { "type": "string", "nullable": true, "example": "/storage/stores/banners/filename.png" },
+          "kota": { "type": "string", "example": "Samarinda" },
+          "whatsapp": { "type": "string", "example": "6281234567890" },
+          "status": { "type": "string", "enum": ["pending", "active", "suspended"], "example": "active" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "3b2a1a09-90b8-4c91-a1b2-138402af0299" },
+          "name": { "type": "string", "example": "Buku Akuntansi Lanjutan" },
+          "description": { "type": "string", "example": "Buku ajar akuntansi untuk tingkat universitas." },
+          "price": { "type": "number", "example": 75000 },
+          "stock": { "type": "integer", "example": 15 },
+          "status": { "type": "string", "enum": ["active", "inactive", "out_of_stock"], "example": "active" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "2a7b53bb-3918-4f2b-8a8b-117502bf0212" },
+          "name": { "type": "string", "example": "Bahan Pangan / Sembako" },
+          "slug": { "type": "string", "example": "bahan-pangan-sembako" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "order_number": { "type": "string", "example": "ORD-2026061801" },
+          "total": { "type": "number", "example": 160000 },
+          "status": { "type": "string", "enum": ["menunggu_konfirmasi", "diproses", "dalam_pengantaran", "selesai", "dibatalkan"], "example": "menunggu_konfirmasi" },
+          "nama_penerima": { "type": "string" },
+          "alamat_penerima": { "type": "string" },
+          "whatsapp_penerima": { "type": "string" }
+        }
+      }
+    }
+  }
+}

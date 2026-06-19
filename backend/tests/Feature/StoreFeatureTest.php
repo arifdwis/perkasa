@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Store;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -14,13 +14,15 @@ class StoreFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
+
     protected $verifiedAlumni;
+
     protected $unverifiedAlumni;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Seed Spatie roles & permissions
         $this->seed(RolePermissionSeeder::class);
 
@@ -28,7 +30,7 @@ class StoreFeatureTest extends TestCase
         $this->admin = User::create([
             'name' => 'Super Admin',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->admin->assignRole('super_admin');
 
@@ -36,7 +38,7 @@ class StoreFeatureTest extends TestCase
         $this->verifiedAlumni = User::create([
             'name' => 'Verified Alumni',
             'email' => 'verified@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->verifiedAlumni->assignRole('alumni_pembeli');
         $this->verifiedAlumni->profile()->create([
@@ -46,14 +48,14 @@ class StoreFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567811',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         // 3. Create Unverified Alumni
         $this->unverifiedAlumni = User::create([
             'name' => 'Unverified Alumni',
             'email' => 'unverified@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->unverifiedAlumni->assignRole('alumni_pembeli');
         $this->unverifiedAlumni->profile()->create([
@@ -63,7 +65,7 @@ class StoreFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567822',
             'status_verifikasi' => 'pending',
-            'badge_verified' => false
+            'badge_verified' => false,
         ]);
     }
 
@@ -75,7 +77,7 @@ class StoreFeatureTest extends TestCase
         $token = $this->unverifiedAlumni->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/stores', [
             'name' => 'Toko Buku Unverified',
             'kategori_usaha' => 'Buku',
@@ -83,12 +85,12 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2024,
             'delivery_type' => 'fixed',
-            'fixed_delivery_fee' => 10000
+            'fixed_delivery_fee' => 10000,
         ]);
 
         $response->assertStatus(403);
         $response->assertJson([
-            'message' => 'Akses ditolak. Akun alumni Anda belum diverifikasi oleh admin.' // Handled by EnsureAlumniIsVerified middleware
+            'message' => 'Akses ditolak. Akun alumni Anda belum diverifikasi oleh admin.', // Handled by EnsureAlumniIsVerified middleware
         ]);
     }
 
@@ -100,7 +102,7 @@ class StoreFeatureTest extends TestCase
         $token = $this->verifiedAlumni->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/stores', [
             'name' => 'Toko Serba Ada',
             'description' => 'Toko alumni FEB termurah',
@@ -109,7 +111,7 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'delivery_type' => 'fixed',
-            'fixed_delivery_fee' => 15000
+            'fixed_delivery_fee' => 15000,
         ]);
 
         $response->assertStatus(201);
@@ -117,7 +119,7 @@ class StoreFeatureTest extends TestCase
 
         $this->assertDatabaseHas('stores', [
             'name' => 'Toko Serba Ada',
-            'status' => 'pending' // Defaults to pending
+            'status' => 'pending', // Defaults to pending
         ]);
     }
 
@@ -136,12 +138,12 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'pending',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // Attempt second store
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/stores', [
             'name' => 'Toko Kedua',
             'kategori_usaha' => 'Pakaian',
@@ -149,12 +151,12 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2026,
             'delivery_type' => 'fixed',
-            'fixed_delivery_fee' => 5000
+            'fixed_delivery_fee' => 5000,
         ]);
 
         $response->assertStatus(400);
         $response->assertJson([
-            'message' => 'Alumni hanya diperbolehkan memiliki satu toko.'
+            'message' => 'Alumni hanya diperbolehkan memiliki satu toko.',
         ]);
     }
 
@@ -173,20 +175,20 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'pending',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // Approve store
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $adminToken"
+            'Authorization' => "Bearer $adminToken",
         ])->postJson("/api/admin/stores/{$store->id}/verify", [
             'action' => 'approve',
-            'reason' => 'Data usaha valid'
+            'reason' => 'Data usaha valid',
         ]);
 
         $response->assertStatus(200);
         $this->assertEquals('active', $store->fresh()->status);
-        
+
         // Assert role update
         $this->assertTrue($this->verifiedAlumni->fresh()->hasRole('alumni_penjual'));
     }
@@ -205,11 +207,11 @@ class StoreFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson('/api/stores/my-store', [
             'name' => 'Toko Kue Enak Terbaru',
             'kategori_usaha' => 'Makanan dan Minuman',
@@ -219,8 +221,8 @@ class StoreFeatureTest extends TestCase
             'delivery_type' => 'per_wilayah',
             'delivery_fees' => [
                 ['wilayah' => 'Samarinda Kota', 'fee' => 10000],
-                ['wilayah' => 'Samarinda Ulu', 'fee' => 15000]
-            ]
+                ['wilayah' => 'Samarinda Ulu', 'fee' => 15000],
+            ],
         ]);
 
         $response->assertStatus(200);
@@ -229,7 +231,7 @@ class StoreFeatureTest extends TestCase
         $this->assertDatabaseHas('store_delivery_fees', [
             'store_id' => $store->id,
             'wilayah' => 'Samarinda Kota',
-            'fee' => 10000.00
+            'fee' => 10000.00,
         ]);
     }
 }

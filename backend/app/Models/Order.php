@@ -25,12 +25,16 @@ class Order extends Model
         'payment_method',
         'status',
         'catatan',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
         'subtotal' => 'decimal:2',
         'biaya_antar' => 'decimal:2',
         'total' => 'decimal:2',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     /**
@@ -55,5 +59,13 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Get the status logs/history for the order.
+     */
+    public function statusLogs(): HasMany
+    {
+        return $this->hasMany(OrderStatusLog::class)->orderBy('created_at', 'asc');
     }
 }

@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Store;
-use App\Models\ProductCategory;
-use App\Models\ServiceCategory;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Service;
-use App\Models\AlumniProfile;
+use App\Models\ServiceCategory;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -18,10 +16,15 @@ class CatalogFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $sellerUser;
+
     protected $otherSellerUser;
+
     protected $productCategory;
+
     protected $serviceCategory;
+
     protected $store;
+
     protected $otherStore;
 
     protected function setUp(): void
@@ -34,20 +37,20 @@ class CatalogFeatureTest extends TestCase
         $this->productCategory = ProductCategory::create([
             'name' => 'Fashion',
             'slug' => 'fashion',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         $this->serviceCategory = ServiceCategory::create([
             'name' => 'Programmer',
             'slug' => 'programmer',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         // Create Seller 1 (S1 Manajemen, 2018)
         $this->sellerUser = User::create([
             'name' => 'Seller Satu',
             'email' => 'seller1@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $profile = $this->sellerUser->profile()->create([
             'nim' => '1801015111',
@@ -57,7 +60,7 @@ class CatalogFeatureTest extends TestCase
             'whatsapp' => '081234567811',
             'domisili' => 'Samarinda',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->store = $profile->store()->create([
             'name' => 'Butik Alumni',
@@ -66,14 +69,14 @@ class CatalogFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // Create Seller 2 (S1 Akuntansi, 2019)
         $this->otherSellerUser = User::create([
             'name' => 'Seller Dua',
             'email' => 'seller2@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $otherProfile = $this->otherSellerUser->profile()->create([
             'nim' => '1901015222',
@@ -83,7 +86,7 @@ class CatalogFeatureTest extends TestCase
             'whatsapp' => '081234567822',
             'domisili' => 'Balikpapan',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->otherStore = $otherProfile->store()->create([
             'name' => 'Tech Service',
@@ -92,7 +95,7 @@ class CatalogFeatureTest extends TestCase
             'kota' => 'Balikpapan',
             'tahun_berdiri' => 2026,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // Create Products
@@ -104,7 +107,7 @@ class CatalogFeatureTest extends TestCase
             'description' => 'Kaos FEB Unmul',
             'price' => 85000,
             'stock' => 20,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         // Create Services
@@ -116,7 +119,7 @@ class CatalogFeatureTest extends TestCase
             'description' => 'Jasa bikin website cepat',
             'price_from' => 3000000,
             'lokasi_layanan' => 'Online',
-            'status' => 'active'
+            'status' => 'active',
         ]);
     }
 

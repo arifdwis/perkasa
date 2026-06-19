@@ -37,8 +37,8 @@ onMounted(() => {
       
       <!-- Logo/Brand Identity -->
       <div class="flex flex-col items-center gap-2">
-        <div class="bg-primary-soft p-3 rounded-2xl">
-          <i class="pi pi-prime text-3xl text-primary animate-pulse"></i>
+        <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center w-14 h-14 shrink-0">
+          <img src="/logo_unmul.png" alt="Logo Unmul" class="w-10 h-10 object-contain" />
         </div>
         <h1 class="text-xl font-black text-slate-800">FEB Unmul</h1>
         <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Marketplace Alumni</p>

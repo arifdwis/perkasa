@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ImportedAlumniRecord;
 use App\Models\User;
+use App\Notifications\AlumniRegisteredNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -26,13 +28,13 @@ class AuthController extends Controller
             'password' => ['required', 'string', Password::min(8)],
             'nim' => ['required', 'string', 'max:50', 'unique:alumni_profiles,nim'],
             'program_studi' => ['required', 'string', 'max:255'],
-            'tahun_masuk' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
-            'tahun_lulus' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 5)],
+            'tahun_masuk' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
+            'tahun_lulus' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 5)],
         ]);
 
         // Check if user is in imported records for auto-verification
-        $importedRecord = \App\Models\ImportedAlumniRecord::where('nim', $request->nim)->first();
-        
+        $importedRecord = ImportedAlumniRecord::where('nim', $request->nim)->first();
+
         $isAutoVerified = false;
         if ($importedRecord && strtolower(trim($importedRecord->email)) === strtolower(trim($request->email))) {
             $isAutoVerified = true;
@@ -66,6 +68,9 @@ class AuthController extends Controller
         // Trigger Registered event to auto-send Laravel verification email
         event(new Registered($user));
 
+        // Send database notification
+        $user->notify(new AlumniRegisteredNotification);
+
         return response()->json([
             'message' => 'Registrasi berhasil. Silakan cek email Anda untuk melakukan verifikasi. Akun Anda sedang menunggu verifikasi data Perkasa.',
             'user' => $user->load('profile'),
@@ -82,9 +87,9 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
-                'message' => 'Email atau kata sandi salah.'
+                'message' => 'Email atau kata sandi salah.',
             ], 401);
         }
 
@@ -93,8 +98,9 @@ class AuthController extends Controller
         // Check if user is suspended
         if ($user->profile && $user->profile->status_verifikasi === 'suspended') {
             Auth::logout();
+
             return response()->json([
-                'message' => 'Akses diblokir. Akun alumni Anda ditangguhkan (suspended). Hubungi admin.'
+                'message' => 'Akses diblokir. Akun alumni Anda ditangguhkan (suspended). Hubungi admin.',
             ], 403);
         }
 
@@ -112,8 +118,8 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user->load('profile'),
-            'permissions' => $permissions
+            'user' => $user->load(['profile.store', 'roles']),
+            'permissions' => $permissions,
         ]);
     }
 
@@ -125,7 +131,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Berhasil keluar log (logout).'
+            'message' => 'Berhasil keluar log (logout).',
         ]);
     }
 
@@ -135,15 +141,15 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         $user = $request->user();
-        
+
         $permissions = $user->getAllPermissions()->pluck('name');
         if ($user->hasRole('super_admin')) {
             $permissions->push('super_admin');
         }
 
         return response()->json([
-            'user' => $user->load('profile'),
-            'permissions' => $permissions
+            'user' => $user->load(['profile.store', 'roles']),
+            'permissions' => $permissions,
         ]);
     }
 
@@ -154,7 +160,7 @@ class AuthController extends Controller
     {
         $user = User::findOrFail($id);
 
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
             return response()->json(['message' => 'Tautan verifikasi tidak valid atau kedaluwarsa.'], 400);
         }
 
@@ -181,7 +187,7 @@ class AuthController extends Controller
         $request->user()->sendEmailVerificationNotification();
 
         return response()->json([
-            'message' => 'Tautan verifikasi email baru telah dikirim ke alamat email Anda.'
+            'message' => 'Tautan verifikasi email baru telah dikirim ke alamat email Anda.',
         ]);
     }
 }

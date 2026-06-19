@@ -22,8 +22,8 @@ Aplikasi ini adalah marketplace tertutup untuk alumni Fakultas Ekonomi dan Bisni
 
 ## 3. Standar Pengembangan Wajib
 
-- Mobile-first responsive sebagai standar UI, nyaman dari layar 360px ke atas.
-- PWA bukan bagian MVP awal, tetapi struktur frontend dibuat future-ready.
+- Buyer dan seller memakai pengalaman mobile-first/PWA seperti aplikasi layanan harian: cepat, sederhana, menu berbeda, dan installable.
+- Admin memakai dashboard desktop-first, bukan pengalaman PWA utama.
 - Kode harus scalable, maintainable, enterprise-ready, dan secure.
 - Role dan permission harus dinamis dan dapat dikelola dari admin UI.
 - Gunakan UUID, disarankan UUID v7 yang terurut, untuk semua tabel utama.
@@ -48,8 +48,8 @@ MVP berfokus pada fitur inti berikut:
 - Chat pembeli dan penjual, minimal integrasi WhatsApp pada tahap awal.
 - Rating dan ulasan.
 - Laporan dan export data.
-- Dashboard admin, penjual, dan pembeli.
-- UI mobile-first responsive.
+- Dashboard admin, penjual, dan pembeli yang dipisah berdasarkan konteks.
+- UI buyer/seller mobile-first PWA dan UI admin desktop-first.
 
 ## 5. Batasan MVP
 
@@ -60,26 +60,97 @@ Fitur berikut tidak masuk MVP awal:
 - Komisi marketplace.
 - Integrasi ekspedisi eksternal.
 - Push notification.
-- PWA installable.
 - Offline transaction.
 
 Chat internal realtime dan sinkronisasi langsung ke database Perkasa dapat dikerjakan setelah fondasi MVP stabil. Komunikasi awal antara pembeli dan penjual dapat menggunakan WhatsApp.
 
-## 6. Strategi Mobile
+## 6. Strategi Pengalaman Pengguna
 
-Tahap awal menggunakan pendekatan **mobile-first responsive web**, bukan PWA penuh.
+Gunakan tiga pengalaman aplikasi yang berbeda:
 
-Ketentuan mobile:
+### Buyer App
+
+Buyer app adalah pengalaman PWA mobile-first untuk alumni yang membeli produk/jasa. Polanya boleh mengambil inspirasi dari aplikasi seperti Gojek/Grab: ringkas, berbasis shortcut, mudah berpindah ke katalog, pesanan, favorit, dan keranjang.
+
+Menu pembeli:
+
+- Beranda.
+- Katalog.
+- Favorit.
+- Keranjang.
+- Pesanan.
+- Notifikasi.
+- Profil.
+- Gabung Jadi Penjual.
+
+Aturan pembeli:
+
+- Pembeli tidak boleh melihat menu Kelola Toko, Produk Seller, Jasa Seller, atau Pesanan Seller.
+- Pembeli hanya melihat CTA **Gabung Jadi Penjual**.
+- Jika pembeli belum verified, CTA mengarah ke status/verifikasi alumni.
+- Jika pembeli verified tetapi belum punya toko, CTA mengarah ke form pengajuan toko.
+- Jika toko pending, tampilkan status pengajuan toko.
+- Jika toko active, user dapat masuk ke Seller App.
+
+### Seller App
+
+Seller app adalah pengalaman PWA mobile-first untuk alumni yang sudah memiliki toko active. Menu dan fitur tidak boleh sama dengan pembeli.
+
+Menu penjual:
+
+- Dashboard Penjual.
+- Toko Saya.
+- Produk.
+- Jasa.
+- Pesanan Masuk.
+- Ulasan.
+- Notifikasi.
+- Mode Pembeli.
+
+Aturan penjual:
+
+- Penjual dapat switch ke Mode Pembeli untuk berbelanja.
+- Penjual tidak melihat menu admin kecuali memiliki role admin.
+- Seller home fokus pada operasional toko, bukan katalog belanja.
+
+### Admin App
+
+Admin app adalah dashboard desktop-first untuk operasional dan manajemen data. Admin tidak dirancang sebagai PWA utama.
+
+Menu admin:
+
+- Dashboard Admin.
+- Verifikasi Alumni.
+- Verifikasi Toko.
+- Kategori.
+- Role dan Permission.
+- Laporan.
+- Activity Log.
+- Pengaturan.
+
+Aturan admin:
+
+- Admin memakai sidebar desktop dan topbar.
+- Admin tidak memakai bottom navigation.
+- Admin route diarahkan ke `/admin/dashboard`.
+- Jika admin panel dibuka di layar HP, tampilkan pesan bahwa admin panel optimal di desktop.
+- Admin tidak mencampur menu buyer/seller pada dashboard admin.
+
+Ketentuan mobile buyer/seller:
 
 - Tampilan nyaman mulai lebar layar 360px.
-- Navigasi mobile menggunakan drawer atau bottom navigation.
+- Navigasi utama menggunakan bottom navigation dan/atau drawer sesuai mode.
 - Form registrasi, toko, produk, jasa, dan checkout mudah digunakan di HP.
 - Tombol aksi utama minimal tinggi 44px.
 - Badge alumni terverifikasi tetap terlihat jelas di layar kecil.
-- Tabel admin harus memiliki tampilan mobile-friendly, misalnya horizontal scroll terkendali atau stacked rows.
 - Checkout COD harus sederhana dan tidak menyerupai payment gateway.
 
-PWA dapat menjadi fase lanjutan setelah fitur inti stabil.
+Ketentuan PWA:
+
+- PWA berlaku untuk Buyer App dan Seller App.
+- PWA menyediakan manifest, service worker, app shell caching, static asset caching, offline fallback, dan update prompt.
+- Transaksi offline tidak dibuat sampai stok dan checkout benar-benar aman.
+- Push notification tetap fase lanjutan setelah notifikasi dasar stabil.
 
 ## 7. Arsitektur Teknis
 
@@ -105,6 +176,7 @@ Frontend:
 - Pinia.
 - Vue Router.
 - Axios.
+- Iconify Solar Icons.
 
 Infrastruktur target:
 
@@ -583,6 +655,7 @@ Dashboard admin:
 - Statistik bulanan.
 - Toko terlaris.
 - Alumni teraktif.
+- Desktop-first dengan sidebar, topbar, DataTable, chart, dan laporan ringkas.
 
 Dashboard penjual:
 
@@ -593,6 +666,10 @@ Dashboard penjual:
 - Produk terlaris.
 - Rating toko.
 - Aktivitas terbaru.
+- Pesanan masuk.
+- Stok menipis.
+- Shortcut tambah produk/jasa.
+- Mobile-first PWA dengan menu operasional toko.
 
 Dashboard pembeli:
 
@@ -600,6 +677,11 @@ Dashboard pembeli:
 - Riwayat pesanan.
 - Favorit.
 - Ulasan saya.
+- Search katalog.
+- Shortcut kategori.
+- Toko alumni populer.
+- CTA Gabung Jadi Penjual.
+- Mobile-first PWA dengan menu belanja.
 
 ## 26. Modul Laporan
 
@@ -703,6 +785,10 @@ Karakter desain:
 - Tidak berlebihan secara dekoratif.
 - Menonjolkan trust alumni.
 - Konsisten dengan identitas FEB Universitas Mulawarman.
+- Mengambil referensi UX marketplace dari Shopee dan Tokopedia, tetapi tidak menyalin brand, warna, logo, atau aset mereka.
+- Buyer app terasa seperti marketplace mobile yang cepat: search dominan, kategori mudah dijangkau, promo/unggulan, produk dalam grid, dan checkout ringkas.
+- Seller app terasa seperti seller center mobile: ringkasan toko, pesanan masuk, produk/jasa, performa toko, dan shortcut operasional.
+- Admin app tetap seperti dashboard operasional desktop, bukan halaman marketplace.
 
 Komponen PrimeVue wajib:
 
@@ -722,6 +808,15 @@ Komponen PrimeVue wajib:
 - Avatar.
 - Menubar.
 
+Icon system:
+
+- Gunakan Iconify dengan icon set Solar untuk ikon aplikasi.
+- Iconify Solar menjadi standar untuk bottom navigation, sidebar, shortcut kategori, action button, empty state, status visual, dan dashboard cards.
+- PrimeIcons hanya boleh dipakai sebagai fallback jika ikon Solar yang sesuai tidak tersedia.
+- Ikon buyer/seller/admin harus konsisten dalam gaya Solar, bukan campuran bebas antar icon set.
+- Tombol berbasis ikon wajib memiliki label atau tooltip yang jelas.
+- Ikon tidak boleh menggantikan teks penting pada flow kritis seperti checkout, status pesanan, dan verifikasi.
+
 Prinsip UI:
 
 - Badge verified mudah terlihat.
@@ -730,6 +825,30 @@ Prinsip UI:
 - Admin area padat, rapi, dan efisien.
 - Katalog mudah dicari dan difilter.
 - Checkout tidak membingungkan.
+- Buyer dan seller tidak memakai menu yang sama.
+- Menu Kelola Toko tidak tampil untuk pembeli biasa.
+- Admin desktop-first, bukan bottom navigation.
+- Buyer/seller PWA memakai bottom navigation dan shortcut cepat.
+
+Referensi layout buyer marketplace:
+
+- Header sticky dengan search bar besar seperti marketplace mobile.
+- Shortcut kategori berbentuk ikon kecil dalam grid horizontal/scroll.
+- Section produk/jasa unggulan.
+- Section toko alumni populer.
+- Product card ringkas berisi foto, nama, harga, kota, rating, badge verified, dan tombol favorit.
+- Filter katalog memakai drawer mobile dan sidebar desktop.
+- Bottom navigation berisi Beranda, Katalog, Favorit, Pesanan, Profil.
+- Keranjang dan notifikasi tetap mudah diakses dari header atau bottom action.
+
+Referensi layout seller center:
+
+- Header ringkas dengan status toko.
+- Kartu ringkasan penjualan, pesanan, produk, jasa, dan rating.
+- Shortcut operasional: tambah produk, tambah jasa, pesanan baru, lihat toko.
+- Daftar pesanan masuk tampil prioritas.
+- Produk/jasa dikelola dalam list yang padat dan mudah discan.
+- Bottom navigation berisi Dashboard, Produk, Jasa, Pesanan, Toko.
 
 Tema warna:
 
@@ -756,9 +875,9 @@ Implementasi tema:
 - Gunakan `tailwindcss-primeui` agar utility Tailwind dan komponen PrimeVue selaras.
 - Satu sumber kebenaran warna dipakai untuk seluruh frontend.
 
-## 31. Fase Lanjutan PWA
+## 31. PWA Buyer/Seller
 
-PWA tidak masuk MVP awal. Setelah MVP stabil, PWA dapat ditambahkan dengan:
+PWA digunakan untuk Buyer App dan Seller App:
 
 - Web app manifest.
 - Service worker.
@@ -767,6 +886,6 @@ PWA tidak masuk MVP awal. Setelah MVP stabil, PWA dapat ditambahkan dengan:
 - Static asset caching.
 - App shell caching.
 - Update prompt.
-- Push notification opsional.
+- Push notification opsional pada fase lanjutan.
 
 Offline transaction tidak direkomendasikan sebelum proses checkout dan stok benar-benar matang.

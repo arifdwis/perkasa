@@ -8,10 +8,10 @@ use App\Http\Requests\UpdateServiceRequest;
 use App\Models\Service;
 use App\Models\ServiceImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class ServiceController extends Controller
 {
@@ -41,7 +41,7 @@ class ServiceController extends Controller
             $keyword = $request->search;
             $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
-                  ->orWhere('description', 'like', "%{$keyword}%");
+                    ->orWhere('description', 'like', "%{$keyword}%");
             });
         }
 
@@ -82,20 +82,20 @@ class ServiceController extends Controller
         // If store is not active or service is inactive, restrict view to owner or admin
         if ($service->store->status !== 'active' || $service->status === 'inactive') {
             $user = auth('sanctum')->user();
-            if (!$user) {
+            if (! $user) {
                 return response()->json(['message' => 'Akses ditolak. Layanan tidak tersedia.'], 403);
             }
 
             $isOwner = $service->store->alumniProfile->user_id === $user->id;
             $isAdmin = $user->hasRole('super_admin') || $user->hasRole('admin_marketplace');
 
-            if (!$isOwner && !$isAdmin) {
+            if (! $isOwner && ! $isAdmin) {
                 return response()->json(['message' => 'Akses ditolak. Layanan tidak tersedia.'], 403);
             }
         }
 
         return response()->json([
-            'service' => $service
+            'service' => $service,
         ]);
     }
 
@@ -105,7 +105,7 @@ class ServiceController extends Controller
     public function sellerServices(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
         }
 
@@ -135,7 +135,7 @@ class ServiceController extends Controller
         $originalSlug = $slug;
         $count = 1;
         while (Service::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $count;
+            $slug = $originalSlug.'-'.$count;
             $count++;
         }
         $data['slug'] = $slug;
@@ -148,7 +148,7 @@ class ServiceController extends Controller
 
         return response()->json([
             'message' => 'Jasa berhasil dibuat.',
-            'service' => $service->load(['category'])
+            'service' => $service->load(['category']),
         ], 201);
     }
 
@@ -161,7 +161,7 @@ class ServiceController extends Controller
         Gate::authorize('update', $service);
 
         return response()->json([
-            'service' => $service
+            'service' => $service,
         ]);
     }
 
@@ -181,7 +181,7 @@ class ServiceController extends Controller
             $originalSlug = $slug;
             $count = 1;
             while (Service::where('slug', $slug)->where('id', '!=', $id)->exists()) {
-                $slug = $originalSlug . '-' . $count;
+                $slug = $originalSlug.'-'.$count;
                 $count++;
             }
             $data['slug'] = $slug;
@@ -195,7 +195,7 @@ class ServiceController extends Controller
 
         return response()->json([
             'message' => 'Jasa berhasil diperbarui.',
-            'service' => $service->load(['category', 'images'])
+            'service' => $service->load(['category', 'images']),
         ]);
     }
 
@@ -221,7 +221,7 @@ class ServiceController extends Controller
             ->log("Menghapus jasa: {$service->name} beserta seluruh portofolionya.");
 
         return response()->json([
-            'message' => 'Jasa berhasil dihapus.'
+            'message' => 'Jasa berhasil dihapus.',
         ]);
     }
 
@@ -249,14 +249,14 @@ class ServiceController extends Controller
 
             ServiceImage::create([
                 'service_id' => $service->id,
-                'image_path' => asset('storage/' . $path),
-                'is_primary' => true
+                'image_path' => asset('storage/'.$path),
+                'is_primary' => true,
             ]);
         });
 
         return response()->json([
             'message' => 'Foto utama jasa berhasil diperbarui.',
-            'service' => $service->load('images')
+            'service' => $service->load('images'),
         ]);
     }
 
@@ -279,7 +279,7 @@ class ServiceController extends Controller
 
         if (($currentPortfolioCount + $newCount) > 5) {
             return response()->json([
-                'message' => 'Maksimal 5 foto portofolio tambahan diperbolehkan.'
+                'message' => 'Maksimal 5 foto portofolio tambahan diperbolehkan.',
             ], 422);
         }
 
@@ -289,8 +289,8 @@ class ServiceController extends Controller
                 $path = $file->store('services/portfolio', 'public');
                 $img = ServiceImage::create([
                     'service_id' => $service->id,
-                    'image_path' => asset('storage/' . $path),
-                    'is_primary' => false
+                    'image_path' => asset('storage/'.$path),
+                    'is_primary' => false,
                 ]);
                 $uploadedImages[] = $img;
             }
@@ -299,7 +299,7 @@ class ServiceController extends Controller
         return response()->json([
             'message' => 'Foto portofolio berhasil ditambahkan.',
             'images' => $uploadedImages,
-            'service' => $service->load('images')
+            'service' => $service->load('images'),
         ]);
     }
 
@@ -321,7 +321,65 @@ class ServiceController extends Controller
 
         return response()->json([
             'message' => 'Foto berhasil dihapus.',
-            'service' => $service->load('images')
+            'service' => $service->load('images'),
+        ]);
+    }
+
+    /**
+     * List all services of a store, any status (Admin moderation).
+     */
+    public function adminStoreServices($storeId)
+    {
+        $services = Service::with(['category', 'primaryImage'])
+            ->where('store_id', $storeId)
+            ->latest()
+            ->get();
+
+        return response()->json($services);
+    }
+
+    /**
+     * Delete a service (Admin moderation, bypasses ownership).
+     */
+    public function adminDestroy($id)
+    {
+        $service = Service::with('images')->findOrFail($id);
+
+        DB::transaction(function () use ($service) {
+            foreach ($service->images as $image) {
+                $oldPath = str_replace(asset('storage/'), '', $image->image_path);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $service->delete();
+        });
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($service)
+            ->log("Admin menghapus jasa: {$service->name}.");
+
+        return response()->json([
+            'message' => 'Jasa berhasil dihapus oleh admin.',
+        ]);
+    }
+
+    /**
+     * Toggle service active/inactive (Admin moderation / sembunyikan).
+     */
+    public function adminToggleStatus($id)
+    {
+        $service = Service::findOrFail($id);
+        $newStatus = $service->status === 'active' ? 'inactive' : 'active';
+        $service->update(['status' => $newStatus]);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($service)
+            ->log("Admin mengubah status jasa {$service->name} menjadi: {$newStatus}.");
+
+        return response()->json([
+            'message' => "Status jasa diubah menjadi {$newStatus}.",
+            'service' => $service->load(['category', 'primaryImage']),
         ]);
     }
 }

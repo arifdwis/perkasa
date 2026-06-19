@@ -16,11 +16,11 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cart = $request->user()->cart()->firstOrCreate();
-        
+
         $cart->load([
             'items.product.store.deliveryFees',
             'items.product.category',
-            'items.product.primaryImage'
+            'items.product.primaryImage',
         ]);
 
         $groupedItems = [];
@@ -28,29 +28,29 @@ class CartController extends Controller
 
         foreach ($cart->items as $item) {
             $product = $item->product;
-            if (!$product) {
-                continue;
-            }
-            
-            // Skip inactive products from the listing (or store is inactive)
-            $store = $product->store;
-            if (!$store || $store->status !== 'active' || $product->status === 'inactive') {
+            if (! $product) {
                 continue;
             }
 
-            if (!isset($groupedItems[$store->id])) {
+            // Skip inactive products from the listing (or store is inactive)
+            $store = $product->store;
+            if (! $store || $store->status !== 'active' || $product->status === 'inactive') {
+                continue;
+            }
+
+            if (! isset($groupedItems[$store->id])) {
                 $groupedItems[$store->id] = [
                     'store_id' => $store->id,
                     'store_name' => $store->name,
                     'store_kota' => $store->kota,
                     'delivery_type' => $store->delivery_type,
                     'fixed_delivery_fee' => floatval($store->fixed_delivery_fee),
-                    'delivery_fees' => $store->deliveryFees->map(fn($df) => [
+                    'delivery_fees' => $store->deliveryFees->map(fn ($df) => [
                         'id' => $df->id,
                         'wilayah' => $df->wilayah,
-                        'fee' => floatval($df->fee)
+                        'fee' => floatval($df->fee),
                     ]),
-                    'items' => []
+                    'items' => [],
                 ];
             }
 
@@ -69,14 +69,14 @@ class CartController extends Controller
                 'primary_image' => $product->primaryImage,
                 'category_name' => $product->category?->name,
                 'quantity' => $item->quantity,
-                'subtotal' => $itemSubtotal
+                'subtotal' => $itemSubtotal,
             ];
         }
 
         return response()->json([
             'cart_id' => $cart->id,
             'grouped_items' => array_values($groupedItems),
-            'subtotal' => $subtotal
+            'subtotal' => $subtotal,
         ]);
     }
 
@@ -87,14 +87,19 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => ['required', 'uuid', 'exists:products,id'],
-            'quantity' => ['required', 'integer', 'min:1']
+            'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        $product = Product::with('store')->find($request->product_id);
-        
+        $product = Product::with('store.alumniProfile')->find($request->product_id);
+
         // Ensure product is active and its store is active
-        if ($product->status === 'inactive' || !$product->store || $product->store->status !== 'active') {
+        if ($product->status === 'inactive' || ! $product->store || $product->store->status !== 'active') {
             return response()->json(['message' => 'Produk tidak aktif atau toko sedang dinonaktifkan.'], 400);
+        }
+
+        // Prevent seller from buying own products
+        if ($product->store->alumniProfile && $product->store->alumniProfile->user_id === $request->user()->id) {
+            return response()->json(['message' => 'Anda tidak dapat membeli produk dari toko Anda sendiri.'], 400);
         }
 
         // Check stock availability
@@ -115,7 +120,7 @@ class CartController extends Controller
         // Ensure total quantity does not exceed available stock
         if ($newQuantity > $product->stock) {
             return response()->json([
-                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit."
+                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit.",
             ], 400);
         }
 
@@ -125,12 +130,12 @@ class CartController extends Controller
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $product->id,
-                'quantity' => $newQuantity
+                'quantity' => $newQuantity,
             ]);
         }
 
         return response()->json([
-            'message' => 'Produk berhasil ditambahkan ke keranjang.'
+            'message' => 'Produk berhasil ditambahkan ke keranjang.',
         ], 201);
     }
 
@@ -140,32 +145,32 @@ class CartController extends Controller
     public function updateItem(Request $request, $id)
     {
         $request->validate([
-            'quantity' => ['required', 'integer', 'min:1']
+            'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
         $cart = $request->user()->cart()->firstOrCreate();
         $cartItem = CartItem::where('cart_id', $cart->id)->find($id);
 
-        if (!$cartItem) {
+        if (! $cartItem) {
             return response()->json(['message' => 'Item keranjang tidak ditemukan.'], 404);
         }
 
         $product = $cartItem->product;
-        if (!$product || $product->status === 'inactive') {
+        if (! $product || $product->status === 'inactive') {
             return response()->json(['message' => 'Produk tidak tersedia.'], 400);
         }
 
         // Validate quantity against stock
         if ($request->quantity > $product->stock) {
             return response()->json([
-                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit."
+                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit.",
             ], 400);
         }
 
         $cartItem->update(['quantity' => $request->quantity]);
 
         return response()->json([
-            'message' => 'Kuantitas keranjang berhasil diperbarui.'
+            'message' => 'Kuantitas keranjang berhasil diperbarui.',
         ]);
     }
 
@@ -177,14 +182,14 @@ class CartController extends Controller
         $cart = $request->user()->cart()->firstOrCreate();
         $cartItem = CartItem::where('cart_id', $cart->id)->find($id);
 
-        if (!$cartItem) {
+        if (! $cartItem) {
             return response()->json(['message' => 'Item keranjang tidak ditemukan.'], 404);
         }
 
         $cartItem->delete();
 
         return response()->json([
-            'message' => 'Produk berhasil dihapus dari keranjang.'
+            'message' => 'Produk berhasil dihapus dari keranjang.',
         ]);
     }
 
@@ -197,7 +202,7 @@ class CartController extends Controller
         $cart->items()->delete();
 
         return response()->json([
-            'message' => 'Keranjang belanja berhasil dikosongkan.'
+            'message' => 'Keranjang belanja berhasil dikosongkan.',
         ]);
     }
 }

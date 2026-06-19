@@ -4,12 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
-import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import Dialog from 'primevue/dialog'
 import Textarea from 'primevue/textarea'
 import Timeline from 'primevue/timeline'
 import Toast from 'primevue/toast'
+import AdminPageHeader from '../../components/admin/AdminPageHeader.vue'
+import AdminPanel from '../../components/admin/AdminPanel.vue'
+import AdminState from '../../components/admin/AdminState.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,9 +22,8 @@ const alumni = ref(null)
 const history = ref([])
 const loading = ref(true)
 
-// Verification Action State
 const verifyDialog = ref(false)
-const verifyAction = ref('') // 'approve' | 'reject' | 'suspend'
+const verifyAction = ref('')
 const verifyReason = ref('')
 const processingAction = ref(false)
 
@@ -33,21 +34,12 @@ const fetchAlumniDetail = async () => {
     alumni.value = response.data.profile
     history.value = response.data.history
   } catch (err) {
-    toast.add({
-      severity: 'error',
-      summary: 'Gagal Memuat Detail',
-      detail: err.response?.data?.message || 'Data alumni tidak ditemukan.',
-      life: 3000
-    })
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Data tidak ditemukan.', life: 3000 })
     setTimeout(() => router.push({ name: 'AlumniList' }), 2000)
-  } finally {
-    loading.value = false
-  }
+  } finally { loading.value = false }
 }
 
-onMounted(() => {
-  fetchAlumniDetail()
-})
+onMounted(() => { fetchAlumniDetail() })
 
 const getSeverity = (status) => {
   switch (status) {
@@ -59,6 +51,16 @@ const getSeverity = (status) => {
   }
 }
 
+const statusPill = (status) => {
+  switch (status) {
+    case 'verified': return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+    case 'pending': return 'bg-amber-50 text-amber-700 border border-amber-200'
+    case 'rejected':
+    case 'suspended': return 'bg-red-50 text-red-700 border border-red-200'
+    default: return 'bg-slate-50 text-slate-500 border border-slate-200'
+  }
+}
+
 const openVerifyDialog = (action) => {
   verifyAction.value = action
   verifyReason.value = ''
@@ -67,239 +69,142 @@ const openVerifyDialog = (action) => {
 
 const handleVerification = async () => {
   if (verifyAction.value !== 'approve' && !verifyReason.value.trim()) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Input Tidak Valid',
-      detail: 'Alasan verifikasi harus diisi untuk penolakan atau penangguhan.',
-      life: 3000
-    })
+    toast.add({ severity: 'warn', summary: 'Wajib', detail: 'Alasan harus diisi.', life: 3000 })
     return
   }
-
   processingAction.value = true
   try {
-    const response = await axios.post(`/admin/alumni/${profileId}/verify`, {
-      action: verifyAction.value,
-      reason: verifyReason.value
-    })
-    toast.add({
-      severity: 'success',
-      summary: 'Sukses',
-      detail: response.data.message || 'Status verifikasi alumni berhasil diperbarui.',
-      life: 3000
-    })
+    const response = await axios.post(`/admin/alumni/${profileId}/verify`, { action: verifyAction.value, reason: verifyReason.value })
+    toast.add({ severity: 'success', summary: 'Sukses', detail: response.data.message || 'Status verifikasi diperbarui.', life: 3000 })
     verifyDialog.value = false
     fetchAlumniDetail()
   } catch (err) {
-    toast.add({
-      severity: 'error',
-      summary: 'Gagal Memproses',
-      detail: err.response?.data?.message || 'Terjadi kesalahan sistem.',
-      life: 3000
-    })
-  } finally {
-    processingAction.value = false
-  }
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Terjadi kesalahan.', life: 3000 })
+  } finally { processingAction.value = false }
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 p-4 sm:p-8">
+  <div class="space-y-6">
     <Toast />
-    
-    <div class="max-w-4xl mx-auto space-y-6" v-if="alumni">
-      
-      <!-- Top Actions Bar -->
-      <div class="flex justify-between items-center">
-        <Button label="Kembali ke Daftar" icon="pi pi-arrow-left" severity="secondary" size="small" @click="router.push({ name: 'AlumniList' })" />
-        <span class="text-xs font-semibold text-slate-400">ID Profil: {{ alumni.id }}</span>
-      </div>
+    <AdminPageHeader v-if="alumni" icon="solar:shield-user-bold-duotone" :title="alumni.user?.name || 'Detail Alumni'" subtitle="Detail profil dan log verifikasi alumni.">
+      <template #action>
+        <Button label="Kembali" icon="pi pi-arrow-left" size="small" severity="secondary" outlined @click="router.push({ name: 'AlumniList' })" />
+      </template>
+    </AdminPageHeader>
 
-      <!-- Profile Summary Card -->
-      <Card class="shadow-sm border border-slate-100 overflow-hidden">
-        <template #content>
-          <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <!-- Avatar / Initials -->
-            <div class="w-24 h-24 rounded-2xl bg-primary-soft text-primary flex items-center justify-center text-4xl font-black shadow-sm shrink-0">
-              {{ alumni.user?.name?.substring(0, 2).toUpperCase() || 'AL' }}
+    <AdminState v-if="loading" mode="loading" />
+
+    <template v-else-if="alumni">
+      <!-- Profile Summary -->
+      <AdminPanel>
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div class="w-24 h-24 rounded-2xl bg-primary-soft text-primary flex items-center justify-center text-4xl font-black shrink-0">
+            {{ alumni.user?.name?.substring(0, 2).toUpperCase() || 'AL' }}
+          </div>
+          <div class="space-y-4 flex-grow text-center sm:text-left">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 class="text-2xl font-black text-slate-800 flex items-center justify-center sm:justify-start gap-2">
+                  {{ alumni.user?.name }}
+                  <i v-if="alumni.badge_verified" class="pi pi-verified text-primary text-xl"></i>
+                </h2>
+                <p class="text-sm text-slate-400 font-medium">{{ alumni.user?.email }}</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="statusPill(alumni.status_verifikasi)">
+                {{ alumni.status_verifikasi?.toUpperCase() }}
+              </span>
             </div>
-
-            <!-- Profile Info -->
-            <div class="space-y-4 flex-grow text-center sm:text-left">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 class="text-2xl font-black text-slate-800 flex items-center justify-center sm:justify-start gap-2">
-                    {{ alumni.user?.name }}
-                    <i v-if="alumni.badge_verified" class="pi pi-verified text-primary text-xl" v-tooltip="'Alumni Terverifikasi'"></i>
-                  </h2>
-                  <p class="text-sm text-slate-500 font-medium">{{ alumni.user?.email }}</p>
-                </div>
-                <div>
-                  <Tag :value="alumni.status_verifikasi.toUpperCase()" :severity="getSeverity(alumni.status_verifikasi)" class="text-sm px-3 py-1.5" />
-                </div>
-              </div>
-
-              <!-- Action Buttons for Verification -->
-              <div class="flex flex-wrap justify-center sm:justify-start gap-2 pt-2 border-t border-slate-100">
-                <Button 
-                  v-if="alumni.status_verifikasi !== 'verified'" 
-                  label="Approve Alumni" 
-                  icon="pi pi-check" 
-                  severity="success" 
-                  size="small" 
-                  @click="openVerifyDialog('approve')" 
-                />
-                <Button 
-                  v-if="alumni.status_verifikasi !== 'rejected'" 
-                  label="Reject Alumni" 
-                  icon="pi pi-times" 
-                  severity="danger" 
-                  size="small" 
-                  outlined 
-                  @click="openVerifyDialog('reject')" 
-                />
-                <Button 
-                  v-if="alumni.status_verifikasi === 'verified'" 
-                  label="Suspend Akun" 
-                  icon="pi pi-ban" 
-                  severity="danger" 
-                  size="small" 
-                  @click="openVerifyDialog('suspend')" 
-                />
-              </div>
+            <div class="flex flex-wrap justify-center sm:justify-start gap-2 pt-2 border-t border-slate-100">
+              <Button v-if="alumni.status_verifikasi !== 'verified'" label="Approve" icon="pi pi-check" severity="success" size="small" @click="openVerifyDialog('approve')" />
+              <Button v-if="alumni.status_verifikasi !== 'rejected'" label="Reject" icon="pi pi-times" severity="danger" size="small" outlined @click="openVerifyDialog('reject')" />
+              <Button v-if="alumni.status_verifikasi === 'verified'" label="Suspend" icon="pi pi-ban" severity="danger" size="small" @click="openVerifyDialog('suspend')" />
             </div>
           </div>
-        </template>
-      </Card>
+        </div>
+      </AdminPanel>
 
-      <!-- Grid Details and Audit Logs -->
+      <!-- Grid Details -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- Left: Academic Details -->
-        <Card class="md:col-span-2 shadow-sm border border-slate-100">
-          <template #title>
-            <div class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <i class="pi pi-graduation-cap text-primary"></i> Data Akademik & Kontak
+        <AdminPanel icon="solar:square-academic-cap-bold-duotone" title="Data Akademik & Kontak" class="md:col-span-2">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">NIM</span>
+              <span class="font-bold text-slate-700">{{ alumni.nim }}</span>
             </div>
-          </template>
-          <template #content>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm pt-2">
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Nomor Induk Mahasiswa (NIM)</span>
-                <span class="font-bold text-slate-800">{{ alumni.nim }}</span>
-              </div>
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Program Studi</span>
-                <span class="font-bold text-slate-800">{{ alumni.program_studi }}</span>
-              </div>
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Tahun Masuk (Angkatan)</span>
-                <span class="font-bold text-slate-800">{{ alumni.tahun_masuk }}</span>
-              </div>
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Tahun Lulus</span>
-                <span class="font-bold text-slate-800">{{ alumni.tahun_lulus }}</span>
-              </div>
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Kontak WhatsApp</span>
-                <span class="font-bold text-slate-800 flex items-center gap-1.5">
-                  {{ alumni.whatsapp }}
-                  <a :href="`https://wa.me/${alumni.whatsapp}`" target="_blank" class="text-xs text-primary hover:underline">
-                    <i class="pi pi-external-link"></i> Hubungi
-                  </a>
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Program Studi</span>
+              <span class="font-bold text-slate-700">{{ alumni.program_studi }}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahun Masuk</span>
+              <span class="font-bold text-slate-700">{{ alumni.tahun_masuk }}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tahun Lulus</span>
+              <span class="font-bold text-slate-700">{{ alumni.tahun_lulus }}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">WhatsApp</span>
+              <span class="font-bold text-slate-700 flex items-center gap-1.5">
+                {{ alumni.whatsapp }}
+                <a :href="`https://wa.me/${alumni.whatsapp}`" target="_blank" class="text-xs text-primary hover:underline">
+                  <i class="pi pi-external-link"></i>
+                </a>
+              </span>
+            </div>
+            <div class="space-y-1">
+              <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Domisili</span>
+              <span class="font-bold text-slate-700">{{ alumni.domisili || 'Belum diisi' }}</span>
+            </div>
+          </div>
+        </AdminPanel>
+
+        <AdminPanel icon="solar:history-bold-duotone" title="Log Verifikasi">
+          <div class="pt-2">
+            <Timeline :value="history" class="p-timeline-custom">
+              <template #opposite="slotProps">
+                <span class="text-[10px] font-mono text-slate-400 block whitespace-nowrap">
+                  {{ new Date(slotProps.item.created_at).toLocaleDateString('id-ID') }}
                 </span>
-              </div>
-              <div class="space-y-1">
-                <span class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Domisili</span>
-                <span class="font-bold text-slate-800">{{ alumni.domisili || 'Belum diisi' }}</span>
-              </div>
-            </div>
-          </template>
-        </Card>
-
-        <!-- Right: Verification Timeline Audit Log -->
-        <Card class="shadow-sm border border-slate-100">
-          <template #title>
-            <div class="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
-              <i class="pi pi-history text-primary"></i> Log Verifikasi
-            </div>
-          </template>
-          <template #content>
-            <div class="pt-2">
-              <Timeline :value="history" class="p-timeline-custom">
-                <template #opposite="slotProps">
-                  <span class="text-[10px] font-mono text-slate-400 block whitespace-nowrap">
-                    {{ new Date(slotProps.item.created_at).toLocaleDateString('id-ID') }}
-                  </span>
-                </template>
-                <template #content="slotProps">
-                  <div class="text-xs mb-4">
-                    <div class="font-bold flex items-center gap-1">
-                      <span :class="slotProps.item.action === 'approve' ? 'text-green-600' : 'text-red-500'" class="capitalize">
-                        {{ slotProps.item.action }}
-                      </span>
-                    </div>
-                    <p class="text-slate-500 font-medium mt-0.5" v-if="slotProps.item.reason">
-                      "{{ slotProps.item.reason }}"
-                    </p>
-                    <p class="text-[10px] text-slate-400 italic mt-0.5">
-                      Oleh: {{ slotProps.item.admin?.name || 'Sistem' }}
-                    </p>
+              </template>
+              <template #content="slotProps">
+                <div class="text-xs mb-4">
+                  <div class="font-bold flex items-center gap-1">
+                    <span :class="slotProps.item.action === 'approve' ? 'text-emerald-600' : 'text-red-500'" class="capitalize">
+                      {{ slotProps.item.action }}
+                    </span>
                   </div>
-                </template>
-              </Timeline>
-              <div v-if="history.length === 0" class="text-center py-6 text-slate-400 text-xs italic">
-                Belum ada aktivitas verifikasi manual.
-              </div>
-            </div>
-          </template>
-        </Card>
-
+                  <p class="text-slate-500 font-medium mt-0.5" v-if="slotProps.item.reason">"{{ slotProps.item.reason }}"</p>
+                  <p class="text-[10px] text-slate-400 italic mt-0.5">Oleh: {{ slotProps.item.admin?.name || 'Sistem' }}</p>
+                </div>
+              </template>
+            </Timeline>
+            <div v-if="history.length === 0" class="text-center py-6 text-slate-400 text-xs italic">Belum ada aktivitas verifikasi.</div>
+          </div>
+        </AdminPanel>
       </div>
+    </template>
 
-    </div>
-
-    <!-- Dialog for verification actions -->
-    <Dialog 
-      v-model:visible="verifyDialog" 
-      :header="verifyAction === 'approve' ? 'Approve Alumni' : (verifyAction === 'reject' ? 'Reject Alumni' : 'Suspend Alumni')" 
-      :modal="true" 
-      :style="{ width: '450px' }"
-    >
+    <Dialog v-model:visible="verifyDialog" :header="verifyAction === 'approve' ? 'Approve Alumni' : (verifyAction === 'reject' ? 'Reject Alumni' : 'Suspend Alumni')" :modal="true" :style="{ width: '450px' }">
       <div class="flex flex-col gap-4 pt-2">
         <p class="text-sm text-slate-600">
-          Apakah Anda yakin ingin melakukan aksi <strong class="capitalize">{{ verifyAction }}</strong> pada data alumni ini? 
-          Tindakan ini akan mempengaruhi akses login dan kemampuan bertransaksi alumni tersebut.
+          Apakah Anda yakin ingin melakukan aksi <strong class="capitalize">{{ verifyAction }}</strong> pada data alumni ini?
         </p>
-        
         <div class="flex flex-col gap-1.5">
-          <label for="reason" class="text-xs font-bold text-slate-600 uppercase tracking-wider">
+          <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">
             Alasan Verifikasi <span class="text-red-500" v-if="verifyAction !== 'approve'">*</span>
           </label>
-          <Textarea 
-            id="reason" 
-            v-model="verifyReason" 
-            rows="3" 
-            placeholder="Masukkan keterangan audit verifikasi..." 
-            class="w-full text-sm"
-          />
+          <Textarea v-model="verifyReason" rows="3" placeholder="Masukkan keterangan audit verifikasi..." class="w-full text-sm" />
         </div>
       </div>
-
       <template #footer>
         <div class="flex justify-end gap-2 pt-4">
           <Button label="Batal" severity="secondary" size="small" outlined @click="verifyDialog = false" />
-          <Button 
-            :label="verifyAction === 'approve' ? 'Approve' : (verifyAction === 'reject' ? 'Reject' : 'Suspend')" 
-            :severity="verifyAction === 'approve' ? 'success' : 'danger'"
-            :loading="processingAction" 
-            size="small" 
-            @click="handleVerification" 
-          />
+          <Button :label="verifyAction === 'approve' ? 'Approve' : (verifyAction === 'reject' ? 'Reject' : 'Suspend')" :severity="verifyAction === 'approve' ? 'success' : 'danger'" :loading="processingAction" size="small" @click="handleVerification" />
         </div>
       </template>
     </Dialog>
-
   </div>
 </template>
 

@@ -1,12 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const routes = [
-  {
-    path: '/',
-    name: 'Home',
-    component: () => import('../views/HomeView.vue'),
-    meta: { requiresAuth: true }
-  },
+  // Guest only routes
   {
     path: '/login',
     name: 'Login',
@@ -20,125 +16,238 @@ const routes = [
     meta: { guestOnly: true }
   },
   {
-    path: '/admin/roles',
-    name: 'AdminRoles',
-    component: () => import('../views/admin/AdminRoleView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/alumni',
-    name: 'AlumniList',
-    component: () => import('../views/admin/AlumniListView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/alumni/import',
-    name: 'AlumniImport',
-    component: () => import('../views/admin/AlumniImportView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/alumni/:id',
-    name: 'AlumniDetail',
-    component: () => import('../views/admin/AlumniDetailView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/my-store',
-    name: 'MyStore',
-    component: () => import('../views/store/MyStoreView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/stores/:id',
-    name: 'StoreProfile',
-    component: () => import('../views/store/StoreProfileView.vue')
-  },
-  {
-    path: '/admin/stores',
-    name: 'AdminStores',
-    component: () => import('../views/admin/AdminStoreListView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/admin/categories',
-    name: 'AdminCategories',
-    component: () => import('../views/admin/AdminCategoryView.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/my-store/products',
-    name: 'SellerProducts',
-    component: () => import('../views/store/product/ProductListView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/my-store/products/create',
-    name: 'SellerProductCreate',
-    component: () => import('../views/store/product/ProductFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/my-store/products/:id/edit',
-    name: 'SellerProductEdit',
-    component: () => import('../views/store/product/ProductFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/products/:slug',
-    name: 'ProductDetail',
-    component: () => import('../views/product/ProductDetailView.vue')
-  },
-  {
-    path: '/my-store/services',
-    name: 'SellerServices',
-    component: () => import('../views/store/service/ServiceListView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/my-store/services/create',
-    name: 'SellerServiceCreate',
-    component: () => import('../views/store/service/ServiceFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/my-store/services/:id/edit',
-    name: 'SellerServiceEdit',
-    component: () => import('../views/store/service/ServiceFormView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/services/:slug',
-    name: 'ServiceDetail',
-    component: () => import('../views/service/ServiceDetailView.vue')
-  },
-  {
     path: '/email/verify/:id/:hash',
     name: 'EmailVerify',
     component: () => import('../views/auth/EmailVerifyView.vue')
   },
+
+  // Parent: Buyer App Layout Wrapper
   {
-    path: '/catalog',
-    name: 'Catalog',
-    component: () => import('../views/CatalogView.vue')
+    path: '/buyer',
+    component: () => import('../layouts/BuyerLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'home',
+        name: 'BuyerHome',
+        component: () => import('../views/product/BuyerHomeView.vue')
+      },
+      {
+        path: 'catalog',
+        name: 'Catalog',
+        component: () => import('../views/CatalogView.vue')
+      },
+      {
+        path: 'favorites',
+        name: 'Favorites',
+        component: () => import('../views/FavoritesView.vue')
+      },
+      {
+        path: 'cart',
+        name: 'Cart',
+        component: () => import('../views/CartView.vue')
+      },
+      {
+        path: 'checkout',
+        name: 'Checkout',
+        component: () => import('../views/CheckoutView.vue')
+      },
+      {
+        path: 'orders',
+        name: 'BuyerOrders',
+        component: () => import('../views/order/BuyerOrdersView.vue')
+      },
+      {
+        path: 'orders/:id',
+        name: 'OrderDetail',
+        component: () => import('../views/order/OrderDetailView.vue')
+      },
+      {
+        path: 'stores/:id',
+        name: 'StoreProfile',
+        component: () => import('../views/store/StoreProfileView.vue')
+      },
+      {
+        path: 'products/:slug',
+        name: 'ProductDetail',
+        component: () => import('../views/product/ProductDetailView.vue')
+      },
+      {
+        path: 'services/:slug',
+        name: 'ServiceDetail',
+        component: () => import('../views/service/ServiceDetailView.vue')
+      },
+      {
+        path: 'notifications',
+        name: 'Notifications',
+        component: () => import('../views/NotificationListView.vue')
+      }
+    ]
+  },
+
+  // Parent: Seller App Layout Wrapper
+  {
+    path: '/seller',
+    component: () => import('../layouts/SellerLayout.vue'),
+    meta: { requiresAuth: true, requiresSellerMode: true },
+    children: [
+      {
+        path: 'home',
+        name: 'SellerHome',
+        component: () => import('../views/store/SellerHomeView.vue')
+      },
+      {
+        path: 'store',
+        name: 'SellerStore',
+        component: () => import('../views/store/MyStoreView.vue')
+      },
+      {
+        path: 'products',
+        name: 'SellerProducts',
+        component: () => import('../views/store/product/ProductListView.vue')
+      },
+      {
+        path: 'products/create',
+        name: 'SellerProductCreate',
+        component: () => import('../views/store/product/ProductFormView.vue')
+      },
+      {
+        path: 'products/:id/edit',
+        name: 'SellerProductEdit',
+        component: () => import('../views/store/product/ProductFormView.vue')
+      },
+      {
+        path: 'services',
+        name: 'SellerServices',
+        component: () => import('../views/store/service/ServiceListView.vue')
+      },
+      {
+        path: 'services/create',
+        name: 'SellerServiceCreate',
+        component: () => import('../views/store/service/ServiceFormView.vue')
+      },
+      {
+        path: 'services/:id/edit',
+        name: 'SellerServiceEdit',
+        component: () => import('../views/store/service/ServiceFormView.vue')
+      },
+      {
+        path: 'orders',
+        name: 'SellerOrders',
+        component: () => import('../views/store/order/SellerOrdersView.vue')
+      },
+      {
+        path: 'orders/:id',
+        name: 'SellerOrderDetail',
+        component: () => import('../views/order/OrderDetailView.vue')
+      }
+    ]
+  },
+
+  // Parent: Admin App Layout Wrapper
+  {
+    path: '/admin',
+    component: () => import('../layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('../views/admin/AdminDashboardView.vue')
+      },
+      {
+        path: 'roles',
+        name: 'AdminRoles',
+        component: () => import('../views/admin/AdminRoleView.vue')
+      },
+      {
+        path: 'alumni',
+        name: 'AlumniList',
+        component: () => import('../views/admin/AlumniListView.vue')
+      },
+      {
+        path: 'alumni/import',
+        name: 'AlumniImport',
+        component: () => import('../views/admin/AlumniImportView.vue')
+      },
+      {
+        path: 'alumni/:id',
+        name: 'AlumniDetail',
+        component: () => import('../views/admin/AlumniDetailView.vue')
+      },
+      {
+        path: 'stores',
+        name: 'AdminStores',
+        component: () => import('../views/admin/AdminStoreListView.vue')
+      },
+      {
+        path: 'categories',
+        name: 'AdminCategories',
+        component: () => import('../views/admin/AdminCategoryView.vue')
+      },
+      {
+        path: 'reports',
+        name: 'AdminReports',
+        component: () => import('../views/admin/AdminReportView.vue')
+      },
+      {
+        path: 'finance',
+        name: 'AdminFinance',
+        component: () => import('../views/admin/AdminFinanceView.vue')
+      }
+    ]
+  },
+
+  // Handle Root Redirect and legacy redirects
+  {
+    path: '/',
+    name: 'Home',
+    redirect: to => {
+      const token = localStorage.getItem('token')
+      if (!token) return { name: 'Login' }
+
+      // Resolve userMode redirect
+      const userMode = localStorage.getItem('userMode')
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+      const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
+      const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
+      const store = user?.profile?.store || null
+      const isStoreActive = store && store.status === 'active'
+
+      if (userMode === 'admin' && isAdmin) {
+        return { name: 'AdminDashboard' }
+      } else if (userMode === 'seller' && isStoreActive) {
+        return { name: 'SellerHome' }
+      } else {
+        return { name: 'BuyerHome' }
+      }
+    }
   },
   {
-    path: '/favorites',
-    name: 'Favorites',
-    component: () => import('../views/FavoritesView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/cart',
-    name: 'Cart',
-    component: () => import('../views/CartView.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/checkout',
-    name: 'Checkout',
-    component: () => import('../views/CheckoutView.vue'),
-    meta: { requiresAuth: true }
+    path: '/:pathMatch(.*)*',
+    name: 'CatchAll',
+    redirect: to => {
+      const token = localStorage.getItem('token')
+      if (!token) return { name: 'Login' }
+
+      // Resolve userMode redirect
+      const userMode = localStorage.getItem('userMode')
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+      const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
+      const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
+      const store = user?.profile?.store || null
+      const isStoreActive = store && store.status === 'active'
+
+      if (userMode === 'admin' && isAdmin) {
+        return { name: 'AdminDashboard' }
+      } else if (userMode === 'seller' && isStoreActive) {
+        return { name: 'SellerHome' }
+      } else {
+        return { name: 'BuyerHome' }
+      }
+    }
   }
 ]
 
@@ -147,29 +256,130 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard
+// Navigation guards
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
   const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
-  const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
   
+  const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
+  const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
+  const store = user?.profile?.store || null
+  const isStoreActive = store && store.status === 'active'
+
+  // 1. Guest Only Routes
+  if (to.matched.some(record => record.meta.guestOnly)) {
+    if (token) {
+      // Redirect to proper role home
+      const userMode = localStorage.getItem('userMode')
+      if (userMode === 'admin' && isAdmin) {
+        next({ name: 'AdminDashboard' })
+      } else if (userMode === 'seller' && isStoreActive) {
+        next({ name: 'SellerHome' })
+      } else {
+        next({ name: 'BuyerHome' })
+      }
+    } else {
+      next()
+    }
+    return
+  }
+
+  // 2. Authentication Check
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
       next({ name: 'Login' })
-    } else if (to.matched.some(record => record.meta.requiresAdmin) && !isAdmin) {
-      next({ name: 'Home' })
-    } else {
-      next()
+      return
     }
-  } else if (to.matched.some(record => record.meta.guestOnly)) {
-    if (token) {
-      next({ name: 'Home' })
-    } else {
-      next()
-    }
-  } else {
-    next()
   }
+
+  // 3. Admin Permission Check
+  if (to.matched.some(record => record.meta.requiresAdmin) || to.path.startsWith('/admin')) {
+    if (!isAdmin) {
+      next({ name: 'BuyerHome' })
+      return
+    }
+  }
+
+  // 4. Seller Mode Check
+  if (to.matched.some(record => record.meta.requiresSellerMode) || to.path.startsWith('/seller')) {
+    // Exception: Allow seller profile settings/pengajuan toko if store is pending
+    if (to.name === 'SellerStore') {
+      next()
+      return
+    }
+
+    if (!isSeller || !isStoreActive) {
+      // Redirect to buyer home if not a valid seller or store is not active yet
+      next({ name: 'BuyerHome' })
+      return
+    }
+  }
+
+  // 5. Handle Legacy Path Redirects (Avoid breaking links)
+  if (to.path === '/') {
+    const userMode = localStorage.getItem('userMode')
+    if (userMode === 'admin' && isAdmin) {
+      next({ name: 'AdminDashboard' })
+    } else if (userMode === 'seller' && isStoreActive) {
+      next({ name: 'SellerHome' })
+    } else {
+      next({ name: 'BuyerHome' })
+    }
+    return
+  }
+
+  if (to.path === '/my-store') {
+    next({ name: 'SellerStore' })
+    return
+  }
+
+  if (to.path === '/orders') {
+    next({ name: 'BuyerOrders' })
+    return
+  }
+
+  if (to.path === '/catalog') {
+    next({ name: 'Catalog' })
+    return
+  }
+
+  if (to.path === '/favorites') {
+    next({ name: 'Favorites' })
+    return
+  }
+
+  if (to.path === '/cart') {
+    next({ name: 'Cart' })
+    return
+  }
+
+  if (to.path === '/checkout') {
+    next({ name: 'Checkout' })
+    return
+  }
+
+  if (to.path === '/notifications') {
+    next({ name: 'Notifications' })
+    return
+  }
+
+  if (to.path.startsWith('/products/')) {
+    next({ name: 'ProductDetail', params: { slug: to.params.slug || to.path.split('/').pop() } })
+    return
+  }
+
+  if (to.path.startsWith('/services/')) {
+    next({ name: 'ServiceDetail', params: { slug: to.params.slug || to.path.split('/').pop() } })
+    return
+  }
+
+  if (to.path.startsWith('/stores/')) {
+    next({ name: 'StoreProfile', params: { id: to.params.id || to.path.split('/').pop() } })
+    return
+  }
+
+  next()
 })
 
 export default router

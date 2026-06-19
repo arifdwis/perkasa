@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
-use App\Models\StoreDeliveryFee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -19,23 +18,23 @@ class StoreController extends Controller
     public function register(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile) {
+        if (! $profile) {
             return response()->json([
-                'message' => 'Profil alumni tidak ditemukan.'
+                'message' => 'Profil alumni tidak ditemukan.',
             ], 400);
         }
 
         // Only verified alumni can register a store
         if ($profile->status_verifikasi !== 'verified') {
             return response()->json([
-                'message' => 'Hanya alumni terverifikasi yang dapat membuka toko.'
+                'message' => 'Hanya alumni terverifikasi yang dapat membuka toko.',
             ], 403);
         }
 
         // Limit to 1 store per alumni
         if ($profile->store) {
             return response()->json([
-                'message' => 'Alumni hanya diperbolehkan memiliki satu toko.'
+                'message' => 'Alumni hanya diperbolehkan memiliki satu toko.',
             ], 400);
         }
 
@@ -45,7 +44,7 @@ class StoreController extends Controller
             'kategori_usaha' => ['required', 'string', 'max:255'],
             'whatsapp' => ['required', 'string', 'max:20'],
             'kota' => ['required', 'string', 'max:255'],
-            'tahun_berdiri' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
+            'tahun_berdiri' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
             'delivery_type' => ['required', 'string', Rule::in(['fixed', 'per_wilayah'])],
             'fixed_delivery_fee' => ['required_if:delivery_type,fixed', 'numeric', 'min:0', 'nullable'],
             'delivery_fees' => ['required_if:delivery_type,per_wilayah', 'array', 'nullable'],
@@ -71,7 +70,7 @@ class StoreController extends Controller
                 foreach ($request->delivery_fees as $feeItem) {
                     $store->deliveryFees()->create([
                         'wilayah' => $feeItem['wilayah'],
-                        'fee' => $feeItem['fee']
+                        'fee' => $feeItem['fee'],
                     ]);
                 }
             }
@@ -87,7 +86,7 @@ class StoreController extends Controller
 
         return response()->json([
             'message' => 'Pendaftaran toko berhasil diajukan. Menunggu verifikasi admin.',
-            'store' => $store->load('deliveryFees')
+            'store' => $store->load('deliveryFees'),
         ], 201);
     }
 
@@ -97,15 +96,16 @@ class StoreController extends Controller
     public function myStore(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json([
-                'store' => null
+                'store' => null,
             ]);
         }
 
         $store = $profile->store->load('deliveryFees');
+
         return response()->json([
-            'store' => $store
+            'store' => $store,
         ]);
     }
 
@@ -115,9 +115,9 @@ class StoreController extends Controller
     public function updateMyStore(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json([
-                'message' => 'Toko tidak ditemukan.'
+                'message' => 'Toko tidak ditemukan.',
             ], 404);
         }
 
@@ -132,7 +132,7 @@ class StoreController extends Controller
             'kategori_usaha' => ['required', 'string', 'max:255'],
             'whatsapp' => ['required', 'string', 'max:20'],
             'kota' => ['required', 'string', 'max:255'],
-            'tahun_berdiri' => ['required', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
+            'tahun_berdiri' => ['required', 'integer', 'min:1900', 'max:'.(date('Y') + 1)],
             'delivery_type' => ['required', 'string', Rule::in(['fixed', 'per_wilayah'])],
             'fixed_delivery_fee' => ['required_if:delivery_type,fixed', 'numeric', 'min:0', 'nullable'],
             'delivery_fees' => ['required_if:delivery_type,per_wilayah', 'array', 'nullable'],
@@ -158,7 +158,7 @@ class StoreController extends Controller
                 foreach ($request->delivery_fees as $feeItem) {
                     $store->deliveryFees()->create([
                         'wilayah' => $feeItem['wilayah'],
-                        'fee' => $feeItem['fee']
+                        'fee' => $feeItem['fee'],
                     ]);
                 }
             }
@@ -172,7 +172,7 @@ class StoreController extends Controller
 
         return response()->json([
             'message' => 'Profil toko berhasil diperbarui.',
-            'store' => $store->fresh()->load('deliveryFees')
+            'store' => $store->fresh()->load('deliveryFees'),
         ]);
     }
 
@@ -182,7 +182,7 @@ class StoreController extends Controller
     public function uploadLogo(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
         }
 
@@ -201,12 +201,12 @@ class StoreController extends Controller
 
         $path = $request->file('logo')->store('store_logos', 'public');
         $store->update([
-            'logo' => asset('storage/' . $path)
+            'logo' => asset('storage/'.$path),
         ]);
 
         return response()->json([
             'message' => 'Logo toko berhasil diperbarui.',
-            'logo' => $store->logo
+            'logo' => $store->logo,
         ]);
     }
 
@@ -216,7 +216,7 @@ class StoreController extends Controller
     public function uploadBanner(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
         }
 
@@ -235,12 +235,12 @@ class StoreController extends Controller
 
         $path = $request->file('banner')->store('store_banners', 'public');
         $store->update([
-            'banner' => asset('storage/' . $path)
+            'banner' => asset('storage/'.$path),
         ]);
 
         return response()->json([
             'message' => 'Banner toko berhasil diperbarui.',
-            'banner' => $store->banner
+            'banner' => $store->banner,
         ]);
     }
 
@@ -254,20 +254,20 @@ class StoreController extends Controller
         // If the store is not active, only owners or admins can view it
         if ($store->status !== 'active') {
             $user = auth('sanctum')->user();
-            if (!$user) {
+            if (! $user) {
                 return response()->json(['message' => 'Akses ditolak. Toko belum aktif.'], 403);
             }
 
             $isOwner = $store->alumniProfile->user_id === $user->id;
             $isAdmin = $user->hasRole('super_admin') || $user->hasRole('admin_marketplace');
 
-            if (!$isOwner && !$isAdmin) {
+            if (! $isOwner && ! $isAdmin) {
                 return response()->json(['message' => 'Akses ditolak. Toko belum aktif.'], 403);
             }
         }
 
         return response()->json([
-            'store' => $store
+            'store' => $store,
         ]);
     }
 }

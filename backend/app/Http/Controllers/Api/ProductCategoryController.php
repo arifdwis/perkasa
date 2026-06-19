@@ -36,13 +36,13 @@ class ProductCategoryController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:product_categories,name'],
-            'is_active' => ['nullable', 'boolean']
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $category = ProductCategory::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->get('is_active', true)
+            'is_active' => $request->get('is_active', true),
         ]);
 
         // Log to Activity Log
@@ -53,7 +53,7 @@ class ProductCategoryController extends Controller
 
         return response()->json([
             'message' => 'Kategori produk berhasil dibuat.',
-            'category' => $category
+            'category' => $category,
         ], 201);
     }
 
@@ -65,14 +65,14 @@ class ProductCategoryController extends Controller
         $category = ProductCategory::findOrFail($id);
 
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:product_categories,name,' . $category->id],
-            'is_active' => ['required', 'boolean']
+            'name' => ['required', 'string', 'max:255', 'unique:product_categories,name,'.$category->id],
+            'is_active' => ['required', 'boolean'],
         ]);
 
         $category->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->is_active
+            'is_active' => $request->is_active,
         ]);
 
         // Log to Activity Log
@@ -83,7 +83,7 @@ class ProductCategoryController extends Controller
 
         return response()->json([
             'message' => 'Kategori produk berhasil diperbarui.',
-            'category' => $category
+            'category' => $category,
         ]);
     }
 
@@ -99,7 +99,7 @@ class ProductCategoryController extends Controller
             $isUsed = DB::table('products')->where('product_category_id', $category->id)->exists();
             if ($isUsed) {
                 return response()->json([
-                    'message' => 'Gagal menghapus. Kategori sedang digunakan oleh data produk aktif.'
+                    'message' => 'Gagal menghapus. Kategori sedang digunakan oleh data produk aktif.',
                 ], 422);
             }
         }
@@ -113,7 +113,7 @@ class ProductCategoryController extends Controller
             ->log("Menghapus kategori produk: {$categoryName}");
 
         return response()->json([
-            'message' => "Kategori produk {$categoryName} berhasil dihapus."
+            'message' => "Kategori produk {$categoryName} berhasil dihapus.",
         ]);
     }
 }

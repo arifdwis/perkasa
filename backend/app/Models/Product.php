@@ -30,6 +30,11 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
+    protected $appends = [
+        'average_rating',
+        'reviews_count',
+    ];
+
     /**
      * Get the store that owns the product.
      */
@@ -60,5 +65,37 @@ class Product extends Model
     public function primaryImage(): HasOne
     {
         return $this->hasOne(ProductImage::class)->where('is_primary', true);
+    }
+
+    /**
+     * Get all reviews for the product.
+     */
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /**
+     * Get all order items for this product.
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Accessor for average rating.
+     */
+    public function getAverageRatingAttribute()
+    {
+        return round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    /**
+     * Accessor for total reviews count.
+     */
+    public function getReviewsCountAttribute()
+    {
+        return $this->reviews()->count();
     }
 }

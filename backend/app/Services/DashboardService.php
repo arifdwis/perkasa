@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\User;
 use App\Models\AlumniProfile;
-use App\Models\Store;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Service;
-use App\Models\Order;
+use App\Models\Store;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class DashboardService
@@ -46,7 +46,7 @@ class DashboardService
     {
         $store = Store::find($storeId);
 
-        if (!$store) {
+        if (! $store) {
             return null;
         }
 
@@ -190,7 +190,7 @@ class DashboardService
     private function getTopProducts($storeId)
     {
         return Product::where('store_id', $storeId)
-            ->withCount(['items as total_sold' => function ($query) {
+            ->withCount(['orderItems as total_sold' => function ($query) {
                 $query->select(DB::raw('sum(quantity)'));
             }])
             ->orderBy('total_sold', 'desc')

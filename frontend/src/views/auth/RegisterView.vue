@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
@@ -94,133 +95,272 @@ const handleRegister = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4 py-12">
-    <div class="w-full max-w-2xl bg-white rounded-3xl shadow-xl border border-slate-100 p-8 space-y-6 relative overflow-hidden">
-      <!-- Decorative background blur -->
-      <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-      <div class="absolute bottom-0 left-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -ml-16 -mb-16"></div>
+  <div class="min-h-screen bg-white flex flex-col justify-between font-sans">
+    <!-- Top Header Bar (Tokopedia Style) -->
+    <header class="hidden md:flex w-full max-w-7xl mx-auto px-6 py-4 items-center justify-between border-b border-slate-50 select-none">
+      <router-link :to="{ name: 'Home' }" class="flex items-center gap-3">
+        <img src="/logo_unmul.png" alt="Logo Unmul" class="w-8 h-8 object-contain" />
+        <span class="text-lg font-black text-primary tracking-tight">Marketplace Alumni FEB</span>
+      </router-link>
+      <router-link :to="{ name: 'Login' }" class="text-xs font-bold text-slate-500 hover:text-primary transition-colors">
+        Sudah punya akun? <span class="text-primary font-black">Masuk</span>
+      </router-link>
+    </header>
 
-      <!-- Header -->
-      <div class="text-center space-y-2 relative z-10">
-        <div class="inline-flex p-3 bg-primary-soft text-primary rounded-2xl mb-2">
-          <i class="pi pi-user-plus text-3xl text-accent"></i>
+    <!-- Main Container -->
+    <main class="flex-grow w-full max-w-6xl mx-auto p-0 sm:p-6 sm:py-8 flex flex-col md:flex-row items-center justify-center gap-12 lg:gap-20">
+      <!-- Left Column: Illustration (Visible on md and up) -->
+      <div class="hidden md:flex md:w-1/2 flex-col items-center text-center space-y-6 select-none">
+        <img src="/alumni_connect.png" alt="Alumni Connect" class="w-full max-w-md object-contain" />
+        <div class="space-y-2 max-w-sm">
+          <h2 class="text-xl lg:text-2xl font-black text-slate-800 tracking-tight">
+            Gabung Jaringan Bisnis Alumni FEB.
+          </h2>
+          <p class="text-xs text-slate-500 leading-relaxed">
+            Daftarkan diri Anda hari ini untuk berkolaborasi, mempromosikan produk/jasa Anda, dan menjalin kemitraan erat di lingkungan kampus.
+          </p>
         </div>
-        <h2 class="text-2xl font-black text-slate-800">Registrasi Alumni</h2>
-        <p class="text-xs text-slate-500 max-w-xs mx-auto">
-          Daftarkan akun Anda untuk bergabung di Marketplace Alumni FEB Unmul
-        </p>
       </div>
 
-      <!-- Messages -->
-      <Message v-if="error" severity="error" closable @close="error = ''" class="text-sm">
-        {{ error }}
-      </Message>
-      <Message v-if="success" severity="success" class="text-sm">
-        {{ success }}
-      </Message>
-
-      <!-- Form -->
-      <form @submit.prevent="handleRegister" class="space-y-4 relative z-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- NIM -->
-          <div class="flex flex-col gap-1.5">
-            <label for="nim" class="text-xs font-bold text-slate-500 uppercase tracking-wider">NIM (Nomor Induk Mahasiswa)</label>
-            <InputText id="nim" v-model="form.nim" placeholder="Contoh: 1801015001" class="w-full" />
+      <!-- Right Column: Register Card -->
+      <div class="w-full md:w-1/2 max-w-xl min-h-screen sm:min-h-0 flex flex-col">
+        <div class="bg-white border-0 sm:border border-slate-200/80 rounded-none sm:rounded-2xl p-6 sm:p-8 shadow-none sm:shadow-sm flex-grow flex flex-col justify-center min-h-screen sm:min-h-0">
+          <!-- Mobile Logo Header (Visible only on mobile) -->
+          <div class="md:hidden flex flex-col items-center mb-6 text-center select-none">
+            <img src="/logo_unmul.png" alt="Logo Unmul" class="w-12 h-12 object-contain mb-2" />
+            <h1 class="text-lg font-black text-slate-800 tracking-tight">Marketplace Alumni FEB</h1>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Universitas Mulawarman</p>
           </div>
 
-          <!-- Nama Lengkap -->
-          <div class="flex flex-col gap-1.5">
-            <label for="name" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Lengkap</label>
-            <InputText id="name" v-model="form.name" placeholder="Nama lengkap sesuai ijazah" class="w-full" />
+          <!-- Card Header -->
+          <div class="text-center md:text-left mb-6 space-y-2">
+            <h3 class="text-2xl font-black text-slate-800 tracking-tight">Daftar</h3>
+            <p class="text-xs text-slate-400">
+              Lengkapi data di bawah ini untuk bergabung dengan komunitas alumni.
+            </p>
           </div>
 
-          <!-- Program Studi -->
-          <div class="flex flex-col gap-1.5">
-            <label for="prodi" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Program Studi</label>
-            <Select 
-              id="prodi" 
-              v-model="form.programStudi" 
-              :options="programStudiList" 
-              optionLabel="label" 
-              placeholder="Pilih program studi" 
-              class="w-full" 
-            />
-          </div>
-
-          <!-- Tahun Masuk & Lulus -->
-          <div class="grid grid-cols-2 gap-2">
-            <div class="flex flex-col gap-1.5">
-              <label for="tahunMasuk" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tahun Masuk</label>
-              <InputText id="tahunMasuk" v-model="form.tahunMasuk" placeholder="2018" class="w-full" />
+          <!-- Notifications -->
+          <Transition name="fade-slide">
+            <div class="space-y-2 mb-4">
+              <Message v-if="error" severity="error" closable @close="error = ''" class="text-xs">
+                {{ error }}
+              </Message>
+              <Message v-if="success" severity="success" class="text-xs">
+                {{ success }}
+              </Message>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label for="tahunLulus" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tahun Lulus</label>
-              <InputText id="tahunLulus" v-model="form.tahunLulus" placeholder="2022" class="w-full" />
+          </Transition>
+
+          <!-- Form Fields -->
+          <form @submit.prevent="handleRegister" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- NIM -->
+              <div class="flex flex-col gap-1.5 sm:col-span-1">
+                <label for="nim" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">NIM Alumni</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:card-holder-bold" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="nim" 
+                    v-model="form.nim" 
+                    placeholder="Contoh: 1801015001" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Nama Lengkap -->
+              <div class="flex flex-col gap-1.5 sm:col-span-1">
+                <label for="name" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nama Lengkap</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:user-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="name" 
+                    v-model="form.name" 
+                    placeholder="Nama sesuai ijazah" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Program Studi -->
+              <div class="flex flex-col gap-1.5 sm:col-span-2">
+                <label for="prodi" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Program Studi</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:notebook-linear" class="absolute left-3.5 text-lg text-slate-400 z-10 pointer-events-none" />
+                  <Select 
+                    id="prodi" 
+                    v-model="form.programStudi" 
+                    :options="programStudiList" 
+                    optionLabel="label" 
+                    placeholder="Pilih program studi Anda" 
+                    class="w-full h-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Tahun Masuk -->
+              <div class="flex flex-col gap-1.5 col-span-1">
+                <label for="tahunMasuk" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tahun Masuk</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:calendar-date-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="tahunMasuk" 
+                    v-model="form.tahunMasuk" 
+                    placeholder="2018" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Tahun Lulus -->
+              <div class="flex flex-col gap-1.5 col-span-1">
+                <label for="tahunLulus" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tahun Lulus</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:calendar-date-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="tahunLulus" 
+                    v-model="form.tahunLulus" 
+                    placeholder="2022" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="flex flex-col gap-1.5 sm:col-span-2">
+                <label for="email" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Alamat Email</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:letter-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="email" 
+                    v-model="form.email" 
+                    type="email" 
+                    placeholder="nama@email.com" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- WhatsApp -->
+              <div class="flex flex-col gap-1.5 sm:col-span-2">
+                <label for="whatsapp" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nomor WhatsApp</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:phone-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <InputText 
+                    id="whatsapp" 
+                    v-model="form.whatsapp" 
+                    placeholder="Contoh: 08123456789" 
+                    class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                  />
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="flex flex-col gap-1.5 sm:col-span-1">
+                <label for="password" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Kata Sandi</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:lock-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <Password 
+                    id="password" 
+                    v-model="form.password" 
+                    placeholder="Min 8 karakter" 
+                    toggleMask 
+                    class="w-full" 
+                    inputClass="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all"
+                  />
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="flex flex-col gap-1.5 sm:col-span-1">
+                <label for="confirmPassword" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Konfirmasi Sandi</label>
+                <div class="input-wrapper relative flex items-center">
+                  <Icon icon="solar:lock-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
+                  <Password 
+                    id="confirmPassword" 
+                    v-model="form.confirmPassword" 
+                    placeholder="Ulangi sandi" 
+                    toggleMask 
+                    :feedback="false" 
+                    class="w-full" 
+                    inputClass="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all"
+                  />
+                </div>
+              </div>
             </div>
+
+            <!-- Submit Button -->
+            <Button 
+              type="submit" 
+              :loading="isLoading" 
+              class="w-full h-11 mt-4 rounded-xl font-extrabold text-xs tracking-wider uppercase transition-all shadow-md shadow-primary/10"
+            >
+              <template #default>
+                <div class="flex items-center justify-center gap-2">
+                  <Icon icon="solar:user-plus-bold" class="text-lg" />
+                  <span>Daftar Sekarang</span>
+                </div>
+              </template>
+            </Button>
+          </form>
+
+          <!-- Divider line -->
+          <div class="relative flex py-4 items-center">
+            <div class="flex-grow border-t border-slate-100"></div>
+            <span class="flex-shrink mx-4 text-[10px] font-black text-slate-400 uppercase tracking-wider">Sudah punya akun?</span>
+            <div class="flex-grow border-t border-slate-100"></div>
           </div>
 
-          <!-- Email -->
-          <div class="flex flex-col gap-1.5">
-            <label for="email" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Alamat Email</label>
-            <InputText id="email" v-model="form.email" type="email" placeholder="nama@email.com" class="w-full" />
-          </div>
-
-          <!-- WhatsApp -->
-          <div class="flex flex-col gap-1.5">
-            <label for="whatsapp" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nomor WhatsApp</label>
-            <InputText id="whatsapp" v-model="form.whatsapp" placeholder="Contoh: 08123456789" class="w-full" />
-          </div>
-
-          <!-- Password -->
-          <div class="flex flex-col gap-1.5">
-            <label for="password" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Kata Sandi</label>
-            <Password 
-              id="password" 
-              v-model="form.password" 
-              placeholder="Minimal 8 karakter" 
-              toggleMask 
-              class="w-full" 
-              inputClass="w-full"
-            />
-          </div>
-
-          <!-- Confirm Password -->
-          <div class="flex flex-col gap-1.5">
-            <label for="confirmPassword" class="text-xs font-bold text-slate-500 uppercase tracking-wider">Konfirmasi Kata Sandi</label>
-            <Password 
-              id="confirmPassword" 
-              v-model="form.confirmPassword" 
-              placeholder="Ulangi kata sandi" 
-              toggleMask 
-              :feedback="false" 
-              class="w-full" 
-              inputClass="w-full"
-            />
+          <!-- Footer Register Link -->
+          <div class="text-center text-xs text-slate-600">
+            Sudah terdaftar sebagai alumni? <br class="sm:hidden" />
+            <router-link :to="{ name: 'Login' }" class="text-primary font-black hover:underline ml-1 hover:text-primary-hover transition-colors">
+              Masuk di sini
+            </router-link>
           </div>
         </div>
-
-        <Button 
-          type="submit" 
-          label="Daftar Sekarang" 
-          icon="pi pi-user-plus" 
-          class="w-full h-11 mt-6" 
-          :loading="isLoading" 
-        />
-      </form>
-
-      <!-- Footer links -->
-      <div class="text-center text-xs text-slate-500 relative z-10 pt-4 border-t border-slate-100">
-        Sudah memiliki akun alumni? 
-        <router-link :to="{ name: 'Login' }" class="text-primary font-black hover:underline ml-1">
-          Masuk di sini
-        </router-link>
       </div>
-    </div>
+    </main>
+
+    <!-- Bottom Footer Bar -->
+    <footer class="hidden md:flex w-full max-w-7xl mx-auto px-6 py-4 border-t border-slate-100 flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 select-none">
+      <span>&copy; 2026 FEB Universitas Mulawarman</span>
+      <span class="flex items-center gap-1 mt-1 sm:mt-0">
+        <Icon icon="solar:verified-check-bold" class="text-xs text-primary" />
+        Dari Alumni, Oleh Alumni, Untuk Alumni
+      </span>
+    </footer>
   </div>
 </template>
 
 <style scoped>
 :deep(.p-password) {
   width: 100%;
+}
+:deep(.p-password-input) {
+  width: 100% !important;
+}
+:deep(.p-inputtext) {
+  padding-left: 2.75rem !important;
+}
+:deep(.p-select) {
+  width: 100%;
+}
+:deep(.p-select-label) {
+  padding-left: 2.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Custom fade animation for alert message */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -11,6 +11,8 @@
 - [x] Set konfigurasi database Laravel: host `127.0.0.1`, port `3306`, username `root`, password kosong.
 - [x] Konfigurasi Tailwind CSS 4.
 - [x] Konfigurasi PrimeVue 4.
+- [x] Konfigurasi Iconify untuk Vue.
+- [x] Tetapkan Solar Icons sebagai icon set utama.
 - [x] Konfigurasi `@primeuix/themes`.
 - [x] Konfigurasi preset PrimeVue berbasis Aura.
 - [x] Konfigurasi `tailwindcss-primeui`.
@@ -340,61 +342,122 @@
 
 ## Fase 15: Laporan dan Export
 
-- [ ] Buat laporan alumni.
-- [ ] Buat laporan toko.
-- [ ] Buat laporan produk.
-- [ ] Buat laporan jasa.
-- [ ] Buat laporan pesanan.
-- [ ] Buat laporan penjualan.
-- [ ] Buat export Excel.
-- [ ] Buat export CSV.
-- [ ] Buat export PDF.
-- [ ] Buat halaman laporan admin.
+- [x] Buat laporan alumni.
+- [x] Buat laporan toko.
+- [x] Buat laporan produk.
+- [x] Buat laporan jasa.
+- [x] Buat laporan pesanan.
+- [x] Buat laporan penjualan.
+- [x] Buat export Excel.
+- [x] Buat export CSV.
+- [x] Buat export PDF.
+- [x] Buat halaman laporan admin.
 
 ## Fase 16: UI/UX Mobile-First
 
-- [ ] Buat layout utama desktop.
-- [ ] Buat layout utama mobile.
-- [ ] Buat navigation drawer.
-- [ ] Buat bottom navigation bila diperlukan.
-- [ ] Buat komponen badge verified.
-- [ ] Buat komponen status tag.
-- [ ] Terapkan warna primary `#006756`.
-- [ ] Terapkan warna hover `#00513F`.
-- [ ] Terapkan warna primary soft `#E6F1EE`.
-- [ ] Terapkan accent emas `#D4A017`.
-- [ ] Terapkan warna status sesuai standar.
-- [ ] Buat komponen product card.
-- [ ] Buat komponen service card.
-- [ ] Buat komponen store card.
-- [ ] Buat komponen alumni card.
-- [ ] Buat form controls konsisten.
-- [ ] Buat empty state.
-- [ ] Buat loading state.
-- [ ] Buat error state.
-- [ ] Buat Toast global.
-- [ ] Buat ConfirmDialog global.
-- [ ] Pastikan tombol aksi utama minimal tinggi 44px.
-- [ ] Pastikan semua form nyaman di layar 360px.
-- [ ] Pastikan DataTable admin tetap usable di mobile.
+- [x] Buat layout utama desktop.
+- [x] Buat layout utama mobile.
+- [x] Buat navigation drawer.
+- [x] Buat bottom navigation bila diperlukan.
+- [x] Buat komponen badge verified.
+- [x] Buat komponen status tag.
+- [x] Terapkan warna primary `#006756`.
+- [x] Terapkan warna hover `#00513F`.
+- [x] Terapkan warna primary soft `#E6F1EE`.
+- [x] Terapkan accent emas `#D4A017`.
+- [x] Terapkan warna status sesuai standar.
+- [x] Buat komponen product card.
+- [x] Buat komponen service card.
+- [x] Buat komponen store card.
+- [x] Buat komponen alumni card.
+- [x] Buat form controls konsisten.
+- [x] Buat empty state.
+- [x] Buat loading state.
+- [x] Buat error state.
+- [x] Buat Toast global.
+- [x] Buat ConfirmDialog global.
+- [x] Pastikan tombol aksi utama minimal tinggi 44px.
+- [x] Pastikan semua form nyaman di layar 360px.
+- [x] Pastikan DataTable admin tetap usable di mobile.
+
+## Fase 16A: Pemisahan Buyer, Seller, dan Admin
+
+- [x] Buat `BuyerLayout.vue`.
+- [x] Buat `SellerLayout.vue`.
+- [x] Buat `AdminLayout.vue`.
+- [x] Buat `BuyerBottomNav.vue`.
+- [x] Buat `SellerBottomNav.vue`.
+- [x] Buat `AdminSidebar.vue`.
+- [x] Buat `RoleModeSwitcher.vue`.
+- [x] Buat `BecomeSellerCard.vue`.
+- [x] Refactor `HomeView.vue` menjadi `BuyerHomeView.vue`.
+- [x] Buat `SellerHomeView.vue`.
+- [x] Buat `AdminDashboardView.vue`.
+- [x] Ubah route pembeli ke prefix `/buyer/*`.
+- [x] Ubah route penjual ke prefix `/seller/*`.
+- [x] Ubah route admin ke prefix `/admin/*`.
+- [x] Redirect `/` berdasarkan role dan mode aktif.
+- [x] Redirect admin ke `/admin/dashboard`.
+- [x] Redirect pembeli ke `/buyer/home`.
+- [x] Redirect penjual toko active ke `/seller/home`.
+- [x] Sediakan redirect route lama `/my-store` ke `/seller/store`.
+- [x] Sediakan redirect route lama `/orders` ke `/buyer/orders`.
+- [x] Hapus menu Kelola Toko dari pembeli biasa.
+- [x] Tambahkan CTA Gabung Jadi Penjual di buyer home/profil.
+- [x] Buat alur Gabung Jadi Penjual untuk user belum verified.
+- [x] Buat alur Gabung Jadi Penjual untuk user verified belum punya toko.
+- [x] Buat status pengajuan toko untuk user dengan toko pending.
+- [x] Tampilkan seller app hanya untuk toko active.
+- [x] Sediakan switch Mode Pembeli untuk penjual.
+- [x] Pastikan seller app tidak menampilkan menu belanja utama sebagai menu operasional.
+- [x] Pastikan admin tidak memakai bottom navigation.
+- [x] Buat desktop-only notice saat admin panel dibuka di layar HP.
+- [x] Pastikan admin menu tidak bercampur dengan buyer/seller menu.
+- [x] Pastikan buyer/seller tetap PWA mobile-first.
+- [x] Terapkan pola visual marketplace mobile seperti Shopee/Tokopedia pada buyer app tanpa menyalin brand/aset.
+- [x] Buat sticky search header untuk buyer app.
+- [x] Buat shortcut kategori ikon/grid untuk buyer home.
+- [x] Buat section produk unggulan di buyer home.
+- [x] Buat section jasa unggulan di buyer home.
+- [x] Buat section toko alumni populer di buyer home.
+- [x] Buat product card marketplace berisi foto, nama, harga, kota, rating, badge verified, dan favorit.
+- [x] Buat service card marketplace berisi foto/portofolio, nama, harga mulai dari, lokasi, rating, badge verified, dan favorit.
+- [x] Buat store card marketplace berisi logo, nama toko, kota, rating, pemilik alumni, dan badge verified.
+- [x] Buat buyer bottom navigation: Beranda, Katalog, Favorit, Pesanan, Profil.
+- [x] Buat seller bottom navigation: Dashboard, Produk, Jasa, Pesanan, Toko.
+- [x] Terapkan pola seller center mobile untuk seller app.
+- [x] Buat seller shortcut tambah produk, tambah jasa, pesanan baru, dan lihat toko.
+- [x] Prioritaskan pesanan masuk pada seller dashboard.
+- [x] Ganti ikon menu buyer ke Iconify Solar.
+- [x] Ganti ikon menu seller ke Iconify Solar.
+- [x] Ganti ikon sidebar admin ke Iconify Solar.
+- [x] Gunakan Iconify Solar untuk shortcut kategori buyer.
+- [x] Gunakan Iconify Solar untuk dashboard cards buyer/seller/admin.
+- [x] Gunakan Iconify Solar untuk empty state dan status visual.
+- [x] Tambahkan tooltip atau label pada tombol ikon penting.
+- [x] Test pembeli tidak melihat menu Kelola Toko.
+- [x] Test pembeli bisa mengajukan menjadi penjual.
+- [x] Test penjual bisa switch ke mode pembeli.
+- [x] Test admin diarahkan ke dashboard desktop.
+- [x] Test route guard buyer/seller/admin sesuai role dan status toko.
 
 ## Fase 17: API Documentation
 
-- [ ] Konfigurasi OpenAPI/Swagger.
-- [ ] Dokumentasikan endpoint auth.
-- [ ] Dokumentasikan endpoint alumni.
-- [ ] Dokumentasikan endpoint import.
-- [ ] Dokumentasikan endpoint toko.
-- [ ] Dokumentasikan endpoint produk.
-- [ ] Dokumentasikan endpoint jasa.
-- [ ] Dokumentasikan endpoint katalog.
-- [ ] Dokumentasikan endpoint cart.
-- [ ] Dokumentasikan endpoint checkout.
-- [ ] Dokumentasikan endpoint pesanan.
-- [ ] Dokumentasikan endpoint review.
-- [ ] Dokumentasikan endpoint dashboard.
-- [ ] Dokumentasikan endpoint role dan permission dinamis.
-- [ ] Dokumentasikan endpoint laporan dan export.
+- [x] Konfigurasi OpenAPI/Swagger.
+- [x] Dokumentasikan endpoint auth.
+- [x] Dokumentasikan endpoint alumni.
+- [x] Dokumentasikan endpoint import.
+- [x] Dokumentasikan endpoint toko.
+- [x] Dokumentasikan endpoint produk.
+- [x] Dokumentasikan endpoint jasa.
+- [x] Dokumentasikan endpoint katalog.
+- [x] Dokumentasikan endpoint cart.
+- [x] Dokumentasikan endpoint checkout.
+- [x] Dokumentasikan endpoint pesanan.
+- [x] Dokumentasikan endpoint review.
+- [x] Dokumentasikan endpoint dashboard.
+- [x] Dokumentasikan endpoint role dan permission dinamis.
+- [x] Dokumentasikan endpoint laporan dan export.
 
 ## Fase 18: Testing dan Hardening
 
@@ -410,19 +473,19 @@
 - [x] Buat checkout COD test.
 - [x] Buat order status test.
 - [x] Buat review test.
-- [ ] Buat authorization test.
-- [ ] Buat dynamic role/permission test.
-- [ ] Buat catalog alumni identity filter test.
-- [ ] Buat delivery fee per wilayah test.
-- [ ] Buat report export test.
-- [ ] Buat validation test.
+- [x] Buat authorization test.
+- [x] Buat dynamic role/permission test.
+- [x] Buat catalog alumni identity filter test.
+- [x] Buat delivery fee per wilayah test.
+- [x] Buat report export test.
+- [x] Buat validation test.
 - [x] Buat dashboard endpoint test.
-- [ ] Jalankan lint backend.
-- [ ] Jalankan lint frontend.
+- [x] Jalankan lint backend.
+- [x] Jalankan lint frontend.
 - [x] Jalankan build frontend.
-- [ ] Jalankan mobile responsive smoke test.
-- [ ] Audit rate limiting endpoint sensitif.
-- [ ] Audit policy semua modul utama.
+- [x] Jalankan mobile responsive smoke test.
+- [x] Audit rate limiting endpoint sensitif.
+- [x] Audit policy semua modul utama.
 
 ## Fase 19: Deployment Readiness
 
@@ -439,12 +502,12 @@
 
 ## Fase Lanjutan: PWA
 
-- [ ] Tambahkan web app manifest.
-- [ ] Tambahkan service worker.
-- [ ] Tambahkan app icon ukuran standar.
-- [ ] Tambahkan offline fallback.
-- [ ] Tambahkan static asset caching.
-- [ ] Tambahkan app shell caching.
-- [ ] Tambahkan update prompt.
-- [ ] Validasi installability.
-- [ ] Evaluasi push notification.
+- [x] Tambahkan web app manifest.
+- [x] Tambahkan service worker.
+- [x] Tambahkan app icon ukuran standar.
+- [x] Tambahkan offline fallback.
+- [x] Tambahkan static asset caching.
+- [x] Tambahkan app shell caching.
+- [x] Tambahkan update prompt.
+- [x] Validasi installability.
+- [x] Evaluasi push notification.

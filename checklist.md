@@ -2,34 +2,50 @@
 
 ## 1. Product Checklist
 
-- [ ] Aplikasi bernama Marketplace Alumni FEB Universitas Mulawarman.
-- [ ] Tagline menggunakan "Dari Alumni, Oleh Alumni, Untuk Alumni".
-- [ ] Marketplace bersifat tertutup.
-- [ ] UI memakai standar mobile-first responsive.
-- [ ] PWA tidak menjadi scope MVP awal.
-- [ ] Hanya alumni terverifikasi yang dapat bertransaksi.
-- [ ] User pending tidak dapat membuka toko.
-- [ ] User pending tidak dapat membuat produk.
-- [ ] User pending tidak dapat membuat jasa.
-- [ ] User pending tidak dapat checkout.
-- [ ] User rejected tidak dapat bertransaksi.
-- [ ] User suspended tidak dapat bertransaksi.
-- [ ] Badge alumni terverifikasi tampil di profil alumni.
-- [ ] Badge alumni terverifikasi tampil di toko.
-- [ ] Badge alumni terverifikasi tampil di produk.
-- [ ] Badge alumni terverifikasi tampil di jasa.
-- [ ] Badge alumni terverifikasi tampil di ulasan.
-- [ ] Badge alumni terverifikasi tampil di dashboard.
-- [ ] COD menjadi satu-satunya metode pembayaran MVP.
-- [ ] Tidak ada payment gateway.
-- [ ] Tidak ada wallet.
-- [ ] Tidak ada komisi marketplace.
-- [ ] Tidak ada ekspedisi eksternal pada MVP.
-- [ ] Komunikasi awal dapat menggunakan WhatsApp.
+- [x] Aplikasi bernama Marketplace Alumni FEB Universitas Mulawarman.
+- [x] Tagline menggunakan "Dari Alumni, Oleh Alumni, Untuk Alumni".
+- [x] Marketplace bersifat tertutup.
+- [x] UI memakai standar mobile-first responsive.
+- [x] PWA digunakan untuk pengalaman buyer/seller.
+- [x] Admin panel dibuat desktop-first.
+- [x] Buyer, seller, dan admin memiliki pengalaman/menu berbeda.
+- [x] Hanya alumni terverifikasi yang dapat bertransaksi.
+- [x] User pending tidak dapat membuka toko.
+- [x] User pending tidak dapat membuat produk.
+- [x] User pending tidak dapat membuat jasa.
+- [x] User pending tidak dapat checkout.
+- [x] User rejected tidak dapat bertransaksi.
+- [x] User suspended tidak dapat bertransaksi.
+- [x] Badge alumni terverifikasi tampil di profil alumni.
+- [x] Badge alumni terverifikasi tampil di toko.
+- [x] Badge alumni terverifikasi tampil di produk.
+- [x] Badge alumni terverifikasi tampil di jasa.
+- [x] Badge alumni terverifikasi tampil di ulasan.
+- [x] Badge alumni terverifikasi tampil di dashboard.
+- [x] COD menjadi satu-satunya metode pembayaran MVP.
+- [x] Tidak ada payment gateway.
+- [x] Tidak ada wallet.
+- [x] Tidak ada komisi marketplace.
+- [x] Tidak ada ekspedisi eksternal pada MVP.
+- [x] Komunikasi awal dapat menggunakan WhatsApp.
+- [x] Pembeli biasa tidak melihat menu Kelola Toko.
+- [x] Pembeli melihat CTA Gabung Jadi Penjual.
+- [x] Seller app hanya tersedia untuk user dengan toko active.
+- [x] Penjual dapat switch ke Mode Pembeli.
+- [x] Admin tidak memakai menu PWA/bottom navigation.
 - [x] Filter katalog berdasarkan program studi tersedia.
 - [x] Filter katalog berdasarkan angkatan atau tahun masuk tersedia.
 - [x] Filter katalog berdasarkan tahun lulus tersedia.
 - [x] Filter identitas alumni berlaku untuk produk, jasa, toko, dan alumni.
+- [x] Rate limiting aktif pada endpoint login.
+- [x] Rate limiting aktif pada endpoint register.
+- [x] Rate limiting aktif pada endpoint import.
+- [x] SQL injection dicegah melalui Eloquent atau Query Builder.
+- [x] File upload divalidasi tipe file.
+- [x] File upload divalidasi ukuran file.
+- [x] Error response konsisten.
+- [x] Pagination konsisten.
+- [x] Sorting dan filtering tervalidasi.
 
 ## 2. Backend Checklist
 
@@ -57,15 +73,6 @@
 - [x] Response API memakai API Resource.
 - [x] Proses bisnis utama berada di Service Layer.
 - [x] Query kompleks memakai Repository bila diperlukan.
-- [ ] Rate limiting aktif pada endpoint login.
-- [ ] Rate limiting aktif pada endpoint register.
-- [ ] Rate limiting aktif pada endpoint import.
-- [ ] SQL injection dicegah melalui Eloquent atau Query Builder.
-- [ ] File upload divalidasi tipe file.
-- [ ] File upload divalidasi ukuran file.
-- [ ] Error response konsisten.
-- [ ] Pagination konsisten.
-- [ ] Sorting dan filtering tervalidasi.
 
 ## 3. Auth dan Role Checklist
 
@@ -150,7 +157,7 @@
 - [x] Status active berjalan.
 - [x] Status inactive berjalan.
 - [x] Status out of stock berjalan.
-- [ ] Produk out of stock tidak dapat checkout.
+- [x] Produk out of stock tidak dapat checkout.
 - [x] Produk inactive tidak tampil di katalog.
 - [x] Badge alumni tampil pada detail produk.
 
@@ -280,6 +287,9 @@
 - [x] Routing menggunakan Vue Router.
 - [x] HTTP client menggunakan Axios.
 - [x] UI utama menggunakan PrimeVue.
+- [x] Icon system menggunakan Iconify.
+- [x] Solar Icons menjadi icon set utama.
+- [ ] PrimeIcons hanya digunakan sebagai fallback.
 - [x] Styling menggunakan Tailwind CSS.
 - [x] Tailwind CSS 4 memakai `@theme`.
 - [x] PrimeVue 4 memakai preset dari `@primeuix/themes`.
@@ -298,33 +308,89 @@
 - [x] Badge digunakan untuk alumni verified.
 - [x] Tag digunakan untuk status.
 - [x] Timeline digunakan untuk pesanan.
-- [ ] Chart digunakan untuk dashboard.
+- [x] Chart digunakan untuk dashboard.
 - [x] Rating digunakan untuk ulasan.
 - [x] FileUpload digunakan untuk upload file.
-- [ ] Avatar digunakan untuk profil.
-- [ ] Menubar digunakan untuk navigasi desktop bila sesuai.
+- [x] Avatar digunakan untuk profil.
+- [x] Menubar digunakan untuk navigasi desktop bila sesuai.
 
 ## 15. Mobile Responsive Checklist
 
-- [ ] Layout nyaman pada lebar 360px.
-- [ ] Layout nyaman pada lebar 390px.
-- [ ] Layout nyaman pada tablet.
-- [ ] Layout nyaman pada desktop.
-- [ ] Tidak ada teks keluar dari tombol.
-- [ ] Tidak ada teks keluar dari card.
-- [ ] Tidak ada elemen UI tumpang tindih.
-- [ ] Tombol aksi utama minimal tinggi 44px.
-- [ ] Form registrasi nyaman di HP.
-- [ ] Form checkout nyaman di HP.
-- [ ] Form produk nyaman di HP.
-- [ ] Form toko nyaman di HP.
-- [ ] Katalog nyaman discroll di HP.
-- [ ] Filter katalog mudah digunakan di HP.
-- [ ] Dashboard admin tetap usable di HP.
-- [ ] Dashboard seller tetap usable di HP.
-- [ ] Dashboard buyer tetap usable di HP.
-- [ ] DataTable admin punya strategi mobile-friendly.
-- [ ] Badge verified tetap terlihat jelas di mobile.
+- [x] Layout nyaman pada lebar 360px.
+- [x] Layout nyaman pada lebar 390px.
+- [x] Layout nyaman pada tablet.
+- [x] Layout nyaman pada desktop.
+- [x] Tidak ada teks keluar dari tombol.
+- [x] Tidak ada teks keluar dari card.
+- [x] Tidak ada elemen UI tumpang tindih.
+- [x] Tombol aksi utama minimal tinggi 44px.
+- [x] Form registrasi nyaman di HP.
+- [x] Form checkout nyaman di HP.
+- [x] Form produk nyaman di HP.
+- [x] Form toko nyaman di HP.
+- [x] Katalog nyaman discroll di HP.
+- [x] Filter katalog mudah digunakan di HP.
+- [x] Dashboard admin tetap usable di HP.
+- [x] Dashboard seller tetap usable di HP.
+- [x] Dashboard buyer tetap usable di HP.
+- [x] DataTable admin punya strategi mobile-friendly.
+- [x] Badge verified tetap terlihat jelas di mobile.
+
+## 15A. Buyer/Seller/Admin Experience Checklist
+
+- [x] `BuyerLayout.vue` tersedia.
+- [x] `SellerLayout.vue` tersedia.
+- [x] `AdminLayout.vue` tersedia.
+- [x] `BuyerBottomNav.vue` tersedia.
+- [x] `SellerBottomNav.vue` tersedia.
+- [x] `AdminSidebar.vue` tersedia.
+- [x] `RoleModeSwitcher.vue` tersedia.
+- [x] `BecomeSellerCard.vue` tersedia.
+- [x] Route pembeli memakai prefix `/buyer/*`.
+- [x] Route penjual memakai prefix `/seller/*`.
+- [x] Route admin memakai prefix `/admin/*`.
+- [x] Login admin redirect ke `/admin/dashboard`.
+- [x] Login pembeli redirect ke `/buyer/home`.
+- [x] Login penjual toko active redirect ke `/seller/home`.
+- [x] Route lama `/my-store` redirect ke `/seller/store`.
+- [x] Route lama `/orders` redirect ke `/buyer/orders`.
+- [x] Buyer home berbeda dari seller home.
+- [x] Buyer home berisi search katalog, shortcut kategori, pesanan aktif, favorit, dan CTA Gabung Jadi Penjual.
+- [x] Seller home berisi ringkasan toko, pesanan masuk, produk/jasa, stok menipis, rating, dan shortcut tambah produk/jasa.
+- [x] Admin dashboard desktop-first dengan sidebar dan topbar.
+- [x] Admin panel menampilkan notice desktop saat dibuka di layar HP.
+- [x] Menu Kelola Toko tidak tampil untuk pembeli biasa.
+- [x] Menu Produk Seller tidak tampil untuk pembeli biasa.
+- [x] Menu Jasa Seller tidak tampil untuk pembeli biasa.
+- [x] Menu Pesanan Seller tidak tampil untuk pembeli biasa.
+- [x] CTA Gabung Jadi Penjual mengarah ke verifikasi jika user belum verified.
+- [x] CTA Gabung Jadi Penjual mengarah ke form toko jika user verified belum punya toko.
+- [x] User dengan toko pending melihat status pengajuan toko.
+- [x] User dengan toko active dapat masuk Seller App.
+- [x] Penjual dapat switch ke Mode Pembeli.
+- [x] Buyer dan seller PWA tetap installable.
+- [x] Admin tidak memakai bottom navigation.
+- [x] Buyer app memakai pola visual marketplace mobile seperti Shopee/Tokopedia tanpa menyalin brand/aset.
+- [x] Buyer app memiliki sticky search header.
+- [x] Buyer home memiliki shortcut kategori ikon/grid.
+- [x] Buyer home memiliki section produk unggulan.
+- [x] Buyer home memiliki section jasa unggulan.
+- [x] Buyer home memiliki section toko alumni populer.
+- [x] Product card berisi foto, nama, harga, kota, rating, badge verified, dan favorit.
+- [x] Service card berisi foto/portofolio, nama, harga mulai dari, lokasi, rating, badge verified, dan favorit.
+- [x] Store card berisi logo, nama toko, kota, rating, pemilik alumni, dan badge verified.
+- [x] Buyer bottom navigation berisi Beranda, Katalog, Favorit, Pesanan, Profil.
+- [x] Seller app memakai pola seller center mobile.
+- [x] Seller bottom navigation berisi Dashboard, Produk, Jasa, Pesanan, Toko.
+- [x] Seller dashboard memprioritaskan pesanan masuk.
+- [x] Seller dashboard memiliki shortcut tambah produk, tambah jasa, pesanan baru, dan lihat toko.
+- [x] Bottom navigation buyer memakai Iconify Solar.
+- [x] Bottom navigation seller memakai Iconify Solar.
+- [x] Sidebar admin memakai Iconify Solar.
+- [x] Shortcut kategori buyer memakai Iconify Solar.
+- [x] Dashboard cards memakai Iconify Solar.
+- [x] Empty state memakai Iconify Solar.
+- [x] Tombol ikon penting memiliki label atau tooltip.
 
 ## 16. Dashboard Checklist
 
@@ -344,18 +410,21 @@
 - [x] Dashboard buyer menampilkan riwayat pesanan.
 - [x] Dashboard buyer menampilkan favorit.
 - [x] Dashboard buyer menampilkan ulasan saya.
+- [x] Dashboard admin terpisah dari dashboard buyer/seller.
+- [x] Dashboard penjual terpisah dari dashboard pembeli.
+- [x] Dashboard pembeli tidak memakai tab admin/seller.
 
 ## 17. Laporan dan Export Checklist
 
-- [ ] Laporan alumni tersedia.
-- [ ] Laporan toko tersedia.
-- [ ] Laporan produk tersedia.
-- [ ] Laporan jasa tersedia.
-- [ ] Laporan pesanan tersedia.
-- [ ] Laporan penjualan tersedia.
-- [ ] Export Excel tersedia.
-- [ ] Export CSV tersedia.
-- [ ] Export PDF tersedia.
+- [x] Laporan alumni tersedia.
+- [x] Laporan toko tersedia.
+- [x] Laporan produk tersedia.
+- [x] Laporan jasa tersedia.
+- [x] Laporan pesanan tersedia.
+- [x] Laporan penjualan tersedia.
+- [x] Export Excel tersedia.
+- [x] Export CSV tersedia.
+- [x] Export PDF tersedia.
 
 ## 18. Testing Checklist
 
@@ -377,36 +446,41 @@
 - [x] Order status test lulus.
 - [x] Review test lulus.
 - [x] Dashboard endpoint test lulus.
-- [ ] Authorization test lulus.
-- [ ] Dynamic role/permission test lulus.
-- [ ] Catalog alumni identity filter test lulus.
-- [ ] Delivery fee per wilayah test lulus.
-- [ ] Report export test lulus.
-- [ ] API validation test lulus.
+- [x] Authorization test lulus.
+- [x] Dynamic role/permission test lulus.
+- [x] Catalog alumni identity filter test lulus.
+- [x] Delivery fee per wilayah test lulus.
+- [x] Report export test lulus.
+- [x] API validation test lulus.
 - [x] Frontend build berhasil.
 - [x] Backend test suite berhasil.
+- [x] Buyer tidak melihat menu Kelola Toko test lulus.
+- [x] Buyer become seller flow test lulus.
+- [x] Seller mode switch test lulus.
+- [x] Admin desktop route guard test lulus.
+- [x] Buyer/seller/admin redirect test lulus.
 
 ## 19. API Documentation Checklist
 
-- [ ] OpenAPI/Swagger tersedia.
-- [ ] Dokumentasi auth tersedia.
-- [ ] Dokumentasi alumni tersedia.
-- [ ] Dokumentasi import tersedia.
-- [ ] Dokumentasi toko tersedia.
-- [ ] Dokumentasi produk tersedia.
-- [ ] Dokumentasi jasa tersedia.
-- [ ] Dokumentasi katalog tersedia.
-- [ ] Dokumentasi favorit tersedia.
-- [ ] Dokumentasi cart tersedia.
-- [ ] Dokumentasi checkout tersedia.
-- [ ] Dokumentasi order tersedia.
-- [ ] Dokumentasi review tersedia.
-- [ ] Dokumentasi dashboard tersedia.
-- [ ] Dokumentasi role dan permission tersedia.
-- [ ] Dokumentasi laporan dan export tersedia.
-- [ ] Contoh request tersedia.
-- [ ] Contoh response tersedia.
-- [ ] Error response terdokumentasi.
+- [x] OpenAPI/Swagger tersedia.
+- [x] Dokumentasi auth tersedia.
+- [x] Dokumentasi alumni tersedia.
+- [x] Dokumentasi import tersedia.
+- [x] Dokumentasi toko tersedia.
+- [x] Dokumentasi produk tersedia.
+- [x] Dokumentasi jasa tersedia.
+- [x] Dokumentasi katalog tersedia.
+- [x] Dokumentasi favorit tersedia.
+- [x] Dokumentasi cart tersedia.
+- [x] Dokumentasi checkout tersedia.
+- [x] Dokumentasi order tersedia.
+- [x] Dokumentasi review tersedia.
+- [x] Dokumentasi dashboard tersedia.
+- [x] Dokumentasi role dan permission tersedia.
+- [x] Dokumentasi laporan dan export tersedia.
+- [x] Contoh request tersedia.
+- [x] Contoh response tersedia.
+- [x] Error response terdokumentasi.
 
 ## 20. Deployment Readiness Checklist
 
@@ -426,14 +500,17 @@
 - [ ] Dokumentasi deployment tersedia.
 - [ ] Dokumentasi rollback tersedia.
 
-## 21. PWA Future Checklist
+## 21. PWA Checklist
 
-- [ ] PWA tidak masuk MVP awal.
-- [ ] Web app manifest direncanakan untuk fase lanjutan.
-- [ ] Service worker direncanakan untuk fase lanjutan.
-- [ ] Offline fallback direncanakan untuk fase lanjutan.
-- [ ] Static asset caching direncanakan untuk fase lanjutan.
-- [ ] App shell caching direncanakan untuk fase lanjutan.
-- [ ] Update prompt direncanakan untuk fase lanjutan.
+- [x] PWA diintegrasikan ke dalam aplikasi (Vite PWA).
+- [x] Web app manifest berhasil diintegrasikan.
+- [x] Service worker berhasil dikonfigurasi.
+- [x] Offline fallback untuk static assets aktif.
+- [x] Static asset caching berhasil dikonfigurasi dengan Workbox.
+- [x] App shell caching berjalan.
+- [x] Update prompt dikonfigurasi menggunakan mode autoUpdate.
+- [x] PWA difokuskan untuk buyer app.
+- [x] PWA difokuskan untuk seller app.
+- [x] Admin tidak diposisikan sebagai PWA utama.
 - [ ] Push notification dievaluasi setelah notifikasi dasar stabil.
 - [ ] Offline transaction tidak dibuat sebelum stok dan checkout stabil.

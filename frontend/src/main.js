@@ -9,11 +9,12 @@ import axios from 'axios'
 
 import App from './App.vue'
 import router from './router'
+import { useAuthStore } from './stores/auth'
 import 'primeicons/primeicons.css'
 import './style.css'
 
 // Configure Axios
-axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://perkasa-api.test/api'
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://perkasa-api.test/api'
 const token = localStorage.getItem('token')
 if (token) {
   axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
@@ -24,26 +25,32 @@ const app = createApp(App)
 const FEBPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50: '#e6f1ee',
-      100: '#cce2dd',
-      200: '#99c5bb',
-      300: '#66a79a',
-      400: '#338a78',
-      500: '#006756', // Primary warna FEB Unmul
-      600: '#005d4e',
-      700: '#005143',
-      800: '#004439',
-      900: '#00382f',
-      950: '#001c18'
+      50: '#f1f6f1',
+      100: '#DBE7C9', // Soft cream/light green
+      200: '#b8cbb8',
+      300: '#95af95',
+      400: '#5c7d5c',
+      500: '#294B29', // New Primary (#294B29)
+      600: '#223e22',
+      700: '#1b321b',
+      800: '#142514',
+      900: '#0d190d',
+      950: '#060c06'
     }
   }
 })
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
 
+// Fetch user profile on startup if token exists
+const authStore = useAuthStore(pinia)
+if (authStore.token) {
+  authStore.fetchUser()
+}
+
 // Global authorization helper
-import { useAuthStore } from './stores/auth'
 app.config.globalProperties.$can = (permission) => {
   try {
     const authStore = useAuthStore()

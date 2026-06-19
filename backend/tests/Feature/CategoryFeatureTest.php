@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\ProductCategory;
 use App\Models\ServiceCategory;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,6 +14,7 @@ class CategoryFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
+
     protected $user;
 
     protected function setUp(): void
@@ -26,7 +27,7 @@ class CategoryFeatureTest extends TestCase
         $this->admin = User::create([
             'name' => 'Admin User',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->admin->assignRole('super_admin');
 
@@ -34,7 +35,7 @@ class CategoryFeatureTest extends TestCase
         $this->user = User::create([
             'name' => 'Regular Alumni',
             'email' => 'alumni@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->user->assignRole('alumni_pembeli');
     }
@@ -62,9 +63,9 @@ class CategoryFeatureTest extends TestCase
         $token = $this->user->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/admin/product-categories', [
-            'name' => 'Forbidden Category'
+            'name' => 'Forbidden Category',
         ]);
 
         $response->assertStatus(403);
@@ -79,10 +80,10 @@ class CategoryFeatureTest extends TestCase
 
         // 1. Create
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/admin/product-categories', [
             'name' => 'New Tech Category',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         $response->assertStatus(201);
@@ -92,10 +93,10 @@ class CategoryFeatureTest extends TestCase
 
         // 2. Update
         $updateResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/admin/product-categories/{$category->id}", [
             'name' => 'Updated Tech Category',
-            'is_active' => false
+            'is_active' => false,
         ]);
 
         $updateResponse->assertStatus(200);
@@ -103,7 +104,7 @@ class CategoryFeatureTest extends TestCase
 
         // 3. Delete
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/admin/product-categories/{$category->id}");
 
         $deleteResponse->assertStatus(200);
@@ -119,10 +120,10 @@ class CategoryFeatureTest extends TestCase
 
         // 1. Create
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/admin/service-categories', [
             'name' => 'Legal Advisory',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         $response->assertStatus(201);
@@ -132,17 +133,17 @@ class CategoryFeatureTest extends TestCase
 
         // 2. Update
         $updateResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/admin/service-categories/{$category->id}", [
             'name' => 'Legal Advisory Updated',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         $updateResponse->assertStatus(200);
 
         // 3. Delete
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/admin/service-categories/{$category->id}");
 
         $deleteResponse->assertStatus(200);

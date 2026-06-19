@@ -36,13 +36,13 @@ class ServiceCategoryController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:service_categories,name'],
-            'is_active' => ['nullable', 'boolean']
+            'is_active' => ['nullable', 'boolean'],
         ]);
 
         $category = ServiceCategory::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->get('is_active', true)
+            'is_active' => $request->get('is_active', true),
         ]);
 
         // Log to Activity Log
@@ -53,7 +53,7 @@ class ServiceCategoryController extends Controller
 
         return response()->json([
             'message' => 'Kategori jasa berhasil dibuat.',
-            'category' => $category
+            'category' => $category,
         ], 201);
     }
 
@@ -65,14 +65,14 @@ class ServiceCategoryController extends Controller
         $category = ServiceCategory::findOrFail($id);
 
         $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:service_categories,name,' . $category->id],
-            'is_active' => ['required', 'boolean']
+            'name' => ['required', 'string', 'max:255', 'unique:service_categories,name,'.$category->id],
+            'is_active' => ['required', 'boolean'],
         ]);
 
         $category->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
-            'is_active' => $request->is_active
+            'is_active' => $request->is_active,
         ]);
 
         // Log to Activity Log
@@ -83,7 +83,7 @@ class ServiceCategoryController extends Controller
 
         return response()->json([
             'message' => 'Kategori jasa berhasil diperbarui.',
-            'category' => $category
+            'category' => $category,
         ]);
     }
 
@@ -99,7 +99,7 @@ class ServiceCategoryController extends Controller
             $isUsed = DB::table('services')->where('service_category_id', $category->id)->exists();
             if ($isUsed) {
                 return response()->json([
-                    'message' => 'Gagal menghapus. Kategori sedang digunakan oleh data jasa aktif.'
+                    'message' => 'Gagal menghapus. Kategori sedang digunakan oleh data jasa aktif.',
                 ], 422);
             }
         }
@@ -113,7 +113,7 @@ class ServiceCategoryController extends Controller
             ->log("Menghapus kategori jasa: {$categoryName}");
 
         return response()->json([
-            'message' => "Kategori jasa {$categoryName} berhasil dihapus."
+            'message' => "Kategori jasa {$categoryName} berhasil dihapus.",
         ]);
     }
 }

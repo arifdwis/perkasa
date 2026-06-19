@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\ProductCategory;
 use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,8 +14,11 @@ class CartFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $buyer;
+
     protected $seller;
+
     protected $product;
+
     protected $category;
 
     protected function setUp(): void
@@ -27,7 +30,7 @@ class CartFeatureTest extends TestCase
         $this->buyer = User::create([
             'name' => 'Buyer Alumni',
             'email' => 'buyer@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->buyer->assignRole('alumni_pembeli');
         $this->buyer->profile()->create([
@@ -37,14 +40,14 @@ class CartFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567890',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         // Create Seller
         $this->seller = User::create([
             'name' => 'Seller Alumni',
             'email' => 'seller@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->seller->assignRole('alumni_pembeli');
         $sellerProfile = $this->seller->profile()->create([
@@ -54,7 +57,7 @@ class CartFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567891',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $store = $sellerProfile->store()->create([
             'name' => 'Store Mantap',
@@ -63,14 +66,14 @@ class CartFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'status' => 'active',
             'delivery_type' => 'fixed',
-            'tahun_berdiri' => 2024
+            'tahun_berdiri' => 2024,
         ]);
 
         // Create Category
         $this->category = ProductCategory::create([
             'name' => 'Makanan',
             'slug' => 'makanan',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         // Create Product
@@ -82,7 +85,7 @@ class CartFeatureTest extends TestCase
             'description' => 'Roti bakar enak',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
     }
 
@@ -94,16 +97,16 @@ class CartFeatureTest extends TestCase
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/cart/items', [
             'product_id' => $this->product->id,
-            'quantity' => 2
+            'quantity' => 2,
         ]);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('cart_items', [
             'product_id' => $this->product->id,
-            'quantity' => 2
+            'quantity' => 2,
         ]);
     }
 
@@ -116,10 +119,10 @@ class CartFeatureTest extends TestCase
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/cart/items', [
             'product_id' => $this->product->id,
-            'quantity' => 1
+            'quantity' => 1,
         ]);
 
         $response->assertStatus(400);
@@ -133,10 +136,10 @@ class CartFeatureTest extends TestCase
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/cart/items', [
             'product_id' => $this->product->id,
-            'quantity' => 15
+            'quantity' => 15,
         ]);
 
         $response->assertStatus(400);
@@ -150,20 +153,20 @@ class CartFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $cart->items()->create([
             'product_id' => $this->product->id,
-            'quantity' => 3
+            'quantity' => 3,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson('/api/cart');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
             'cart_id',
             'grouped_items',
-            'subtotal'
+            'subtotal',
         ]);
         $response->assertJsonCount(1, 'grouped_items.0.items');
     }
@@ -176,15 +179,15 @@ class CartFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $item = $cart->items()->create([
             'product_id' => $this->product->id,
-            'quantity' => 3
+            'quantity' => 3,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/cart/items/{$item->id}", [
-            'quantity' => 5
+            'quantity' => 5,
         ]);
 
         $response->assertStatus(200);
@@ -199,13 +202,13 @@ class CartFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $item = $cart->items()->create([
             'product_id' => $this->product->id,
-            'quantity' => 3
+            'quantity' => 3,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/cart/items/{$item->id}");
 
         $response->assertStatus(200);
@@ -220,13 +223,13 @@ class CartFeatureTest extends TestCase
         $cart = $this->buyer->cart()->create();
         $cart->items()->create([
             'product_id' => $this->product->id,
-            'quantity' => 3
+            'quantity' => 3,
         ]);
 
         $token = $this->buyer->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson('/api/cart');
 
         $response->assertStatus(200);

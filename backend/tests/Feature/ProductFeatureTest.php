@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Store;
-use App\Models\ProductCategory;
 use App\Models\Product;
-use App\Models\ProductImage;
+use App\Models\ProductCategory;
+use App\Models\Store;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -18,11 +17,17 @@ class ProductFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
+
     protected $sellerUser;
+
     protected $otherSellerUser;
+
     protected $buyerUser;
+
     protected $category;
+
     protected $sellerStore;
+
     protected $otherStore;
 
     protected function setUp(): void
@@ -35,7 +40,7 @@ class ProductFeatureTest extends TestCase
         $this->admin = User::create([
             'name' => 'Super Admin',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->admin->assignRole('super_admin');
 
@@ -43,14 +48,14 @@ class ProductFeatureTest extends TestCase
         $this->category = ProductCategory::create([
             'name' => 'Makanan dan Minuman',
             'slug' => 'makanan-dan-minuman',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         // 3. Create Seller User with Active Store
         $this->sellerUser = User::create([
             'name' => 'Seller Alumni',
             'email' => 'seller@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->sellerUser->assignRole('alumni_penjual');
         $profile = $this->sellerUser->profile()->create([
@@ -60,7 +65,7 @@ class ProductFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567833',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->sellerStore = $profile->store()->create([
             'name' => 'Warung Alumni',
@@ -70,14 +75,14 @@ class ProductFeatureTest extends TestCase
             'tahun_berdiri' => 2025,
             'status' => 'active',
             'delivery_type' => 'fixed',
-            'fixed_delivery_fee' => 5000
+            'fixed_delivery_fee' => 5000,
         ]);
 
         // 4. Create Other Seller User with Active Store
         $this->otherSellerUser = User::create([
             'name' => 'Other Seller',
             'email' => 'other@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->otherSellerUser->assignRole('alumni_penjual');
         $otherProfile = $this->otherSellerUser->profile()->create([
@@ -87,7 +92,7 @@ class ProductFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567844',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->otherStore = $otherProfile->store()->create([
             'name' => 'Toko Buku Alumni',
@@ -96,14 +101,14 @@ class ProductFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2024,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // 5. Create Buyer User (Verified Alumni without Store)
         $this->buyerUser = User::create([
             'name' => 'Buyer Alumni',
             'email' => 'buyer@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->buyerUser->assignRole('alumni_pembeli');
         $this->buyerUser->profile()->create([
@@ -113,7 +118,7 @@ class ProductFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567855',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         Storage::fake('public');
@@ -133,7 +138,7 @@ class ProductFeatureTest extends TestCase
             'description' => 'Kopi manis segar',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         // Inactive Product
@@ -145,7 +150,7 @@ class ProductFeatureTest extends TestCase
             'description' => 'Roti bakar lezat',
             'price' => 12000,
             'stock' => 5,
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
         $response = $this->getJson('/api/products');
@@ -168,10 +173,10 @@ class ProductFeatureTest extends TestCase
             'description' => 'Kopi manis segar',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
-        $response = $this->getJson("/api/products/kopi-susu-alumni");
+        $response = $this->getJson('/api/products/kopi-susu-alumni');
 
         $response->assertStatus(200);
         $response->assertJsonPath('product.name', 'Kopi Susu Alumni');
@@ -191,10 +196,10 @@ class ProductFeatureTest extends TestCase
             'description' => 'Kopi manis segar',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
-        $response = $this->getJson("/api/products/kopi-susu-alumni");
+        $response = $this->getJson('/api/products/kopi-susu-alumni');
         $response->assertStatus(403);
 
         // 2. Product from pending store
@@ -207,10 +212,10 @@ class ProductFeatureTest extends TestCase
             'description' => 'Kopi pahit segar',
             'price' => 10000,
             'stock' => 5,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
-        $response2 = $this->getJson("/api/products/kopi-hitam");
+        $response2 = $this->getJson('/api/products/kopi-hitam');
         $response2->assertStatus(403);
     }
 
@@ -223,14 +228,14 @@ class ProductFeatureTest extends TestCase
 
         // 1. CREATE
         $createResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/seller/products', [
             'name' => 'Kopi Susu Alumni',
             'product_category_id' => $this->category->id,
             'description' => 'Kopi manis segar',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $createResponse->assertStatus(210);
@@ -241,14 +246,14 @@ class ProductFeatureTest extends TestCase
 
         // 2. READ (List & Detail)
         $listResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson('/api/seller/products');
 
         $listResponse->assertStatus(200);
         $listResponse->assertJsonCount(1);
 
         $detailResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson("/api/seller/products/{$product->id}");
 
         $detailResponse->assertStatus(200);
@@ -256,26 +261,26 @@ class ProductFeatureTest extends TestCase
 
         // 3. UPDATE
         $updateResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/seller/products/{$product->id}", [
             'name' => 'Kopi Susu Alumni Mantap',
             'product_category_id' => $this->category->id,
             'description' => 'Kopi manis segar dan mantap',
             'price' => 16000,
             'stock' => 0, // Auto out_of_stock check
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $updateResponse->assertStatus(200);
         $this->assertDatabaseHas('products', [
             'name' => 'Kopi Susu Alumni Mantap',
             'price' => 16000.00,
-            'status' => 'out_of_stock' // Auto-forced to out_of_stock
+            'status' => 'out_of_stock', // Auto-forced to out_of_stock
         ]);
 
         // 4. DELETE
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/products/{$product->id}");
 
         $deleteResponse->assertStatus(200);
@@ -295,27 +300,27 @@ class ProductFeatureTest extends TestCase
             'description' => 'Buku pegangan mahasiswa',
             'price' => 75000,
             'stock' => 3,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $token = $this->sellerUser->createToken('auth_token')->plainTextToken;
 
         // Try Update
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/seller/products/{$product->id}", [
             'name' => 'Hacked Book',
             'product_category_id' => $this->category->id,
             'description' => 'Attempted hijack',
             'price' => 1000,
             'stock' => 1,
-            'status' => 'active'
+            'status' => 'active',
         ]);
         $response->assertStatus(403);
 
         // Try Delete
         $response2 = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/products/{$product->id}");
         $response2->assertStatus(403);
     }
@@ -333,7 +338,7 @@ class ProductFeatureTest extends TestCase
             'description' => 'Kopi manis segar',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $token = $this->sellerUser->createToken('auth_token')->plainTextToken;
@@ -341,15 +346,15 @@ class ProductFeatureTest extends TestCase
         // 1. Upload Primary Image
         $file = UploadedFile::fake()->image('primary.jpg');
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/products/{$product->id}/image", [
-            'image' => $file
+            'image' => $file,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('product_images', [
             'product_id' => $product->id,
-            'is_primary' => true
+            'is_primary' => true,
         ]);
 
         // 2. Upload Gallery Images (Max 5 constraint check)
@@ -362,25 +367,25 @@ class ProductFeatureTest extends TestCase
 
         // Post 3 files -> Should succeed
         $galleryResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/products/{$product->id}/gallery", [
-            'images' => [$file1, $file2, $file3]
+            'images' => [$file1, $file2, $file3],
         ]);
         $galleryResponse->assertStatus(200);
         $this->assertEquals(3, $product->images()->where('is_primary', false)->count());
 
         // Post 3 more files -> Total 6, should fail (max limit 5)
         $failedResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/products/{$product->id}/gallery", [
-            'images' => [$file4, $file5, $file6]
+            'images' => [$file4, $file5, $file6],
         ]);
         $failedResponse->assertStatus(422);
 
         // 3. Delete Specific Image
         $imageToDelete = $product->images()->where('is_primary', false)->first();
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/products/{$product->id}/images/{$imageToDelete->id}");
 
         $deleteResponse->assertStatus(200);

@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
@@ -23,16 +23,16 @@ class RolePermissionSeeder extends Seeder
             'verify_alumni',
             'suspend_alumni',
             'view_alumni_list',
-            
+
             // Store management
             'apply_store',
             'verify_store',
             'manage_own_store',
             'suspend_store',
-            
+
             // Category management
             'manage_categories',
-            
+
             // Product & Service management
             'create_product',
             'update_product',
@@ -40,18 +40,18 @@ class RolePermissionSeeder extends Seeder
             'create_service',
             'update_service',
             'delete_service',
-            
+
             // Order management
             'create_order', // checkout COD
             'update_order_status', // seller can update status
             'view_own_orders',
             'view_all_orders', // admin
-            
+
             // Interaction
             'favorite_items',
             'create_review',
             'reply_review',
-            
+
             // Reports & Log
             'view_reports',
             'view_activity_logs',
@@ -66,7 +66,7 @@ class RolePermissionSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Create roles and assign existing permissions
-        
+
         // 1. Alumni Pembeli (Default role upon registration)
         $rolePembeli = Role::create(['name' => 'alumni_pembeli', 'guard_name' => 'web']);
         $rolePembeli->givePermissionTo([

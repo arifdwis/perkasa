@@ -26,6 +26,11 @@ class Store extends Model
         'fixed_delivery_fee',
     ];
 
+    protected $appends = [
+        'average_rating',
+        'reviews_count',
+    ];
+
     /**
      * Get the alumni profile that owns this store.
      */
@@ -40,5 +45,37 @@ class Store extends Model
     public function deliveryFees(): HasMany
     {
         return $this->hasMany(StoreDeliveryFee::class);
+    }
+
+    /**
+     * Get all reviews received by this store.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Get all orders for this store.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Accessor for average store rating.
+     */
+    public function getAverageRatingAttribute()
+    {
+        return round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    /**
+     * Accessor for total reviews count.
+     */
+    public function getReviewsCountAttribute()
+    {
+        return $this->reviews()->count();
     }
 }

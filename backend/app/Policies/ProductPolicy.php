@@ -7,13 +7,21 @@ use App\Models\User;
 
 class ProductPolicy
 {
+    public function before(User $user, string $ability): ?bool
+    {
+        if ($user->hasRole('super_admin') || $user->hasRole('admin_marketplace')) {
+            return true;
+        }
+        return null;
+    }
+
     /**
      * Determine whether the user can create products.
      */
     public function create(User $user): bool
     {
         $profile = $user->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return false;
         }
 

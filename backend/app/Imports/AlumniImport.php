@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\ImportedAlumniRecord;
+use Illuminate\Database\Eloquent\Model;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -12,9 +13,8 @@ class AlumniImport implements ToModel, WithHeadingRow, WithValidation
     /**
      * Map a row to a model.
      *
-     * @param array $row
      *
-     * @return \Illuminate\Database\Eloquent\Model|null
+     * @return Model|null
      */
     public function model(array $row)
     {

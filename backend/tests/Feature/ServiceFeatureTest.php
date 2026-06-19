@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Store;
-use App\Models\ServiceCategory;
 use App\Models\Service;
-use App\Models\ServiceImage;
+use App\Models\ServiceCategory;
+use App\Models\Store;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -18,11 +17,17 @@ class ServiceFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $admin;
+
     protected $sellerUser;
+
     protected $otherSellerUser;
+
     protected $buyerUser;
+
     protected $category;
+
     protected $sellerStore;
+
     protected $otherStore;
 
     protected function setUp(): void
@@ -35,7 +40,7 @@ class ServiceFeatureTest extends TestCase
         $this->admin = User::create([
             'name' => 'Super Admin',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->admin->assignRole('super_admin');
 
@@ -43,14 +48,14 @@ class ServiceFeatureTest extends TestCase
         $this->category = ServiceCategory::create([
             'name' => 'Konsultan Pajak',
             'slug' => 'konsultan-pajak',
-            'is_active' => true
+            'is_active' => true,
         ]);
 
         // 3. Create Seller User with Active Store
         $this->sellerUser = User::create([
             'name' => 'Seller Alumni',
             'email' => 'seller@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->sellerUser->assignRole('alumni_penjual');
         $profile = $this->sellerUser->profile()->create([
@@ -60,7 +65,7 @@ class ServiceFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567833',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->sellerStore = $profile->store()->create([
             'name' => 'Konsultasi Alumni',
@@ -69,14 +74,14 @@ class ServiceFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // 4. Create Other Seller User with Active Store
         $this->otherSellerUser = User::create([
             'name' => 'Other Seller',
             'email' => 'other@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->otherSellerUser->assignRole('alumni_penjual');
         $otherProfile = $this->otherSellerUser->profile()->create([
@@ -86,7 +91,7 @@ class ServiceFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567844',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->otherStore = $otherProfile->store()->create([
             'name' => 'Akuntan Alumni',
@@ -95,14 +100,14 @@ class ServiceFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2024,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         // 5. Create Buyer User (Verified Alumni without Store)
         $this->buyerUser = User::create([
             'name' => 'Buyer Alumni',
             'email' => 'buyer@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->buyerUser->assignRole('alumni_pembeli');
         $this->buyerUser->profile()->create([
@@ -112,7 +117,7 @@ class ServiceFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567855',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         Storage::fake('public');
@@ -132,7 +137,7 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Jasa audit terpercaya',
             'price_from' => 5000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         // Inactive Service
@@ -144,7 +149,7 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Bimbingan SPT Tahunan',
             'price_from' => 500000,
             'lokasi_layanan' => 'Online',
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
         $response = $this->getJson('/api/services');
@@ -167,10 +172,10 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Jasa audit terpercaya',
             'price_from' => 5000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
-        $response = $this->getJson("/api/services/audit-laporan-keuangan");
+        $response = $this->getJson('/api/services/audit-laporan-keuangan');
 
         $response->assertStatus(200);
         $response->assertJsonPath('service.name', 'Audit Laporan Keuangan');
@@ -190,10 +195,10 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Jasa audit terpercaya',
             'price_from' => 5000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
-        $response = $this->getJson("/api/services/audit-laporan-keuangan");
+        $response = $this->getJson('/api/services/audit-laporan-keuangan');
         $response->assertStatus(403);
 
         // 2. Service from pending store
@@ -206,10 +211,10 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Penyusunan pajak pribadi',
             'price_from' => 300000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
-        $response2 = $this->getJson("/api/services/penyusunan-spt");
+        $response2 = $this->getJson('/api/services/penyusunan-spt');
         $response2->assertStatus(403);
     }
 
@@ -222,14 +227,14 @@ class ServiceFeatureTest extends TestCase
 
         // 1. CREATE
         $createResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/seller/services', [
             'name' => 'Audit Laporan Keuangan',
             'service_category_id' => $this->category->id,
             'description' => 'Jasa audit terpercaya',
             'price_from' => 5000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $createResponse->assertStatus(201);
@@ -240,14 +245,14 @@ class ServiceFeatureTest extends TestCase
 
         // 2. READ (List & Detail)
         $listResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson('/api/seller/services');
 
         $listResponse->assertStatus(200);
         $listResponse->assertJsonCount(1);
 
         $detailResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson("/api/seller/services/{$service->id}");
 
         $detailResponse->assertStatus(200);
@@ -255,26 +260,26 @@ class ServiceFeatureTest extends TestCase
 
         // 3. UPDATE
         $updateResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/seller/services/{$service->id}", [
             'name' => 'Audit Laporan Keuangan Terakreditasi',
             'service_category_id' => $this->category->id,
             'description' => 'Audit kap akreditasi a',
             'price_from' => 6000000,
             'lokasi_layanan' => 'Samarinda & Balikpapan',
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
         $updateResponse->assertStatus(200);
         $this->assertDatabaseHas('services', [
             'name' => 'Audit Laporan Keuangan Terakreditasi',
             'price_from' => 6000000.00,
-            'status' => 'inactive'
+            'status' => 'inactive',
         ]);
 
         // 4. DELETE
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/services/{$service->id}");
 
         $deleteResponse->assertStatus(200);
@@ -294,27 +299,27 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Jasa urus pajak tahunan perusahaan',
             'price_from' => 2000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $token = $this->sellerUser->createToken('auth_token')->plainTextToken;
 
         // Try Update
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->putJson("/api/seller/services/{$service->id}", [
             'name' => 'Hacked Service',
             'service_category_id' => $this->category->id,
             'description' => 'Attempted hijack',
             'price_from' => 1000,
             'lokasi_layanan' => 'Hacked',
-            'status' => 'active'
+            'status' => 'active',
         ]);
         $response->assertStatus(403);
 
         // Try Delete
         $response2 = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/services/{$service->id}");
         $response2->assertStatus(403);
     }
@@ -332,7 +337,7 @@ class ServiceFeatureTest extends TestCase
             'description' => 'Jasa audit terpercaya',
             'price_from' => 5000000,
             'lokasi_layanan' => 'Samarinda',
-            'status' => 'active'
+            'status' => 'active',
         ]);
 
         $token = $this->sellerUser->createToken('auth_token')->plainTextToken;
@@ -340,15 +345,15 @@ class ServiceFeatureTest extends TestCase
         // 1. Upload Primary Image
         $file = UploadedFile::fake()->image('primary.jpg');
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/services/{$service->id}/image", [
-            'image' => $file
+            'image' => $file,
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('service_images', [
             'service_id' => $service->id,
-            'is_primary' => true
+            'is_primary' => true,
         ]);
 
         // 2. Upload Portfolio Images (Max 5 constraint check)
@@ -361,25 +366,25 @@ class ServiceFeatureTest extends TestCase
 
         // Post 3 files -> Should succeed
         $portfolioResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/services/{$service->id}/portfolio", [
-            'images' => [$file1, $file2, $file3]
+            'images' => [$file1, $file2, $file3],
         ]);
         $portfolioResponse->assertStatus(200);
         $this->assertEquals(3, $service->images()->where('is_primary', false)->count());
 
         // Post 3 more files -> Total 6, should fail (max limit 5)
         $failedResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson("/api/seller/services/{$service->id}/portfolio", [
-            'images' => [$file4, $file5, $file6]
+            'images' => [$file4, $file5, $file6],
         ]);
         $failedResponse->assertStatus(422);
 
         // 3. Delete Specific Image
         $imageToDelete = $service->images()->where('is_primary', false)->first();
         $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->deleteJson("/api/seller/services/{$service->id}/images/{$imageToDelete->id}");
 
         $deleteResponse->assertStatus(200);

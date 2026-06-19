@@ -2,23 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Traits\HasUuid7;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use App\Traits\HasUuid7;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, HasUuid7;
+    use HasApiTokens, HasFactory, HasRoles, HasUuid7, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -36,7 +38,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the profile associated with the user.
      */
-    public function profile(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function profile(): HasOne
     {
         return $this->hasOne(AlumniProfile::class);
     }
@@ -44,7 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get all favorites for the user.
      */
-    public function favorites(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
     }
@@ -52,7 +54,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the cart for the user.
      */
-    public function cart(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
     }
@@ -60,7 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get all orders for the user.
      */
-    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }

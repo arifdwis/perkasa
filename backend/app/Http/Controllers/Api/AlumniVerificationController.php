@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Imports\AlumniImport;
 use App\Models\AlumniProfile;
 use App\Models\AlumniVerification;
+use App\Notifications\AlumniVerificationNotification;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 
 class AlumniVerificationController extends Controller
 {
@@ -26,25 +28,25 @@ class AlumniVerificationController extends Controller
             // Log activity
             activity()
                 ->causedBy(auth()->user())
-                ->log("Mengimpor database resmi alumni via berkas Excel/CSV");
+                ->log('Mengimpor database resmi alumni via berkas Excel/CSV');
 
             return response()->json([
-                'message' => 'Data alumni resmi berhasil di-import.'
+                'message' => 'Data alumni resmi berhasil di-import.',
             ]);
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+        } catch (ValidationException $e) {
             $failures = $e->failures();
             $errorMessages = [];
             foreach ($failures as $failure) {
-                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+                $errorMessages[] = "Baris {$failure->row()}: ".implode(', ', $failure->errors());
             }
 
             return response()->json([
                 'message' => 'Gagal mengimpor data. Terdapat kesalahan validasi.',
-                'errors' => array_slice($errorMessages, 0, 10) // Limit to top 10 errors
+                'errors' => array_slice($errorMessages, 0, 10), // Limit to top 10 errors
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Gagal memproses file. Pastikan format kolom sesuai: nim, nama, program_studi, tahun_masuk, tahun_lulus, email, whatsapp.'
+                'message' => 'Gagal memproses file. Pastikan format kolom sesuai: nim, nama, program_studi, tahun_masuk, tahun_lulus, email, whatsapp.',
             ], 500);
         }
     }
@@ -57,22 +59,23 @@ class AlumniVerificationController extends Controller
         $query = AlumniProfile::with('user');
 
         // Filter by verification status
-        if ($request->has('status') && !empty($request->status)) {
+        if ($request->has('status') && ! empty($request->status)) {
             $query->where('status_verifikasi', $request->status);
         }
 
         // Filter by keyword (Name or NIM)
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->has('search') && ! empty($request->search)) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nim', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
         $profiles = $query->latest()->paginate(15);
+
         return response()->json($profiles);
     }
 
@@ -82,7 +85,7 @@ class AlumniVerificationController extends Controller
     public function show($id)
     {
         $profile = AlumniProfile::with(['user', 'user.roles'])->findOrFail($id);
-        
+
         // Load verification history
         $history = AlumniVerification::with('admin')
             ->where('alumni_profile_id', $profile->id)
@@ -91,7 +94,7 @@ class AlumniVerificationController extends Controller
 
         return response()->json([
             'profile' => $profile,
-            'history' => $history
+            'history' => $history,
         ]);
     }
 
@@ -104,14 +107,14 @@ class AlumniVerificationController extends Controller
 
         $request->validate([
             'action' => ['required', 'string', 'in:approve,reject,suspend'],
-            'reason' => ['required_if:action,reject,suspend', 'string', 'nullable', 'max:500']
+            'reason' => ['required_if:action,reject,suspend', 'string', 'nullable', 'max:500'],
         ]);
 
         $status = 'pending';
         $badge = false;
 
         switch ($request->action) {
-            Case 'approve':
+            case 'approve':
                 $status = 'verified';
                 $badge = true;
                 break;
@@ -128,7 +131,7 @@ class AlumniVerificationController extends Controller
         // Update profile verification status
         $profile->update([
             'status_verifikasi' => $status,
-            'badge_verified' => $badge
+            'badge_verified' => $badge,
         ]);
 
         // If verified, we can promote role to alumni_penjual if necessary,
@@ -139,7 +142,7 @@ class AlumniVerificationController extends Controller
             'alumni_profile_id' => $profile->id,
             'admin_user_id' => auth()->id(),
             'action' => $request->action,
-            'reason' => $request->reason
+            'reason' => $request->reason,
         ]);
 
         // Log to Activity Log
@@ -148,9 +151,12 @@ class AlumniVerificationController extends Controller
             ->performedOn($profile->user)
             ->log("Mengubah status verifikasi alumni {$profile->user->name} menjadi: {$status}");
 
+        // Send notification (database + email)
+        $profile->user->notify(new AlumniVerificationNotification($status, $request->reason));
+
         return response()->json([
             'message' => "Status verifikasi alumni berhasil diperbarui menjadi {$status}.",
-            'profile' => $profile->load('user')
+            'profile' => $profile->load('user'),
         ]);
     }
 }

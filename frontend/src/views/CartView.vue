@@ -1,293 +1,252 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
-import Card from 'primevue/card'
-import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
+import Dialog from 'primevue/dialog'
+
+import AppNavbar from '../components/AppNavbar.vue'
+import LoadingState from '../components/LoadingState.vue'
+import EmptyState from '../components/EmptyState.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const toast = useToast()
 
 const isVerified = ref(false)
+const showClearDialog = ref(false)
+const removingId = ref(null)
 
 const checkVerification = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   isVerified.value = user.profile?.status_verifikasi === 'verified'
 }
 
+const totalItems = computed(() => {
+  let count = 0
+  cartStore.groupedItems.forEach(g => g.items.forEach(i => count += i.quantity))
+  return count
+})
+
+const totalStores = computed(() => cartStore.groupedItems.length)
+
 const updateQuantity = async (item, delta) => {
   const newQty = item.quantity + delta
   if (newQty < 1) return
-
   if (newQty > item.stock) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Stok Terbatas',
-      detail: `Stok produk hanya tersedia ${item.stock} unit.`,
-      life: 2500
-    })
+    toast.add({ severity: 'warn', summary: 'Stok Terbatas', detail: `Stok hanya ${item.stock} unit.`, life: 2500 })
     return
   }
-
   const res = await cartStore.updateItemQuantity(item.id, newQty)
-  if (!res.success) {
-    toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
-  }
+  if (!res.success) toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
 }
 
 const deleteItem = async (item) => {
+  removingId.value = item.id
   const res = await cartStore.deleteItem(item.id)
+  removingId.value = null
   if (res.success) {
-    toast.add({ severity: 'success', summary: 'Dihapus', detail: 'Produk berhasil dihapus dari keranjang.', life: 2000 })
+    toast.add({ severity: 'success', summary: 'Dihapus', detail: 'Produk dihapus dari keranjang.', life: 2000 })
   } else {
     toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
   }
 }
 
-const clearCart = async () => {
+const confirmClear = async () => {
+  showClearDialog.value = false
   const res = await cartStore.clearCart()
-  if (res.success) {
-    toast.add({ severity: 'success', summary: 'Dikosongkan', detail: 'Keranjang belanja berhasil dikosongkan.', life: 2000 })
-  } else {
-    toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
-  }
+  if (res.success) toast.add({ severity: 'success', summary: 'Dikosongkan', detail: 'Keranjang berhasil dikosongkan.', life: 2000 })
 }
 
 const proceedToCheckout = () => {
   if (!isVerified.value) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Belum Terverifikasi',
-      detail: 'Hanya alumni terverifikasi yang dapat melakukan checkout.',
-      life: 3000
-    })
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya alumni terverifikasi yang dapat checkout.', life: 3000 })
     return
   }
   router.push({ name: 'Checkout' })
 }
 
-onMounted(() => {
-  checkVerification()
-  cartStore.fetchCart()
-})
+onMounted(() => { checkVerification(); cartStore.fetchCart() })
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col">
     <Toast />
+    <AppNavbar />
 
-    <!-- Navbar -->
-    <header class="bg-primary text-white shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3 cursor-pointer" @click="router.push({ name: 'Home' })">
-          <i class="pi pi-prime text-2xl text-accent"></i>
-          <div>
-            <h1 class="text-lg font-bold tracking-tight">FEB Unmul</h1>
-            <p class="text-[10px] text-primary-soft">Marketplace Alumni</p>
+    <!-- Mobile header -->
+    <div class="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="router.back()" class="w-8 h-8" />
+        <span class="text-sm font-bold text-slate-700">Keranjang</span>
+      </div>
+      <span class="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">{{ totalItems }} item</span>
+    </div>
+
+    <!-- Loading -->
+    <LoadingState v-if="cartStore.loading" message="Memuat keranjang..." />
+
+    <!-- Cart Content -->
+    <main v-else-if="cartStore.groupedItems.length > 0" class="max-w-6xl mx-auto w-full px-4 py-6 lg:py-10 flex-grow pb-24 lg:pb-8">
+
+      <!-- Desktop header -->
+      <div class="hidden lg:flex items-center justify-between mb-6">
+        <div class="flex items-center gap-3">
+          <button @click="router.back()" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-primary transition-colors">
+            <i class="pi pi-arrow-left text-xs"></i> Kembali
+          </button>
+          <span class="text-slate-300">|</span>
+          <h1 class="text-lg font-black text-slate-800">Keranjang Belanja</h1>
+          <span class="text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">{{ totalItems }} item</span>
+        </div>
+        <Button label="Kosongkan" icon="pi pi-trash" severity="danger" size="small" text class="text-xs" @click="showClearDialog = true" />
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <!-- Left: Cart Items -->
+        <div class="lg:col-span-3 space-y-4">
+
+          <!-- Mobile clear button -->
+          <div class="lg:hidden flex justify-end">
+            <Button label="Kosongkan" icon="pi pi-trash" severity="danger" size="small" text class="text-xs" @click="showClearDialog = true" />
+          </div>
+
+          <!-- Store groups -->
+          <div v-for="storeGroup in cartStore.groupedItems" :key="storeGroup.store_id" class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+
+            <!-- Store header -->
+            <div class="px-4 py-3 border-b border-slate-50 flex items-center gap-2 bg-slate-50/50">
+              <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <i class="pi pi-shopping-bag text-primary text-xs"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-slate-800 truncate">{{ storeGroup.store_name }}</p>
+                <p class="text-xs text-slate-400">{{ storeGroup.store_kota }}</p>
+              </div>
+              <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">
+                {{ storeGroup.items.length }} produk
+              </span>
+            </div>
+
+            <!-- Items -->
+            <div class="divide-y divide-slate-50">
+              <div v-for="item in storeGroup.items" :key="item.id"
+                class="px-4 py-3 flex items-center gap-3 transition-all"
+                :class="removingId === item.id ? 'opacity-50' : ''">
+
+                <!-- Thumbnail -->
+                <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                  <img v-if="item.primary_image" :src="item.primary_image.image_path" class="w-full h-full object-cover" />
+                  <i v-else class="pi pi-box text-slate-300 text-xl"></i>
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ item.name }}</p>
+                  <p class="text-xs text-primary font-semibold mt-0.5">Rp{{ item.price.toLocaleString('id-ID') }}</p>
+                </div>
+
+                <!-- Qty + Price + Delete -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <!-- Qty control -->
+                  <div class="flex items-center bg-slate-50 rounded-lg border border-slate-100">
+                    <button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
+                      :disabled="item.quantity <= 1" @click="updateQuantity(item, -1)">
+                      <i class="pi pi-minus text-xs"></i>
+                    </button>
+                    <span class="w-7 text-center text-xs font-bold text-slate-800">{{ item.quantity }}</span>
+                    <button class="w-8 h-8 flex items-center justify-center text-slate-500 hover:text-primary transition-colors disabled:opacity-30"
+                      :disabled="item.quantity >= item.stock" @click="updateQuantity(item, 1)">
+                      <i class="pi pi-plus text-xs"></i>
+                    </button>
+                  </div>
+
+                  <!-- Subtotal -->
+                  <span class="text-xs font-bold text-slate-800 w-20 text-right hidden sm:block">Rp{{ item.subtotal.toLocaleString('id-ID') }}</span>
+
+                  <!-- Delete -->
+                  <button class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    @click="deleteItem(item)">
+                    <i class="pi pi-trash text-xs"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div class="flex items-center gap-2">
-          <Button label="Kembali Belanja" icon="pi pi-arrow-left" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Catalog' })" />
-          <Button label="Beranda" icon="pi pi-home" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Home' })" />
-        </div>
-      </div>
-    </header>
 
-    <!-- Page Banner -->
-    <section class="bg-primary-dark text-white py-8 px-4 text-center">
-      <div class="max-w-4xl mx-auto space-y-2">
-        <h2 class="text-2xl sm:text-3xl font-black"><i class="pi pi-shopping-cart text-accent mr-1.5"></i>Keranjang Belanja</h2>
-        <p class="text-xs text-primary-soft max-w-xl mx-auto">
-          Kelola produk-produk pilihan alumni yang ingin Anda beli sebelum melakukan checkout.
-        </p>
-      </div>
-    </section>
+        <!-- Right: Summary -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-5 lg:sticky lg:top-20 space-y-4">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ringkasan Belanja</span>
 
-    <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-      <div v-if="cartStore.loading" class="flex flex-col items-center justify-center py-20 space-y-3">
-        <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
-        <span class="text-sm font-semibold text-slate-500">Memuat isi keranjang...</span>
-      </div>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between text-slate-500">
+                <span>Jumlah Produk</span>
+                <span class="font-bold text-slate-700">{{ totalItems }} item</span>
+              </div>
+              <div class="flex justify-between text-slate-500">
+                <span>Jumlah Toko</span>
+                <span class="font-bold text-slate-700">{{ totalStores }} toko</span>
+              </div>
+            </div>
 
-      <div v-else-if="cartStore.groupedItems.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- Left: Cart Items List (Takes 8 columns) -->
-        <div class="lg:col-span-8 space-y-6">
-          <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-            <span class="text-xs font-bold text-slate-500">
-              Daftar Barang Belanjaan
-            </span>
-            <Button 
-              label="Kosongkan Keranjang" 
-              icon="pi pi-trash" 
-              severity="danger" 
-              size="small" 
-              text 
-              class="text-xs" 
-              @click="clearCart" 
+            <div class="pt-3 border-t border-slate-100">
+              <div class="flex justify-between items-baseline">
+                <span class="text-xs text-slate-500 font-bold">Subtotal</span>
+                <span class="text-xl font-black text-primary">Rp{{ cartStore.subtotal.toLocaleString('id-ID') }}</span>
+              </div>
+            </div>
+
+            <!-- Info -->
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-2">
+              <p class="text-xs text-slate-500 leading-relaxed flex items-start gap-1.5">
+                <i class="pi pi-info-circle text-primary text-xs mt-0.5 shrink-0"></i>
+                Biaya antar ditambahkan di halaman checkout sesuai jenis pengiriman toko.
+              </p>
+              <p v-if="!isVerified" class="text-xs text-red-500 font-bold flex items-start gap-1.5">
+                <i class="pi pi-exclamation-triangle text-xs mt-0.5 shrink-0"></i>
+                Akun belum diverifikasi. Checkout dinonaktifkan.
+              </p>
+            </div>
+
+            <!-- Checkout button -->
+            <Button
+              label="Lanjut ke Checkout"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              class="w-full text-sm font-bold py-3"
+              :disabled="!isVerified"
+              @click="proceedToCheckout"
             />
           </div>
-
-          <!-- Grouped by Store -->
-          <div 
-            v-for="storeGroup in cartStore.groupedItems" 
-            :key="storeGroup.store_id"
-            class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm"
-          >
-            <!-- Store Header -->
-            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i class="pi pi-shopping-bag text-primary"></i>
-                <h3 class="text-sm font-bold text-slate-800">{{ storeGroup.store_name }}</h3>
-                <span class="text-[10px] text-slate-400 font-medium"><i class="pi pi-map-marker"></i> {{ storeGroup.store_kota }}</span>
-              </div>
-              
-              <!-- Delivery Type Badge -->
-              <Tag 
-                :value="storeGroup.delivery_type === 'fixed' ? 'Fixed Fee' : 'Tarif Wilayah'" 
-                severity="secondary" 
-                class="text-[9px]" 
-              />
-            </div>
-
-            <!-- Items inside this Store -->
-            <div class="divide-y divide-slate-100">
-              <div 
-                v-for="item in storeGroup.items" 
-                :key="item.id"
-                class="p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-              >
-                <!-- Thumbnail -->
-                <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                  <img v-if="item.primary_image" :src="item.primary_image.image_path" alt="Cover" class="w-full h-full object-cover" />
-                  <i v-else class="pi pi-box text-slate-300 text-3xl"></i>
-                </div>
-
-                <!-- Specs -->
-                <div class="flex-grow min-w-0 space-y-1">
-                  <span class="text-[9px] font-bold text-primary bg-primary-soft px-1.5 py-0.5 rounded">{{ item.category_name }}</span>
-                  <h4 class="text-sm font-bold text-slate-800 truncate">{{ item.name }}</h4>
-                  <div class="flex items-center gap-2 text-xs">
-                    <strong class="text-slate-800">Rp{{ item.price.toLocaleString('id-ID') }}</strong>
-                    <span class="text-slate-400 font-medium">Stok: {{ item.stock }}</span>
-                  </div>
-                </div>
-
-                <!-- Quantity Control & Price -->
-                <div class="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto mt-3 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                  <!-- Control -->
-                  <div class="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-                    <Button 
-                      icon="pi pi-minus" 
-                      severity="secondary" 
-                      text 
-                      rounded
-                      size="small"
-                      class="w-7 h-7 p-0"
-                      :disabled="item.quantity <= 1"
-                      @click="updateQuantity(item, -1)" 
-                    />
-                    <span class="w-8 text-center text-xs font-bold text-slate-800">{{ item.quantity }}</span>
-                    <Button 
-                      icon="pi pi-plus" 
-                      severity="secondary" 
-                      text 
-                      rounded
-                      size="small"
-                      class="w-7 h-7 p-0"
-                      :disabled="item.quantity >= item.stock"
-                      @click="updateQuantity(item, 1)" 
-                    />
-                  </div>
-
-                  <!-- Subtotal Item -->
-                  <div class="text-right min-w-[100px]">
-                    <strong class="text-sm font-black text-slate-800">Rp{{ item.subtotal.toLocaleString('id-ID') }}</strong>
-                  </div>
-
-                  <!-- Action delete -->
-                  <Button 
-                    icon="pi pi-times" 
-                    severity="danger" 
-                    text 
-                    rounded 
-                    size="small" 
-                    class="hover:bg-red-50 text-red-500" 
-                    title="Hapus"
-                    @click="deleteItem(item)" 
-                  />
-                </div>
-
-              </div>
-            </div>
-
-          </div>
         </div>
-
-        <!-- Right: Order Summary Card (Takes 4 columns) -->
-        <div class="lg:col-span-4">
-          <Card class="shadow-sm border border-slate-100 sticky top-4">
-            <template #title>
-              <span class="text-base font-black text-slate-800">Ringkasan Belanja</span>
-            </template>
-            <template #content>
-              <div class="space-y-4 pt-2">
-                <div class="flex justify-between text-xs text-slate-500 font-bold border-b border-slate-100 pb-3">
-                  <span>Total Produk</span>
-                  <span>{{ cartStore.cartCount }} unit</span>
-                </div>
-
-                <div class="flex justify-between items-baseline py-2">
-                  <span class="text-xs text-slate-500 font-bold">Subtotal</span>
-                  <strong class="text-xl font-black text-primary">Rp{{ cartStore.subtotal.toLocaleString('id-ID') }}</strong>
-                </div>
-
-                <!-- Alert info -->
-                <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-[10px] text-slate-500 leading-relaxed space-y-1">
-                  <p><i class="pi pi-info-circle text-primary text-[10px]"></i> Biaya jasa antar akan ditambahkan di halaman checkout berdasarkan jenis pengiriman masing-masing toko.</p>
-                  <p v-if="!isVerified" class="text-red-500 font-bold"><i class="pi pi-exclamation-triangle text-[10px]"></i> Akun Anda belum diverifikasi. Tombol checkout dinonaktifkan.</p>
-                </div>
-
-                <Button 
-                  label="Lanjut ke Checkout" 
-                  icon="pi pi-arrow-right" 
-                  iconPos="right" 
-                  class="w-full text-sm font-bold py-3 mt-2" 
-                  :disabled="!isVerified"
-                  @click="proceedToCheckout" 
-                />
-              </div>
-            </template>
-          </Card>
-        </div>
-
-      </div>
-
-      <!-- Empty State -->
-      <div v-else class="text-center py-20 bg-white rounded-3xl border border-slate-100 space-y-4 max-w-lg mx-auto p-8 shadow-sm">
-        <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 text-3xl mx-auto">
-          <i class="pi pi-shopping-cart"></i>
-        </div>
-        <h3 class="text-sm font-bold text-slate-700">Keranjang Anda masih kosong</h3>
-        <p class="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-          Belum ada produk yang Anda tambahkan. Yuk, cari produk berkualitas dari sesama alumni FEB Universitas Mulawarman!
-        </p>
-        <Button label="Jelajahi Produk" icon="pi pi-search" size="small" @click="router.push({ name: 'Catalog', query: { type: 'product' } })" />
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
-        <p class="text-xs">&copy; 2026 FEB Universitas Mulawarman. Hak Cipta Dilindungi.</p>
-        <p class="text-[10px] text-slate-600">Dari Alumni, Oleh Alumni, Untuk Alumni</p>
-      </div>
-    </footer>
+    <!-- Empty State -->
+    <EmptyState
+      v-else
+      icon="pi-shopping-cart"
+      title="Keranjang kosong"
+      description="Belum ada produk. Yuk cari produk dari alumni FEB Unmul!"
+      actionLabel="Jelajahi Katalog"
+      @action="router.push({ name: 'Catalog', query: { type: 'product' } })"
+    />
+
+    <!-- Clear Cart Dialog -->
+    <Dialog v-model:visible="showClearDialog" modal header="Kosongkan Keranjang" :style="{ width: '95%', maxWidth: '380px' }">
+      <div class="text-xs text-slate-600 py-2">Semua produk akan dihapus dari keranjang. Yakin ingin melanjutkan?</div>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <Button label="Batal" severity="secondary" outlined size="small" @click="showClearDialog = false" />
+          <Button label="Ya, Kosongkan" severity="danger" size="small" @click="confirmClear" />
+        </div>
+      </template>
+    </Dialog>
+
   </div>
 </template>

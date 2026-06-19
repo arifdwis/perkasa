@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class AdminRoleController extends Controller
@@ -17,6 +17,7 @@ class AdminRoleController extends Controller
     public function getRoles()
     {
         $roles = Role::with('permissions')->get();
+
         return response()->json($roles);
     }
 
@@ -28,12 +29,12 @@ class AdminRoleController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'unique:roles,name'],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name']
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $role = Role::create([
             'name' => $request->name,
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
 
         if ($request->has('permissions')) {
@@ -51,7 +52,7 @@ class AdminRoleController extends Controller
 
         return response()->json([
             'message' => "Role {$role->name} berhasil dibuat.",
-            'role' => $role->load('permissions')
+            'role' => $role->load('permissions'),
         ], 201);
     }
 
@@ -65,18 +66,18 @@ class AdminRoleController extends Controller
         // Protect Super Admin from losing permissions or basic identity changes
         if ($role->name === 'super_admin') {
             return response()->json([
-                'message' => 'Role Super Admin dilindungi dan tidak dapat diubah.'
+                'message' => 'Role Super Admin dilindungi dan tidak dapat diubah.',
             ], 403);
         }
 
         $request->validate([
-            'name' => ['required', 'string', 'unique:roles,name,' . $role->id],
+            'name' => ['required', 'string', 'unique:roles,name,'.$role->id],
             'permissions' => ['nullable', 'array'],
-            'permissions.*' => ['string', 'exists:permissions,name']
+            'permissions.*' => ['string', 'exists:permissions,name'],
         ]);
 
         $role->update([
-            'name' => $request->name
+            'name' => $request->name,
         ]);
 
         if ($request->has('permissions')) {
@@ -94,7 +95,7 @@ class AdminRoleController extends Controller
 
         return response()->json([
             'message' => "Role {$role->name} berhasil diperbarui.",
-            'role' => $role->load('permissions')
+            'role' => $role->load('permissions'),
         ]);
     }
 
@@ -108,7 +109,7 @@ class AdminRoleController extends Controller
         // Protect Super Admin role from deletion (specified in plan.md)
         if ($role->name === 'super_admin') {
             return response()->json([
-                'message' => 'Role Super Admin dilindungi dan tidak dapat dihapus.'
+                'message' => 'Role Super Admin dilindungi dan tidak dapat dihapus.',
             ], 403);
         }
 
@@ -124,7 +125,7 @@ class AdminRoleController extends Controller
             ->log("Menghapus role: {$roleName}");
 
         return response()->json([
-            'message' => "Role {$roleName} berhasil dihapus."
+            'message' => "Role {$roleName} berhasil dihapus.",
         ]);
     }
 
@@ -134,6 +135,7 @@ class AdminRoleController extends Controller
     public function getPermissions()
     {
         $permissions = Permission::all();
+
         return response()->json($permissions);
     }
 
@@ -146,15 +148,15 @@ class AdminRoleController extends Controller
 
         $request->validate([
             'roles' => ['required', 'array'],
-            'roles.*' => ['string', 'exists:roles,name']
+            'roles.*' => ['string', 'exists:roles,name'],
         ]);
 
         // If the user being modified is the only super admin, protect them
-        if ($user->hasRole('super_admin') && !in_array('super_admin', $request->roles)) {
+        if ($user->hasRole('super_admin') && ! in_array('super_admin', $request->roles)) {
             $superAdminsCount = User::role('super_admin')->count();
             if ($superAdminsCount <= 1) {
                 return response()->json([
-                    'message' => 'Gagal mengubah role. Harus ada minimal satu Super Admin di sistem.'
+                    'message' => 'Gagal mengubah role. Harus ada minimal satu Super Admin di sistem.',
                 ], 403);
             }
         }
@@ -168,11 +170,11 @@ class AdminRoleController extends Controller
         activity()
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->log("Mengubah role pengguna {$user->name} menjadi: " . implode(', ', $request->roles));
+            ->log("Mengubah role pengguna {$user->name} menjadi: ".implode(', ', $request->roles));
 
         return response()->json([
             'message' => "Role untuk pengguna {$user->name} berhasil diperbarui.",
-            'user' => $user->load('roles')
+            'user' => $user->load('roles'),
         ]);
     }
 }

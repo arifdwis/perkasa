@@ -29,6 +29,11 @@ class Service extends Model
         'is_featured' => 'boolean',
     ];
 
+    protected $appends = [
+        'average_rating',
+        'reviews_count',
+    ];
+
     /**
      * Get the store that offers this service.
      */
@@ -59,5 +64,29 @@ class Service extends Model
     public function primaryImage(): HasOne
     {
         return $this->hasOne(ServiceImage::class)->where('is_primary', true);
+    }
+
+    /**
+     * Get all reviews for the service.
+     */
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable');
+    }
+
+    /**
+     * Accessor for average rating.
+     */
+    public function getAverageRatingAttribute()
+    {
+        return round($this->reviews()->avg('rating') ?? 0, 1);
+    }
+
+    /**
+     * Accessor for total reviews count.
+     */
+    public function getReviewsCountAttribute()
+    {
+        return $this->reviews()->count();
     }
 }

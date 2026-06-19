@@ -9,10 +9,10 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -42,7 +42,7 @@ class ProductController extends Controller
             $keyword = $request->search;
             $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', "%{$keyword}%")
-                  ->orWhere('description', 'like', "%{$keyword}%");
+                    ->orWhere('description', 'like', "%{$keyword}%");
             });
         }
 
@@ -76,27 +76,55 @@ class ProductController extends Controller
      */
     public function show($slug)
     {
-        $product = Product::with(['store.alumniProfile.user', 'category', 'images'])
+        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images'])
             ->where('slug', $slug)
             ->firstOrFail();
 
         // If the store is not active or the product is inactive, restrict view to owner or admin
         if ($product->store->status !== 'active' || $product->status === 'inactive') {
             $user = auth('sanctum')->user();
-            if (!$user) {
+            if (! $user) {
                 return response()->json(['message' => 'Akses ditolak. Produk tidak tersedia.'], 403);
             }
 
             $isOwner = $product->store->alumniProfile->user_id === $user->id;
             $isAdmin = $user->hasRole('super_admin') || $user->hasRole('admin_marketplace');
 
-            if (!$isOwner && !$isAdmin) {
+            if (! $isOwner && ! $isAdmin) {
                 return response()->json(['message' => 'Akses ditolak. Produk tidak tersedia.'], 403);
             }
         }
 
         return response()->json([
-            'product' => $product
+            'product' => $product,
+        ]);
+    }
+
+    /**
+     * Display a specific product by ID (Public).
+     */
+    public function showById($id)
+    {
+        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images'])
+            ->findOrFail($id);
+
+        // If the store is not active or the product is inactive, restrict view to owner or admin
+        if ($product->store->status !== 'active' || $product->status === 'inactive') {
+            $user = auth('sanctum')->user();
+            if (! $user) {
+                return response()->json(['message' => 'Akses ditolak. Produk tidak tersedia.'], 403);
+            }
+
+            $isOwner = $product->store->alumniProfile->user_id === $user->id;
+            $isAdmin = $user->hasRole('super_admin') || $user->hasRole('admin_marketplace');
+
+            if (! $isOwner && ! $isAdmin) {
+                return response()->json(['message' => 'Akses ditolak. Produk tidak tersedia.'], 403);
+            }
+        }
+
+        return response()->json([
+            'product' => $product,
         ]);
     }
 
@@ -106,7 +134,7 @@ class ProductController extends Controller
     public function sellerProducts(Request $request)
     {
         $profile = $request->user()->profile;
-        if (!$profile || !$profile->store) {
+        if (! $profile || ! $profile->store) {
             return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
         }
 
@@ -141,7 +169,7 @@ class ProductController extends Controller
         $originalSlug = $slug;
         $count = 1;
         while (Product::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $count;
+            $slug = $originalSlug.'-'.$count;
             $count++;
         }
         $data['slug'] = $slug;
@@ -154,7 +182,7 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Produk berhasil dibuat.',
-            'product' => $product->load(['category'])
+            'product' => $product->load(['category']),
         ], 210); // Laravel expects 201 for created generally, but 200/201 is fine
     }
 
@@ -167,7 +195,7 @@ class ProductController extends Controller
         Gate::authorize('update', $product);
 
         return response()->json([
-            'product' => $product
+            'product' => $product,
         ]);
     }
 
@@ -192,7 +220,7 @@ class ProductController extends Controller
             $originalSlug = $slug;
             $count = 1;
             while (Product::where('slug', $slug)->where('id', '!=', $id)->exists()) {
-                $slug = $originalSlug . '-' . $count;
+                $slug = $originalSlug.'-'.$count;
                 $count++;
             }
             $data['slug'] = $slug;
@@ -206,7 +234,7 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Produk berhasil diperbarui.',
-            'product' => $product->load(['category', 'images'])
+            'product' => $product->load(['category', 'images']),
         ]);
     }
 
@@ -233,7 +261,7 @@ class ProductController extends Controller
             ->log("Menghapus produk: {$product->name} beserta seluruh fotonya.");
 
         return response()->json([
-            'message' => 'Produk berhasil dihapus.'
+            'message' => 'Produk berhasil dihapus.',
         ]);
     }
 
@@ -264,14 +292,14 @@ class ProductController extends Controller
 
             ProductImage::create([
                 'product_id' => $product->id,
-                'image_path' => asset('storage/' . $path),
-                'is_primary' => true
+                'image_path' => asset('storage/'.$path),
+                'is_primary' => true,
             ]);
         });
 
         return response()->json([
             'message' => 'Foto utama produk berhasil diperbarui.',
-            'product' => $product->load('images')
+            'product' => $product->load('images'),
         ]);
     }
 
@@ -294,7 +322,7 @@ class ProductController extends Controller
 
         if (($currentGalleryCount + $newCount) > 5) {
             return response()->json([
-                'message' => 'Maksimal 5 foto galeri tambahan diperbolehkan.'
+                'message' => 'Maksimal 5 foto galeri tambahan diperbolehkan.',
             ], 422);
         }
 
@@ -304,8 +332,8 @@ class ProductController extends Controller
                 $path = $file->store('products/gallery', 'public');
                 $img = ProductImage::create([
                     'product_id' => $product->id,
-                    'image_path' => asset('storage/' . $path),
-                    'is_primary' => false
+                    'image_path' => asset('storage/'.$path),
+                    'is_primary' => false,
                 ]);
                 $uploadedImages[] = $img;
             }
@@ -314,7 +342,7 @@ class ProductController extends Controller
         return response()->json([
             'message' => 'Foto galeri berhasil ditambahkan.',
             'images' => $uploadedImages,
-            'product' => $product->load('images')
+            'product' => $product->load('images'),
         ]);
     }
 
@@ -336,7 +364,65 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Foto berhasil dihapus.',
-            'product' => $product->load('images')
+            'product' => $product->load('images'),
+        ]);
+    }
+
+    /**
+     * List all products of a store, any status (Admin moderation).
+     */
+    public function adminStoreProducts($storeId)
+    {
+        $products = Product::with(['category', 'primaryImage'])
+            ->where('store_id', $storeId)
+            ->latest()
+            ->get();
+
+        return response()->json($products);
+    }
+
+    /**
+     * Delete a product (Admin moderation, bypasses ownership).
+     */
+    public function adminDestroy($id)
+    {
+        $product = Product::with('images')->findOrFail($id);
+
+        DB::transaction(function () use ($product) {
+            foreach ($product->images as $image) {
+                $oldPath = str_replace(asset('storage/'), '', $image->image_path);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $product->delete();
+        });
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($product)
+            ->log("Admin menghapus produk: {$product->name}.");
+
+        return response()->json([
+            'message' => 'Produk berhasil dihapus oleh admin.',
+        ]);
+    }
+
+    /**
+     * Toggle product active/inactive (Admin moderation / sembunyikan).
+     */
+    public function adminToggleStatus($id)
+    {
+        $product = Product::findOrFail($id);
+        $newStatus = $product->status === 'active' ? 'inactive' : 'active';
+        $product->update(['status' => $newStatus]);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($product)
+            ->log("Admin mengubah status produk {$product->name} menjadi: {$newStatus}.");
+
+        return response()->json([
+            'message' => "Status produk diubah menjadi {$newStatus}.",
+            'product' => $product->load(['category', 'primaryImage']),
         ]);
     }
 }

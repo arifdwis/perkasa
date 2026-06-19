@@ -18,7 +18,7 @@ class FavoriteController extends Controller
     {
         $request->validate([
             'favoritable_id' => ['required', 'uuid'],
-            'favoritable_type' => ['required', 'string', 'in:product,service,store']
+            'favoritable_type' => ['required', 'string', 'in:product,service,store'],
         ]);
 
         $id = $request->favoritable_id;
@@ -40,7 +40,7 @@ class FavoriteController extends Controller
 
         // Verify if the target model exists
         $target = $modelClass::find($id);
-        if (!$target) {
+        if (! $target) {
             return response()->json(['message' => 'Item tidak ditemukan.'], 404);
         }
 
@@ -53,19 +53,21 @@ class FavoriteController extends Controller
 
         if ($existing) {
             $existing->delete();
+
             return response()->json([
                 'favorited' => false,
-                'message' => 'Berhasil dihapus dari favorit.'
+                'message' => 'Berhasil dihapus dari favorit.',
             ]);
         } else {
             Favorite::create([
                 'user_id' => $userId,
                 'favoritable_id' => $id,
-                'favoritable_type' => $modelClass
+                'favoritable_type' => $modelClass,
             ]);
+
             return response()->json([
                 'favorited' => true,
-                'message' => 'Berhasil ditambahkan ke favorit.'
+                'message' => 'Berhasil ditambahkan ke favorit.',
             ]);
         }
     }
@@ -117,7 +119,7 @@ class FavoriteController extends Controller
         return response()->json([
             'products' => $products,
             'services' => $services,
-            'stores' => $stores
+            'stores' => $stores,
         ]);
     }
 }

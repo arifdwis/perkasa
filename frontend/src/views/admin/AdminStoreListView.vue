@@ -3,15 +3,18 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import Tag from 'primevue/tag'
 import Select from 'primevue/select'
-import Dialog from 'primevue/dialog'
-import Textarea from 'primevue/textarea'
 import Toast from 'primevue/toast'
+import { Icon } from '@iconify/vue'
+import AdminPageHeader from '../../components/admin/AdminPageHeader.vue'
+import AdminPanel from '../../components/admin/AdminPanel.vue'
+import AdminState from '../../components/admin/AdminState.vue'
+import AdminSlideOver from '../../components/admin/AdminSlideOver.vue'
+import AdminConfirmModal from '../../components/admin/AdminConfirmModal.vue'
+import AdminPaginator from '../../components/admin/AdminPaginator.vue'
+import { statusPill } from '../../utils/statusPill'
 
 const router = useRouter()
 const toast = useToast()
@@ -21,6 +24,7 @@ const totalRecords = ref(0)
 const loading = ref(true)
 const search = ref('')
 const statusFilter = ref(null)
+const currentPage = ref(1)
 
 const statusOptions = ref([
   { label: 'Semua Status', value: '' },
@@ -29,262 +33,321 @@ const statusOptions = ref([
   { label: 'Suspended', value: 'suspended' }
 ])
 
-// Action moderation dialog state
-const moderateDialog = ref(false)
-const selectedStore = ref(null)
-const modAction = ref('') // 'approve' | 'suspend'
-const modReason = ref('')
-const processingAction = ref(false)
-
 const fetchStores = async (page = 1) => {
   loading.value = true
+  currentPage.value = page
   try {
-    const params = {
-      page,
-      search: search.value,
-      status: statusFilter.value ? statusFilter.value.value : ''
-    }
+    const params = { page, search: search.value, status: statusFilter.value ? statusFilter.value.value : '' }
     const response = await axios.get('/admin/stores', { params })
     storeList.value = response.data.data
     totalRecords.value = response.data.total
   } catch (err) {
-    console.error(err)
     toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat daftar toko.', life: 3000 })
-  } finally {
-    loading.value = false
-  }
+  } finally { loading.value = false }
 }
 
-onMounted(() => {
-  fetchStores()
-})
+onMounted(() => { fetchStores() })
 
-const handleSearch = () => {
-  fetchStores(1)
+const handleSearch = () => { fetchStores(1) }
+
+// Detail slide-over
+const detailVisible = ref(false)
+const selectedStore = ref(null)
+
+const openDetail = (store) => {
+  selectedStore.value = store
+  detailVisible.value = true
+  fetchStoreItems(store.id)
 }
 
-const getSeverity = (status) => {
-  switch (status) {
-    case 'active': return 'success'
-    case 'pending': return 'warn'
-    case 'suspended': return 'danger'
-    default: return 'info'
-  }
-}
+// Confirm modal (moderasi toko)
+const confirmVisible = ref(false)
+const confirmAction = ref('')
+const confirmReason = ref('')
+const confirmLoading = ref(false)
 
 const openModeration = (store, action) => {
   selectedStore.value = store
-  modAction.value = action
-  modReason.value = ''
-  moderateDialog.value = true
+  confirmAction.value = action
+  confirmReason.value = ''
+  confirmVisible.value = true
 }
 
 const handleModeration = async () => {
-  processingAction.value = true
+  confirmLoading.value = true
   try {
     const response = await axios.post(`/admin/stores/${selectedStore.value.id}/verify`, {
-      action: modAction.value,
-      reason: modReason.value
+      action: confirmAction.value,
+      reason: confirmReason.value
     })
-
-    toast.add({
-      severity: 'success',
-      summary: 'Sukses',
-      detail: response.data.message || 'Status moderasi toko berhasil diperbarui.',
-      life: 3000
-    })
-    moderateDialog.value = false
-    fetchStores()
+    toast.add({ severity: 'success', summary: 'Sukses', detail: response.data.message || 'Status moderasi toko berhasil diperbarui.', life: 3000 })
+    confirmVisible.value = false
+    fetchStores(currentPage.value)
   } catch (err) {
-    toast.add({
-      severity: 'error',
-      summary: 'Gagal',
-      detail: err.response?.data?.message || 'Gagal mengubah status moderasi toko.',
-      life: 3000
-    })
-  } finally {
-    processingAction.value = false
-  }
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal mengubah status.', life: 3000 })
+  } finally { confirmLoading.value = false }
 }
+
+// Product/Service moderation in slide-over
+const detailTab = ref('products')
+const storeProducts = ref([])
+const storeServices = ref([])
+const loadingItems = ref(false)
+
+const fetchStoreItems = async (storeId) => {
+  loadingItems.value = true
+  try {
+    const [prodRes, servRes] = await Promise.all([
+      axios.get(`/admin/stores/${storeId}/products`),
+      axios.get(`/admin/stores/${storeId}/services`)
+    ])
+    storeProducts.value = prodRes.data
+    storeServices.value = servRes.data
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat produk/jasa toko.', life: 3000 })
+  } finally { loadingItems.value = false }
+}
+
+// Product/Service action confirm
+const itemConfirmVisible = ref(false)
+const itemConfirmAction = ref('')
+const itemConfirmType = ref('')
+const itemConfirmTarget = ref(null)
+const itemConfirmLoading = ref(false)
+
+const openItemAction = (type, item, action) => {
+  itemConfirmType.value = type
+  itemConfirmTarget.value = item
+  itemConfirmAction.value = action
+  itemConfirmVisible.value = true
+}
+
+const handleItemAction = async () => {
+  itemConfirmLoading.value = true
+  const type = itemConfirmType.value
+  const item = itemConfirmTarget.value
+  const action = itemConfirmAction.value
+  const endpoint = type === 'product'
+    ? (action === 'delete' ? `/admin/products/${item.id}` : `/admin/products/${item.id}/status`)
+    : (action === 'delete' ? `/admin/services/${item.id}` : `/admin/services/${item.id}/status`)
+
+  try {
+    const response = action === 'delete'
+      ? await axios.delete(endpoint)
+      : await axios.patch(endpoint)
+    toast.add({ severity: 'success', summary: 'Sukses', detail: response.data.message || 'Aksi berhasil.', life: 3000 })
+    itemConfirmVisible.value = false
+    fetchStoreItems(selectedStore.value.id)
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal menjalankan aksi.', life: 3000 })
+  } finally { itemConfirmLoading.value = false }
+}
+
+const totalPages = () => Math.ceil(totalRecords.value / 15)
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50 p-4 sm:p-8">
+  <div class="space-y-6">
     <Toast />
-    
-    <div class="max-w-7xl mx-auto space-y-6">
-      
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2">
-            <i class="pi pi-shopping-bag text-primary"></i> Moderasi Toko Alumni
-          </h2>
-          <p class="text-xs text-slate-500 font-medium">Setujui pengajuan toko baru atau tangguhkan operasional toko alumni.</p>
-        </div>
-        <Button label="Kembali ke Dashboard" icon="pi pi-home" severity="secondary" size="small" @click="router.push({ name: 'Home' })" />
-      </div>
+    <AdminPageHeader icon="solar:shop-bold-duotone" title="Moderasi Toko Alumni"
+                     subtitle="Setujui pengajuan toko baru, tangguhkan operasional, atau moderasi produk/jasa." />
 
-      <!-- Filter Panel -->
-      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-4 items-center">
-        <div class="w-full sm:flex-grow">
-          <span class="p-input-icon-left w-full">
-            <i class="pi pi-search text-slate-400" />
-            <InputText v-model="search" placeholder="Cari nama toko atau nama pemilik..." class="w-full text-sm" @input="handleSearch" />
+    <AdminPanel>
+      <div class="flex flex-col sm:flex-row gap-4 items-center">
+        <div class="relative w-full sm:flex-grow">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <InputText v-model="search" placeholder="Cari nama toko atau pemilik..." class="w-full !pl-10" @input="handleSearch" />
+        </div>
+        <Select v-model="statusFilter" :options="statusOptions" optionLabel="label" placeholder="Filter Status" class="w-full sm:w-64" @change="handleSearch" />
+      </div>
+    </AdminPanel>
+
+    <!-- Card list -->
+    <div class="space-y-2.5">
+      <AdminState v-if="loading" mode="loading" />
+      <template v-else>
+        <div v-for="item in storeList" :key="item.id"
+             class="group bg-white border border-slate-200 rounded-xl px-4 py-3
+                    flex items-center gap-4 hover:border-primary/40 hover:shadow-sm
+                    transition-all cursor-pointer" @click="openDetail(item)">
+          <img v-if="item.logo" :src="item.logo" alt="Logo" class="w-11 h-11 object-cover rounded-xl border border-slate-200 shrink-0" />
+          <div v-else class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+            <i class="pi pi-image text-slate-400"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-slate-800 truncate">{{ item.name }}</p>
+            <p class="text-xs text-slate-400 truncate">{{ item.kategori_usaha }}</p>
+          </div>
+          <div class="hidden md:block w-40 text-xs text-slate-500">
+            <span class="font-semibold block">{{ item.alumni_profile?.user?.name || '-' }}</span>
+            <span class="text-slate-400">{{ item.alumni_profile?.nim }}</span>
+          </div>
+          <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="statusPill(item.status)">
+            {{ item.status?.toUpperCase() }}
           </span>
+          <div class="flex gap-1.5">
+            <Button v-if="item.status !== 'active'" label="Setujui" icon="pi pi-check" size="small" severity="success" class="text-xs" @click.stop="openModeration(item, 'approve')" />
+            <Button v-if="item.status === 'active'" label="Suspend" icon="pi pi-ban" size="small" severity="danger" class="text-xs" @click.stop="openModeration(item, 'suspend')" />
+          </div>
         </div>
-        <div class="w-full sm:w-64">
-          <Select 
-            v-model="statusFilter" 
-            :options="statusOptions" 
-            optionLabel="label" 
-            placeholder="Filter Status" 
-            class="w-full text-sm" 
-            @change="handleSearch"
-          />
-        </div>
-      </div>
-
-      <!-- Data Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <DataTable 
-          :value="storeList" 
-          lazy 
-          :totalRecords="totalRecords" 
-          :loading="loading" 
-          paginator 
-          :rows="15"
-          responsiveLayout="stack" 
-          breakpoint="960px"
-          class="p-datatable-sm"
-          @page="(event) => fetchStores(event.page + 1)"
-        >
-          <template #empty>
-            <div class="text-center py-8 text-slate-500 font-medium space-y-2">
-              <i class="pi pi-shopping-bag text-4xl text-slate-300"></i>
-              <p>Belum ada data toko terdaftar.</p>
-            </div>
-          </template>
-
-          <Column field="name" header="Nama Toko" class="font-bold text-slate-800">
-            <template #body="slotProps">
-              <div class="flex items-center gap-3">
-                <img 
-                  v-if="slotProps.data.logo" 
-                  :src="slotProps.data.logo" 
-                  alt="Logo" 
-                  class="w-10 h-10 object-cover rounded-xl border border-slate-100" 
-                />
-                <div v-else class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                  <i class="pi pi-image text-lg"></i>
-                </div>
-                <div>
-                  <span class="block text-sm">{{ slotProps.data.name }}</span>
-                  <span class="text-[10px] text-slate-400 font-mono">{{ slotProps.data.kategori_usaha }}</span>
-                </div>
-              </div>
-            </template>
-          </Column>
-
-          <Column header="Pemilik Alumni" class="text-slate-700 text-sm">
-            <template #body="slotProps">
-              <div>
-                <span class="block font-semibold">{{ slotProps.data.alumni_profile?.user?.name || '-' }}</span>
-                <span class="text-[10px] text-slate-400">{{ slotProps.data.alumni_profile?.nim }} ({{ slotProps.data.alumni_profile?.program_studi }})</span>
-              </div>
-            </template>
-          </Column>
-
-          <Column field="kota" header="Domisili/Kontak" class="text-slate-600 text-sm">
-            <template #body="slotProps">
-              <div>
-                <span class="block font-semibold">{{ slotProps.data.kota }}</span>
-                <span class="text-[10px] text-slate-400">{{ slotProps.data.whatsapp }}</span>
-              </div>
-            </template>
-          </Column>
-
-          <Column field="status" header="Status Moderasi" class="text-center">
-            <template #body="slotProps">
-              <Tag :value="slotProps.data.status.toUpperCase()" :severity="getSeverity(slotProps.data.status)" />
-            </template>
-          </Column>
-
-          <Column header="Aksi" class="text-center w-56">
-            <template #body="slotProps">
-              <div class="flex justify-center gap-1.5">
-                <Button 
-                  label="Lihat Profil" 
-                  icon="pi pi-external-link" 
-                  size="small" 
-                  severity="secondary" 
-                  outlined
-                  class="text-xs"
-                  @click="router.push({ name: 'StoreProfile', params: { id: slotProps.data.id } })"
-                />
-                <Button 
-                  v-if="slotProps.data.status !== 'active'"
-                  label="Setujui" 
-                  icon="pi pi-check" 
-                  size="small" 
-                  severity="success" 
-                  class="text-xs"
-                  @click="openModeration(slotProps.data, 'approve')"
-                />
-                <Button 
-                  v-if="slotProps.data.status === 'active'"
-                  label="Suspend" 
-                  icon="pi pi-ban" 
-                  size="small" 
-                  severity="danger" 
-                  class="text-xs"
-                  @click="openModeration(slotProps.data, 'suspend')"
-                />
-              </div>
-            </template>
-          </Column>
-        </DataTable>
-      </div>
-
+        <AdminState v-if="!storeList.length && !loading" mode="empty" icon="solar:shop-linear" text="Belum ada toko terdaftar." />
+      </template>
     </div>
 
-    <!-- Moderation Dialog -->
-    <Dialog 
-      v-model:visible="moderateDialog" 
-      :header="modAction === 'approve' ? 'Setujui Pengajuan Toko' : 'Suspend Toko'" 
-      :modal="true" 
-      :style="{ width: '450px' }"
-    >
-      <div class="flex flex-col gap-4 pt-2" v-if="selectedStore">
-        <p class="text-sm text-slate-600">
-          Apakah Anda yakin ingin melakukan aksi <strong class="capitalize">{{ modAction }}</strong> pada toko <strong>"{{ selectedStore.name }}"</strong>?
-          Aksi ini akan langsung mempengaruhi status usaha dan role pemilik di marketplace.
-        </p>
+    <!-- Pagination -->
+    <AdminPaginator :total="totalRecords" :rows="15" :first="(currentPage-1)*15" @page="e => fetchStores(e.page)" />
 
-        <div class="flex flex-col gap-1.5">
-          <label for="reason" class="text-xs font-bold text-slate-600 uppercase tracking-wider">Catatan Alasan Moderasi</label>
-          <Textarea 
-            id="reason" 
-            v-model="modReason" 
-            rows="3" 
-            placeholder="Masukkan keterangan alasan verifikasi..." 
-            class="w-full text-sm"
-          />
-        </div>
-      </div>
+    <!-- Detail Slide-Over with Product/Service Moderation -->
+    <AdminSlideOver :visible="detailVisible" @update:visible="detailVisible = $event"
+                    icon="solar:shop-bold-duotone" title="Detail Toko & Moderasi"
+                    subtitle="Profil toko, produk, dan jasa" width="560px">
+      <template v-if="selectedStore">
+        <div class="space-y-5">
+          <!-- Store header -->
+          <div class="flex items-center gap-4">
+            <img v-if="selectedStore.logo" :src="selectedStore.logo" alt="Logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-200" />
+            <div v-else class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center">
+              <i class="pi pi-image text-slate-400 text-xl"></i>
+            </div>
+            <div class="min-w-0">
+              <h4 class="text-lg font-black text-slate-800">{{ selectedStore.name }}</h4>
+              <p class="text-xs text-slate-400">{{ selectedStore.kategori_usaha }}</p>
+              <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold" :class="statusPill(selectedStore.status)">
+                {{ selectedStore.status?.toUpperCase() }}
+              </span>
+            </div>
+          </div>
 
-      <template #footer>
-        <div class="flex justify-end gap-2 pt-4">
-          <Button label="Batal" severity="secondary" size="small" outlined @click="moderateDialog = false" />
-          <Button 
-            :label="modAction === 'approve' ? 'Setujui' : 'Suspend'" 
-            :severity="modAction === 'approve' ? 'success' : 'danger'"
-            :loading="processingAction" 
-            size="small" 
-            @click="handleModeration" 
-          />
+          <!-- Owner info -->
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+            <h5 class="text-xs font-black text-slate-400 uppercase tracking-wider">Pemilik</h5>
+            <div class="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">Nama</span>
+                <span class="font-bold text-slate-700">{{ selectedStore.alumni_profile?.user?.name || '-' }}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">NIM</span>
+                <span class="font-bold text-slate-700">{{ selectedStore.alumni_profile?.nim }}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">Prodi</span>
+                <span class="font-bold text-slate-700">{{ selectedStore.alumni_profile?.program_studi }}</span>
+              </div>
+              <div>
+                <span class="block text-[10px] font-bold text-slate-400 uppercase">Kota</span>
+                <span class="font-bold text-slate-700">{{ selectedStore.kota || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Moderation actions -->
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+            <Button label="Lihat Halaman Toko" icon="pi pi-external-link" size="small" severity="secondary" outlined
+                    @click="router.push({ name: 'StoreProfile', params: { id: selectedStore.id } })" />
+            <Button v-if="selectedStore.status !== 'active'" label="Setujui" icon="pi pi-check" size="small" severity="success"
+                    @click="detailVisible = false; openModeration(selectedStore, 'approve')" />
+            <Button v-if="selectedStore.status === 'active'" label="Suspend" icon="pi pi-ban" size="small" severity="danger"
+                    @click="detailVisible = false; openModeration(selectedStore, 'suspend')" />
+          </div>
+
+          <!-- Product/Service tabs -->
+          <div class="border-t border-slate-100 pt-4">
+            <div class="flex gap-1 p-1 bg-slate-50 rounded-xl w-fit mb-4">
+              <button class="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all"
+                      :class="detailTab === 'products' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'"
+                      @click="detailTab = 'products'">
+                <i class="pi pi-box mr-1"></i> Produk ({{ storeProducts.length }})
+              </button>
+              <button class="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all"
+                      :class="detailTab === 'services' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'"
+                      @click="detailTab = 'services'">
+                <i class="pi pi-wrench mr-1"></i> Jasa ({{ storeServices.length }})
+              </button>
+            </div>
+
+            <AdminState v-if="loadingItems" mode="loading" />
+            <template v-else>
+              <!-- Products tab -->
+              <div v-if="detailTab === 'products'" class="space-y-2">
+                <div v-for="prod in storeProducts" :key="prod.id"
+                     class="bg-white border border-slate-200 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img v-if="prod.primary_image" :src="prod.primary_image.image_path" class="w-full h-full object-cover" />
+                    <i v-else class="pi pi-image text-slate-300 text-xs"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-800 truncate">{{ prod.name }}</p>
+                    <p class="text-[10px] text-slate-400">Rp{{ Number(prod.price).toLocaleString('id-ID') }}</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold" :class="statusPill(prod.status)">
+                    {{ prod.status?.toUpperCase() }}
+                  </span>
+                  <div class="flex gap-1">
+                    <Button icon="pi pi-eye-slash" size="small" text rounded
+                            :title="prod.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'"
+                            @click="openItemAction('product', prod, 'status')" />
+                    <Button icon="pi pi-trash" size="small" text rounded severity="danger"
+                            title="Hapus" @click="openItemAction('product', prod, 'delete')" />
+                  </div>
+                </div>
+                <div v-if="!storeProducts.length" class="py-4 text-center text-slate-400 text-xs">Toko belum memiliki produk</div>
+              </div>
+
+              <!-- Services tab -->
+              <div v-if="detailTab === 'services'" class="space-y-2">
+                <div v-for="serv in storeServices" :key="serv.id"
+                     class="bg-white border border-slate-200 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img v-if="serv.primary_image" :src="serv.primary_image.image_path" class="w-full h-full object-cover" />
+                    <i v-else class="pi pi-image text-slate-300 text-xs"></i>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-800 truncate">{{ serv.name }}</p>
+                    <p class="text-[10px] text-slate-400">Mulai Rp{{ Number(serv.price_from || 0).toLocaleString('id-ID') }}</p>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold" :class="statusPill(serv.status)">
+                    {{ serv.status?.toUpperCase() }}
+                  </span>
+                  <div class="flex gap-1">
+                    <Button icon="pi pi-eye-slash" size="small" text rounded
+                            :title="serv.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'"
+                            @click="openItemAction('service', serv, 'status')" />
+                    <Button icon="pi pi-trash" size="small" text rounded severity="danger"
+                            title="Hapus" @click="openItemAction('service', serv, 'delete')" />
+                  </div>
+                </div>
+                <div v-if="!storeServices.length" class="py-4 text-center text-slate-400 text-xs">Toko belum memiliki jasa</div>
+              </div>
+            </template>
+          </div>
         </div>
       </template>
-    </Dialog>
+    </AdminSlideOver>
+
+    <!-- Moderation Confirm Modal (Toko) -->
+    <AdminConfirmModal :visible="confirmVisible" @update:visible="confirmVisible = $event"
+      :title="confirmAction === 'approve' ? 'Setujui Pengajuan Toko' : 'Suspend Toko'"
+      :message="`Apakah Anda yakin ingin ${confirmAction === 'approve' ? 'menyetujui' : 'menangguhkan'} toko &quot;${selectedStore?.name}&quot;?`"
+      :icon="confirmAction === 'approve' ? 'solar:check-circle-bold' : 'solar:warning-bold'"
+      :tone="confirmAction === 'approve' ? 'primary' : 'danger'"
+      :confirmLabel="confirmAction === 'approve' ? 'Setujui' : 'Suspend'"
+      :loading="confirmLoading"
+      withReason :reasonRequired="true"
+      :reason="confirmReason"
+      @update:reason="confirmReason = $event"
+      @confirm="handleModeration" />
+
+    <!-- Item Action Confirm Modal (Product/Service) -->
+    <AdminConfirmModal :visible="itemConfirmVisible" @update:visible="itemConfirmVisible = $event"
+      :title="itemConfirmAction === 'delete' ? `Hapus ${itemConfirmType === 'product' ? 'Produk' : 'Jasa'}` : `Nonaktifkan ${itemConfirmType === 'product' ? 'Produk' : 'Jasa'}`"
+      :message="itemConfirmAction === 'delete'
+        ? `Apakah Anda yakin ingin menghapus ${itemConfirmType === 'product' ? 'produk' : 'jasa'} &quot;${itemConfirmTarget?.name}&quot;? Tindakan ini tidak dapat dibatalkan.`
+        : `Apakah Anda yakin ingin mengubah status ${itemConfirmType === 'product' ? 'produk' : 'jasa'} &quot;${itemConfirmTarget?.name}&quot;?`"
+      :icon="itemConfirmAction === 'delete' ? 'solar:trash-bin-minimalistic-bold' : 'solar:warning-bold'"
+      :tone="itemConfirmAction === 'delete' ? 'danger' : 'warn'"
+      :confirmLabel="itemConfirmAction === 'delete' ? 'Hapus' : 'Ubah Status'"
+      :loading="itemConfirmLoading"
+      @confirm="handleItemAction" />
   </div>
 </template>

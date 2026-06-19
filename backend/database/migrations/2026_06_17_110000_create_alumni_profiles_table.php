@@ -23,10 +23,10 @@ return new class extends Migration
             $table->string('foto_profil')->nullable();
             $table->enum('status_verifikasi', ['pending', 'verified', 'rejected', 'suspended'])->default('pending');
             $table->boolean('badge_verified')->default(false);
-            
+
             // Index for high performance identity search (specified in plan.md)
             $table->index(['program_studi', 'tahun_masuk', 'tahun_lulus']);
-            
+
             $table->timestamps();
         });
     }

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Store;
-use App\Models\ProductCategory;
 use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\Store;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,8 +15,11 @@ class FavoriteFeatureTest extends TestCase
     use RefreshDatabase;
 
     protected $buyerUser;
+
     protected $unverifiedUser;
+
     protected $sellerStore;
+
     protected $product;
 
     protected function setUp(): void
@@ -29,7 +32,7 @@ class FavoriteFeatureTest extends TestCase
         $this->buyerUser = User::create([
             'name' => 'Buyer Alumni',
             'email' => 'buyer@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->buyerUser->assignRole('alumni_pembeli');
         $this->buyerUser->profile()->create([
@@ -39,14 +42,14 @@ class FavoriteFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567811',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
 
         // 2. Create Unverified User
         $this->unverifiedUser = User::create([
             'name' => 'Unverified User',
             'email' => 'unverified@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $this->unverifiedUser->assignRole('alumni_pembeli');
         $this->unverifiedUser->profile()->create([
@@ -56,14 +59,14 @@ class FavoriteFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567822',
             'status_verifikasi' => 'pending',
-            'badge_verified' => false
+            'badge_verified' => false,
         ]);
 
         // 3. Create Store & Product to favorite
         $seller = User::create([
             'name' => 'Seller',
             'email' => 'seller@example.com',
-            'password' => bcrypt('password123')
+            'password' => bcrypt('password123'),
         ]);
         $sellerProfile = $seller->profile()->create([
             'nim' => '1801015333',
@@ -72,7 +75,7 @@ class FavoriteFeatureTest extends TestCase
             'tahun_lulus' => 2022,
             'whatsapp' => '081234567833',
             'status_verifikasi' => 'verified',
-            'badge_verified' => true
+            'badge_verified' => true,
         ]);
         $this->sellerStore = $sellerProfile->store()->create([
             'name' => 'Toko Kopi',
@@ -81,7 +84,7 @@ class FavoriteFeatureTest extends TestCase
             'kota' => 'Samarinda',
             'tahun_berdiri' => 2025,
             'status' => 'active',
-            'delivery_type' => 'fixed'
+            'delivery_type' => 'fixed',
         ]);
 
         $cat = ProductCategory::create(['name' => 'Kopi', 'slug' => 'kopi']);
@@ -94,7 +97,7 @@ class FavoriteFeatureTest extends TestCase
             'description' => 'Espresso kental',
             'price' => 12000,
             'stock' => 10,
-            'status' => 'active'
+            'status' => 'active',
         ]);
     }
 
@@ -107,22 +110,22 @@ class FavoriteFeatureTest extends TestCase
 
         // 1. ADD favorite
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/favorites/toggle', [
             'favoritable_id' => $this->product->id,
-            'favoritable_type' => 'product'
+            'favoritable_type' => 'product',
         ]);
 
         $response->assertStatus(200);
         $response->assertJsonPath('favorited', true);
         $this->assertDatabaseHas('favorites', [
             'user_id' => $this->buyerUser->id,
-            'favoritable_id' => $this->product->id
+            'favoritable_id' => $this->product->id,
         ]);
 
         // 2. LIST favorites
         $listResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->getJson('/api/favorites');
 
         $listResponse->assertStatus(200);
@@ -130,17 +133,17 @@ class FavoriteFeatureTest extends TestCase
 
         // 3. REMOVE favorite (toggle again)
         $toggleOffResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/favorites/toggle', [
             'favoritable_id' => $this->product->id,
-            'favoritable_type' => 'product'
+            'favoritable_type' => 'product',
         ]);
 
         $toggleOffResponse->assertStatus(200);
         $toggleOffResponse->assertJsonPath('favorited', false);
         $this->assertDatabaseMissing('favorites', [
             'user_id' => $this->buyerUser->id,
-            'favoritable_id' => $this->product->id
+            'favoritable_id' => $this->product->id,
         ]);
     }
 
@@ -152,10 +155,10 @@ class FavoriteFeatureTest extends TestCase
         $token = $this->unverifiedUser->createToken('auth_token')->plainTextToken;
 
         $response = $this->withHeaders([
-            'Authorization' => "Bearer $token"
+            'Authorization' => "Bearer $token",
         ])->postJson('/api/favorites/toggle', [
             'favoritable_id' => $this->product->id,
-            'favoritable_type' => 'product'
+            'favoritable_type' => 'product',
         ]);
 
         $response->assertStatus(403);

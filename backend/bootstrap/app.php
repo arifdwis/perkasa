@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureAlumniIsVerified;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,8 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'verified_alumni' => \App\Http\Middleware\EnsureAlumniIsVerified::class,
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'verified_alumni' => EnsureAlumniIsVerified::class,
+            'admin' => EnsureUserIsAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

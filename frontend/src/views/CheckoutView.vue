@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
@@ -11,13 +11,95 @@ import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Toast from 'primevue/toast'
 
+import AppNavbar from '../components/AppNavbar.vue'
+import LoadingState from '../components/LoadingState.vue'
+import EmptyState from '../components/EmptyState.vue'
+import BuyerPageHeader from '../components/buyer/BuyerPageHeader.vue'
+
 const router = useRouter()
+const route = useRoute()
 const cartStore = useCartStore()
 const toast = useToast()
 
+const directProductId = computed(() => route.query.product_id ? parseInt(route.query.product_id) : null)
+const directQuantity = computed(() => route.query.quantity ? parseInt(route.query.quantity) : 1)
+const isDirectCheckout = computed(() => !!directProductId.value)
+
+const directProduct = ref(null)
+const directProductLoading = ref(false)
+
+const fetchDirectProduct = async () => {
+  if (!directProductId.value) return
+  directProductLoading.value = true
+  try {
+    const response = await axios.get(`/products/id/${directProductId.value}`)
+    directProduct.value = response.data.product
+  } catch (err) {
+    console.error(err)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal Memuat Produk',
+      detail: 'Produk tidak ditemukan atau tidak aktif.',
+      life: 3000
+    })
+  } finally {
+    directProductLoading.value = false
+  }
+}
+
+const groupedItems = computed(() => {
+  if (isDirectCheckout.value) {
+    if (!directProduct.value) return []
+    const prod = directProduct.value
+    const store = prod.store
+    return [
+      {
+        store_id: store.id,
+        store_name: store.name,
+        store_kota: store.kota,
+        delivery_type: store.delivery_type,
+        fixed_delivery_fee: store.fixed_delivery_fee ? parseFloat(store.fixed_delivery_fee) : 0,
+        delivery_fees: store.delivery_fees || [],
+        items: [
+          {
+            id: 'direct',
+            product_id: prod.id,
+            name: prod.name,
+            quantity: directQuantity.value,
+            price: parseFloat(prod.price),
+            subtotal: parseFloat(prod.price) * directQuantity.value
+          }
+        ]
+      }
+    ]
+  }
+  return cartStore.groupedItems || []
+})
+
+const subtotal = computed(() => {
+  if (isDirectCheckout.value) {
+    if (!directProduct.value) return 0
+    return parseFloat(directProduct.value.price) * directQuantity.value
+  }
+  return cartStore.subtotal
+})
+
+const checkoutLoading = computed(() => {
+  if (isDirectCheckout.value) return directProductLoading.value
+  return cartStore.loading
+})
+
 const namaPenerima = ref('')
 const teleponPenerima = ref('')
-const alamatPenerima = ref('')
+const alamatLengkap = ref('')
+const kelurahan = ref('')
+const kecamatan = ref('')
+const kodePos = ref('')
+const mapSearchQuery = ref('')
+const mapSearchResults = ref([])
+const searchLoading = ref(false)
+const selectedLatitude = ref(null)
+const selectedLongitude = ref(null)
 const selectedWilayah = ref(null)
 const catatan = ref('')
 const loading = ref(false)
@@ -40,19 +122,19 @@ const autofillProfile = () => {
   if (user) {
     namaPenerima.value = user.name || ''
     teleponPenerima.value = user.profile?.whatsapp || ''
-    alamatPenerima.value = user.profile?.domisili || ''
+    alamatLengkap.value = user.profile?.domisili || ''
   }
 }
 
 // Check if any store in the cart requires region selection
 const requiresWilayah = computed(() => {
-  return cartStore.groupedItems.some(store => store.delivery_type === 'per_wilayah')
+  return groupedItems.value.some(store => store.delivery_type === 'per_wilayah')
 })
 
 // Collect unique region options from stores using delivery fee per wilayah
 const wilayahOptions = computed(() => {
   const optionsSet = new Set()
-  cartStore.groupedItems.forEach(store => {
+  groupedItems.value.forEach(store => {
     if (store.delivery_type === 'per_wilayah' && store.delivery_fees) {
       store.delivery_fees.forEach(df => {
         optionsSet.add(df.wilayah)
@@ -78,7 +160,7 @@ const getDeliveryFee = (storeGroup) => {
 // Check if any store in the cart doesn't serve the selected region
 const hasUnservedStore = computed(() => {
   if (!selectedWilayah.value) return false
-  return cartStore.groupedItems.some(store => {
+  return groupedItems.value.some(store => {
     if (store.delivery_type === 'per_wilayah') {
       const match = store.delivery_fees.some(df => df.wilayah === selectedWilayah.value)
       return !match
@@ -90,7 +172,7 @@ const hasUnservedStore = computed(() => {
 // Total delivery fees of all split orders
 const totalDeliveryFee = computed(() => {
   let total = 0
-  cartStore.groupedItems.forEach(store => {
+  groupedItems.value.forEach(store => {
     const fee = getDeliveryFee(store)
     if (fee !== null) {
       total += fee
@@ -101,7 +183,7 @@ const totalDeliveryFee = computed(() => {
 
 // Final payment total
 const grandTotal = computed(() => {
-  return cartStore.subtotal + totalDeliveryFee.value
+  return subtotal.value + totalDeliveryFee.value
 })
 
 const handleCheckout = async () => {
@@ -127,13 +209,24 @@ const handleCheckout = async () => {
 
   loading.value = true
   try {
-    const response = await axios.post('/checkout', {
+    const fullAddress = `${alamatLengkap.value}, Kel. ${kelurahan.value}, Kec. ${kecamatan.value}${kodePos.value ? ', Kode Pos: ' + kodePos.value : ''}`.trim().replace(/^[,\s]+|[,\s]+$/g, '')
+
+    const checkoutData = {
       nama_penerima: namaPenerima.value,
       telepon_penerima: teleponPenerima.value,
-      alamat_penerima: alamatPenerima.value,
+      alamat_penerima: fullAddress,
       wilayah_antar: selectedWilayah.value || undefined,
-      catatan: catatan.value || undefined
-    })
+      catatan: catatan.value || undefined,
+      latitude: selectedLatitude.value || undefined,
+      longitude: selectedLongitude.value || undefined
+    }
+
+    if (isDirectCheckout.value) {
+      checkoutData.product_id = directProductId.value
+      checkoutData.quantity = directQuantity.value
+    }
+
+    const response = await axios.post('/checkout', checkoutData)
 
     toast.add({
       severity: 'success',
@@ -163,10 +256,187 @@ const handleCheckout = async () => {
   }
 }
 
-onMounted(() => {
+let map = null
+let marker = null
+
+const reverseGeocode = async (lat, lon) => {
+  selectedLatitude.value = lat
+  selectedLongitude.value = lon
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&addressdetails=1`, {
+      headers: {
+        'Accept-Language': 'id',
+        'User-Agent': 'PerkasaMarketplace/1.0'
+      }
+    })
+    const data = await response.json()
+    if (data && data.address) {
+      const address = data.address
+      
+      // Extract sub-fields
+      kelurahan.value = address.village || address.suburb || address.quarter || address.neighbourhood || address.hamlet || ''
+      kecamatan.value = address.municipality || address.city_district || address.subdistrict || address.district || ''
+      kodePos.value = address.postcode || ''
+      
+      const roadName = address.road || address.street || address.path || address.suburb || data.name || ''
+      alamatLengkap.value = roadName
+      
+      // Auto-select wilayah if possible
+      const matchKeys = [address.suburb, address.village, address.municipality, address.city_district, address.subdistrict]
+      for (const val of matchKeys) {
+        if (!val) continue
+        const matchedOption = wilayahOptions.value.find(opt => 
+          opt.value.toLowerCase().includes(val.toLowerCase()) || 
+          val.toLowerCase().includes(opt.value.toLowerCase())
+        )
+        if (matchedOption) {
+          selectedWilayah.value = matchedOption.value
+          break
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to reverse geocode', error)
+  }
+}
+
+const searchLocation = async () => {
+  if (!mapSearchQuery.value || !map || !marker) return
+  
+  searchLoading.value = true
+  mapSearchResults.value = []
+  try {
+    const query = encodeURIComponent(mapSearchQuery.value)
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=id&limit=5`, {
+      headers: {
+        'Accept-Language': 'id',
+        'User-Agent': 'PerkasaMarketplace/1.0'
+      }
+    })
+    const results = await response.json()
+    if (results && results.length > 0) {
+      mapSearchResults.value = results
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'Lokasi Tidak Ditemukan',
+        detail: 'Coba masukkan kata kunci pencarian yang lebih spesifik.',
+        life: 3000
+      })
+    }
+  } catch (error) {
+    console.error('Failed to search location', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal Mencari',
+      detail: 'Terjadi kesalahan saat mencari lokasi.',
+      life: 3000
+    })
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+const selectSearchResult = async (res) => {
+  const lat = parseFloat(res.lat)
+  const lon = parseFloat(res.lon)
+  
+  if (map && marker) {
+    map.setView([lat, lon], 16)
+    marker.setLatLng([lat, lon])
+  }
+  
+  await reverseGeocode(lat, lon)
+  
+  mapSearchResults.value = []
+  mapSearchQuery.value = res.name || res.display_name.split(',')[0]
+}
+
+const initMap = () => {
+  nextTick(() => {
+    const mapEl = document.getElementById('map')
+    if (!mapEl || map) return
+
+    // Samarinda center coords
+    const lat = -0.5021
+    const lon = 117.1536
+    selectedLatitude.value = lat
+    selectedLongitude.value = lon
+
+    const L = window.L
+    if (!L) return
+
+    map = L.map('map').setView([lat, lon], 14)
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map)
+
+    // Premium custom marker icon (University theme color #294B29)
+    const customIcon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="
+        background-color: #294B29;
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        background: #294B29;
+        position: absolute;
+        transform: rotate(-45deg);
+        left: 50%;
+        top: 50%;
+        margin: -15px 0 0 -15px;
+        border: 2px solid white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      ">
+        <div style="
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: white;
+          margin: 8px auto 0 auto;
+        "></div>
+      </div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30]
+    })
+
+    marker = L.marker([lat, lon], { draggable: true, icon: customIcon }).addTo(map)
+
+    // Handle marker dragend
+    marker.on('dragend', async () => {
+      const position = marker.getLatLng()
+      await reverseGeocode(position.lat, position.lng)
+    })
+
+    // Handle map click
+    map.on('click', async (e) => {
+      marker.setLatLng(e.latlng)
+      await reverseGeocode(e.latlng.lat, e.latlng.lng)
+    })
+  })
+}
+
+watch(() => cartStore.loading, (newVal) => {
+  if (!isDirectCheckout.value && !newVal && cartStore.groupedItems.length > 0) {
+    setTimeout(initMap, 100)
+  }
+})
+
+onMounted(async () => {
   checkAuth()
   autofillProfile()
-  cartStore.fetchCart()
+  if (isDirectCheckout.value) {
+    await fetchDirectProduct()
+    if (directProduct.value) {
+      setTimeout(initMap, 100)
+    }
+  } else {
+    await cartStore.fetchCart()
+    if (!cartStore.loading && cartStore.groupedItems.length > 0) {
+      setTimeout(initMap, 100)
+    }
+  }
 })
 </script>
 
@@ -175,40 +445,16 @@ onMounted(() => {
     <Toast />
 
     <!-- Navbar -->
-    <header class="bg-primary text-white shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3 cursor-pointer" @click="router.push({ name: 'Home' })">
-          <i class="pi pi-prime text-2xl text-accent"></i>
-          <div>
-            <h1 class="text-lg font-bold tracking-tight">FEB Unmul</h1>
-            <p class="text-[10px] text-primary-soft">Marketplace Alumni</p>
-          </div>
-        </div>
-        
-        <div class="flex items-center gap-2">
-          <Button label="Kembali ke Keranjang" icon="pi pi-shopping-cart" severity="secondary" size="small" outlined class="text-white border-white/20 hover:bg-white/10" @click="router.push({ name: 'Cart' })" />
-        </div>
-      </div>
-    </header>
+    <AppNavbar />
 
     <!-- Page Banner -->
-    <section class="bg-primary-dark text-white py-8 px-4 text-center">
-      <div class="max-w-4xl mx-auto space-y-2">
-        <h2 class="text-2xl sm:text-3xl font-black"><i class="pi pi-credit-card text-accent mr-1.5"></i>Proses Checkout</h2>
-        <p class="text-xs text-primary-soft max-w-xl mx-auto">
-          Silakan lengkapi formulir informasi pengantaran untuk memproses pesanan COD Anda.
-        </p>
-      </div>
-    </section>
+    <BuyerPageHeader icon="solar:credit-card-bold-duotone" title="Proses Checkout" subtitle="Silakan lengkapi formulir informasi pengantaran untuk memproses pesanan COD Anda." />
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
-      <div v-if="cartStore.loading" class="flex flex-col items-center justify-center py-20 space-y-3">
-        <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
-        <span class="text-sm font-semibold text-slate-500">Memproses informasi checkout...</span>
-      </div>
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full pb-24 lg:pb-8">
+      <LoadingState v-if="checkoutLoading" message="Memproses informasi checkout..." />
 
-      <div v-else-if="cartStore.groupedItems.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div v-else-if="groupedItems.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <!-- Left Column: Form & Split Items List (Takes 7 columns) -->
         <form @submit.prevent="handleCheckout" class="lg:col-span-7 space-y-6">
@@ -244,13 +490,70 @@ onMounted(() => {
                     required 
                     class="w-full text-xs" 
                   />
-                  <small class="text-[10px] text-slate-400">Pilihan wilayah dibutuhkan untuk menghitung tarif ongkos kirim per wilayah secara otomatis.</small>
+                  <small class="text-xs text-slate-400">Pilihan wilayah dibutuhkan untuk menghitung tarif ongkos kirim per wilayah secara otomatis.</small>
                 </div>
 
-                <!-- Alamat Penerima -->
-                <div class="flex flex-col gap-1.5">
-                  <label class="font-bold text-slate-500 uppercase">Alamat Lengkap</label>
-                  <Textarea v-model="alamatPenerima" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan/kecamatan" required rows="3" class="w-full text-xs" />
+                <!-- Map Picker & Search -->
+                <div class="flex flex-col gap-2 relative">
+                  <label class="font-bold text-slate-500 uppercase">Pencarian & Penanda Lokasi (Peta)</label>
+                  <div class="flex gap-2">
+                    <InputText 
+                      v-model="mapSearchQuery" 
+                      placeholder="Masukkan nama jalan / kelurahan / kecamatan" 
+                      class="flex-grow text-xs" 
+                      @keyup.enter="searchLocation"
+                    />
+                    <Button 
+                      label="Cari" 
+                      icon="pi pi-search" 
+                      size="small" 
+                      class="text-xs shrink-0" 
+                      :loading="searchLoading"
+                      @click="searchLocation"
+                    />
+                  </div>
+
+                  <!-- Search Results Suggestion List -->
+                  <div v-if="mapSearchResults.length > 0" class="absolute left-0 right-0 top-[60px] z-20 bg-white border border-slate-200 rounded-2xl shadow-lg max-h-48 overflow-y-auto divide-y divide-slate-100">
+                    <div 
+                      v-for="res in mapSearchResults" 
+                      :key="res.place_id" 
+                      class="px-4 py-2.5 hover:bg-slate-50 cursor-pointer flex items-start gap-2 text-slate-700 transition-colors"
+                      @click="selectSearchResult(res)"
+                    >
+                      <i class="pi pi-map-marker text-primary mt-0.5 shrink-0"></i>
+                      <div class="min-w-0">
+                        <p class="font-bold text-slate-800 line-clamp-1 text-xs">{{ res.name || res.display_name.split(',')[0] }}</p>
+                        <p class="text-xs text-slate-400 truncate">{{ res.display_name }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="map" class="h-60 w-full rounded-2xl border border-slate-200 z-0"></div>
+                  <small class="text-xs text-slate-400">Cari lokasi Anda di kolom pencarian atau geser pin/klik peta langsung untuk menandai alamat Anda.</small>
+                </div>
+
+                <!-- Alamat Penerima Sub-fields -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="flex flex-col gap-1.5 sm:col-span-2">
+                    <label class="font-bold text-slate-500 uppercase">Nama Jalan / Nomor Rumah / RT-RW</label>
+                    <Textarea v-model="alamatLengkap" placeholder="Contoh: Jl. Mulawarman No. 12, RT. 05" required rows="2" class="w-full text-xs" />
+                  </div>
+                  
+                  <div class="flex flex-col gap-1.5">
+                    <label class="font-bold text-slate-500 uppercase">Kelurahan / Desa</label>
+                    <InputText v-model="kelurahan" placeholder="Contoh: Temindung Permai" required class="w-full text-xs" />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="font-bold text-slate-500 uppercase">Kecamatan</label>
+                    <InputText v-model="kecamatan" placeholder="Contoh: Samarinda Utara" required class="w-full text-xs" />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5 sm:col-span-2">
+                    <label class="font-bold text-slate-500 uppercase">Kode Pos</label>
+                    <InputText v-model="kodePos" placeholder="Contoh: 75119" class="w-full text-xs" />
+                  </div>
                 </div>
 
                 <!-- Catatan Pesanan -->
@@ -267,7 +570,7 @@ onMounted(() => {
             <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Detail Rincian Barang per Toko</h3>
             
             <div 
-              v-for="storeGroup in cartStore.groupedItems" 
+              v-for="storeGroup in groupedItems" 
               :key="storeGroup.store_id"
               class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3"
             >
@@ -293,7 +596,7 @@ onMounted(() => {
               </div>
 
               <!-- Store Specific Shipping Details -->
-              <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-[11px] space-y-1.5 text-slate-500">
+              <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs space-y-1.5 text-slate-500">
                 <div class="flex justify-between">
                   <span>Subtotal Toko:</span>
                   <span class="font-bold text-slate-700">Rp{{ itemSubtotal(storeGroup).toLocaleString('id-ID') }}</span>
@@ -307,8 +610,8 @@ onMounted(() => {
                     Pilih Wilayah Terlebih Dahulu
                   </span>
                 </div>
-                <div v-if="isStoreUnserved(storeGroup)" class="text-[10px] text-red-500 font-bold">
-                  <i class="pi pi-exclamation-circle text-[10px]"></i> Toko ini tidak melayani wilayah pengantaran terpilih!
+                <div v-if="isStoreUnserved(storeGroup)" class="text-xs text-red-500 font-bold">
+                  <i class="pi pi-exclamation-circle text-xs"></i> Toko ini tidak melayani wilayah pengantaran terpilih!
                 </div>
               </div>
             </div>
@@ -318,7 +621,7 @@ onMounted(() => {
 
         <!-- Right Column: Final Summary & COD Confirmation (Takes 5 columns) -->
         <div class="lg:col-span-5">
-          <Card class="shadow-sm border border-slate-100 sticky top-4">
+          <Card class="shadow-sm border border-slate-100 lg:sticky lg:top-20">
             <template #title>
               <span class="text-base font-black text-slate-800">Pembayaran COD</span>
             </template>
@@ -332,7 +635,7 @@ onMounted(() => {
                   </div>
                   <div>
                     <h4 class="font-bold text-amber-800 text-xs">Cash on Delivery (COD)</h4>
-                    <p class="text-[10px] text-amber-700">Bayar secara tunai langsung ke kurir alumni saat pesanan tiba di alamat Anda.</p>
+                    <p class="text-xs text-amber-700">Bayar secara tunai langsung ke kurir alumni saat pesanan tiba di alamat Anda.</p>
                   </div>
                 </div>
 
@@ -340,7 +643,7 @@ onMounted(() => {
                 <div class="space-y-2.5 border-t border-b border-slate-100 py-3">
                   <div class="flex justify-between font-bold text-slate-500">
                     <span>Total Belanja</span>
-                    <span>Rp{{ cartStore.subtotal.toLocaleString('id-ID') }}</span>
+                    <span>Rp{{ subtotal.toLocaleString('id-ID') }}</span>
                   </div>
 
                   <div class="flex justify-between font-bold text-slate-500">
@@ -357,8 +660,8 @@ onMounted(() => {
                   </strong>
                 </div>
 
-                <div class="p-3 bg-slate-50 rounded-2xl text-[10px] text-slate-400 leading-relaxed">
-                  <i class="pi pi-lock text-[10px] text-primary"></i> Dengan menekan tombol di bawah, Anda menyetujui untuk melakukan transaksi pembelian secara sah melalui jaringan COD alumni FEB Universitas Mulawarman.
+                <div class="p-3 bg-slate-50 rounded-2xl text-xs text-slate-400 leading-relaxed">
+                  <i class="pi pi-lock text-xs text-primary"></i> Dengan menekan tombol di bawah, Anda menyetujui untuk melakukan transaksi pembelian secara sah melalui jaringan COD alumni FEB Universitas Mulawarman.
                 </div>
 
                 <Button 
@@ -377,20 +680,15 @@ onMounted(() => {
       </div>
 
       <!-- Empty state redirect fallback -->
-      <div v-else class="text-center py-20 bg-white rounded-3xl border border-slate-100 space-y-4 max-w-lg mx-auto p-8 shadow-sm">
-        <i class="pi pi-ban text-4xl text-slate-300"></i>
-        <h3 class="text-sm font-bold text-slate-700">Tidak ada barang untuk dicheckout</h3>
-        <Button label="Kembali ke Beranda" severity="secondary" size="small" @click="router.push({ name: 'Home' })" />
-      </div>
+      <EmptyState
+        v-else
+        icon="pi-ban"
+        title="Tidak ada barang untuk dicheckout"
+        description="Keranjang kosong atau parameter checkout tidak valid."
+        actionLabel="Kembali ke Beranda"
+        @action="router.push({ name: 'Home' })"
+      />
     </main>
-
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 py-6 mt-12 border-t border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
-        <p class="text-xs">&copy; 2026 FEB Universitas Mulawarman. Hak Cipta Dilindungi.</p>
-        <p class="text-[10px] text-slate-600">Dari Alumni, Oleh Alumni, Untuk Alumni</p>
-      </div>
-    </footer>
   </div>
 </template>
 
