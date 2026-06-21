@@ -16,7 +16,7 @@ const handleAction = () => {
   if (verificationStatus.value !== 'verified') {
     router.push({ name: 'Home' })
   } else if (!store.value) {
-    router.push({ name: 'MyStore' })
+    router.push({ name: 'SellerStore' })
   } else {
     authStore.setUserMode('seller')
     router.push({ name: 'Home' })

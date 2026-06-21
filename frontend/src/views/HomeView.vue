@@ -433,7 +433,7 @@ const getStatusLabel = (status) => {
                     outlined
                     class="text-xs py-1.5"
                     :disabled="authStore.user?.profile?.status_verifikasi !== 'verified'"
-                    @click="router.push({ name: 'MyStore' })"
+                    @click="router.push({ name: 'SellerStore' })"
                   />
                 </div>
 

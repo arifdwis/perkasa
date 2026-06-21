@@ -364,7 +364,7 @@ onMounted(() => {
                 <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
               </div>
 
-              <div class="menu-item" @click="router.push({ name: 'MyStore' }); visibleDrawer = false;">
+              <div class="menu-item" @click="router.push({ name: 'SellerStore' }); visibleDrawer = false;">
                 <div class="flex items-center gap-3">
                   <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
                     <Icon icon="solar:shop-linear" />
@@ -480,7 +480,7 @@ onMounted(() => {
               </div>
               <div v-else class="menu-item switch-item mt-4 bg-emerald-50/50 hover:bg-emerald-50" 
                 :class="authStore.user?.profile?.status_verifikasi !== 'verified' ? 'opacity-50 pointer-events-none' : ''"
-                @click="router.push({ name: 'MyStore' }); visibleDrawer = false;">
+                @click="router.push({ name: 'SellerStore' }); visibleDrawer = false;">
                 <div class="flex items-center gap-3">
                   <div class="menu-icon-wrapper text-emerald-600 bg-emerald-100/50">
                     <Icon icon="solar:shop-2-bold-duotone" class="text-lg animate-pulse" />

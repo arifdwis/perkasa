@@ -26,7 +26,7 @@ Route::middleware('throttle:login')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
-Route::get('/stores/{id}', [StoreController::class, 'show'])->whereNumber('id');
+Route::get('/stores/{id}', [StoreController::class, 'show']);
 Route::get('/product-categories', [ProductCategoryController::class, 'index']);
 Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
@@ -159,6 +159,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin Finance
         Route::get('/admin/finance/summary', [App\Http\Controllers\Api\AdminFinanceController::class, 'summary']);
         Route::get('/admin/finance/per-store', [App\Http\Controllers\Api\AdminFinanceController::class, 'perStore']);
+        Route::get('/admin/finance/store/{storeId}', [App\Http\Controllers\Api\AdminFinanceController::class, 'storeDetail']);
 
         // Admin Category Management
         Route::post('/admin/product-categories', [ProductCategoryController::class, 'store']);
