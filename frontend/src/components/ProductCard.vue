@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Rating from 'primevue/rating'
 import VerifiedBadge from './VerifiedBadge.vue'
+import LazyImage from './LazyImage.vue'
 
 const router = useRouter()
 const props = defineProps({
@@ -53,17 +54,8 @@ const handleAddToCart = (event) => {
     @click="navigateToDetail"
   >
     <!-- Product Image Area -->
-    <div class="aspect-square bg-slate-50 relative overflow-hidden shrink-0">
-      <img 
-        v-if="imageUrl" 
-        :src="imageUrl" 
-        alt="Foto Produk" 
-        class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
-      />
-      <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300">
-        <i class="pi pi-image text-4xl mb-1"></i>
-        <span class="text-xs font-bold text-slate-400">Tidak ada foto</span>
-      </div>
+    <div class="relative shrink-0 group-hover:scale-105 transition-transform duration-500">
+      <LazyImage :src="imageUrl" alt="Foto Produk" aspect-ratio="square" rounded="rounded-none" fallback-icon="pi pi-image" />
 
       <!-- Category Label Overlay -->
       <span class="absolute top-3 left-3 text-xs font-extrabold uppercase tracking-wider bg-white/90 backdrop-blur-xs text-slate-700 py-1 px-2.5 rounded-lg shadow-sm truncate max-w-[60%]">

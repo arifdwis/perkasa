@@ -5,6 +5,7 @@ import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useAuthStore } from './stores/auth'
 import SplashScreen from './components/SplashScreen.vue'
+import PWAInstallGuide from './components/PWAInstallGuide.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -13,9 +14,11 @@ const isMobileAdmin = ref(false)
 const showSplash = ref(false)
 const activeSplashRole = ref('')
 
+const showPWAGuide = ref(false)
+
 const triggerSplash = (role) => {
   if (role === 'admin' || !role) return
-  if (showSplash.value) return // Prevent double animation trigger
+  if (showSplash.value) return
   
   activeSplashRole.value = role
   showSplash.value = true
@@ -34,7 +37,13 @@ onMounted(() => {
   checkIfMobileAdmin()
   window.addEventListener('resize', checkIfMobileAdmin)
   
-  // Show splash on initial launch if session is active and not shown yet
+  // Show PWA install guide on first visit (not logged in)
+  const guideShown = localStorage.getItem('pwa_guide_shown')
+  if (!guideShown && !authStore.token) {
+    showPWAGuide.value = true
+  }
+  
+  // Show splash on initial launch if session is active
   const hasShownSplash = sessionStorage.getItem('splashShown')
   if (!hasShownSplash && authStore.token && authStore.userMode) {
     sessionStorage.setItem('splashShown', 'true')
@@ -48,13 +57,16 @@ onUnmounted(() => {
 
 watch(() => route.path, checkIfMobileAdmin)
 
-// Watch userMode to trigger splash on login and mode switch
 watch(() => authStore.userMode, (newMode) => {
   if (newMode && newMode !== 'admin') {
     sessionStorage.setItem('splashShown', 'true')
     triggerSplash(newMode)
   }
 })
+
+const closePWAGuide = () => {
+  showPWAGuide.value = false
+}
 </script>
 
 <template>
@@ -62,6 +74,9 @@ watch(() => authStore.userMode, (newMode) => {
     <!-- Global Notifications & Dialogs -->
     <Toast position="top-right" />
     <ConfirmDialog />
+
+    <!-- PWA Install Guide (first visit) -->
+    <PWAInstallGuide v-if="showPWAGuide" @close="closePWAGuide" />
 
     <!-- Role-based PWA Splash Screen -->
     <SplashScreen :role="activeSplashRole" :visible="showSplash" />

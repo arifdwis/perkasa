@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import BuyerBottomNav from '../components/BuyerBottomNav.vue'
+import PWAInstallButton from '../components/PWAInstallButton.vue'
 
 const route = useRoute()
 const showBottomNav = computed(() => {
@@ -15,6 +16,9 @@ const showBottomNav = computed(() => {
     <main class="flex-grow flex flex-col">
       <router-view />
     </main>
+
+    <!-- PWA Install Button -->
+    <PWAInstallButton />
 
     <!-- Mobile Bottom Navigation -->
     <BuyerBottomNav v-if="showBottomNav" />

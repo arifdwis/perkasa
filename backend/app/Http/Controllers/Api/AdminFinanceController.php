@@ -184,7 +184,7 @@ class AdminFinanceController extends Controller
     /**
      * Detailed financial data for a single store.
      */
-    public function storeDetail(Request $request, $storeId)
+    public function storeDetail(Request $request, string $storeId)
     {
         $store = Store::with('alumniProfile.user', 'deliveryFees')->findOrFail($storeId);
 
@@ -307,7 +307,7 @@ class AdminFinanceController extends Controller
         }
     }
 
-    private function getMonthlyFinance(Request $request, ?int $storeId = null)
+    private function getMonthlyFinance(Request $request, ?string $storeId = null)
     {
         $months = [];
         for ($i = 11; $i >= 0; $i--) {

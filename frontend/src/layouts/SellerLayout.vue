@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import SellerBottomNav from '../components/SellerBottomNav.vue'
 import RoleModeSwitcher from '../components/RoleModeSwitcher.vue'
+import PWAInstallButton from '../components/PWAInstallButton.vue'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
@@ -100,6 +101,9 @@ const pageTitle = computed(() => {
 
       <router-view />
     </main>
+
+    <!-- PWA Install Button -->
+    <PWAInstallButton />
 
     <!-- Mobile Bottom Navigation -->
     <SellerBottomNav />
