@@ -81,6 +81,11 @@ const routes = [
         path: 'notifications',
         name: 'Notifications',
         component: () => import('../views/NotificationListView.vue')
+      },
+      {
+        path: 'profile',
+        name: 'AlumniProfile',
+        component: () => import('../views/alumni/AlumniProfileView.vue')
       }
     ]
   },
@@ -330,6 +335,7 @@ router.beforeEach((to, from) => {
   if (to.path === '/cart') return { name: 'Cart' }
   if (to.path === '/checkout') return { name: 'Checkout' }
   if (to.path === '/notifications') return { name: 'Notifications' }
+  if (to.path === '/profile') return { name: 'AlumniProfile' }
 
   if (to.path.startsWith('/products/')) {
     return { name: 'ProductDetail', params: { slug: to.params.slug || to.path.split('/').pop() } }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AdminRoleController;
 use App\Http\Controllers\Api\AdminStoreController;
+use App\Http\Controllers\Api\AlumniProfileController;
 use App\Http\Controllers\Api\AlumniVerificationController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CartController;
@@ -48,6 +49,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Email verification resend
     Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail']);
+
+    // Alumni Profile (any authenticated user with profile)
+    Route::get('/me/profile', [AlumniProfileController::class, 'show']);
+    Route::put('/me/profile', [AlumniProfileController::class, 'update']);
+    Route::post('/me/profile/photo', [AlumniProfileController::class, 'uploadPhoto']);
 
     // Store Owner routes (requires verified alumni status)
     Route::middleware('verified_alumni')->group(function () {

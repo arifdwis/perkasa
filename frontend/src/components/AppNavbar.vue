@@ -146,6 +146,17 @@ onMounted(() => {
           </span>
 
           <Button 
+            v-if="route.name !== 'AlumniProfile'"
+            icon="pi pi-user"
+            label="Profil"
+            severity="secondary" 
+            size="small" 
+            outlined 
+            class="!text-white !border-white/20 hover:!bg-white/10 text-xs py-1.5 px-3"
+            @click="router.push({ name: 'AlumniProfile' })"
+          />
+
+          <Button 
             v-if="route.name !== 'Favorites'"
             icon="pi pi-star"
             label="Favorit"
@@ -369,6 +380,16 @@ onMounted(() => {
             
             <!-- SELLER MODE LINKS -->
             <template v-if="userMode === 'seller'">
+              <div class="menu-item" @click="router.push({ name: 'AlumniProfile' }); visibleDrawer = false;">
+                <div class="flex items-center gap-3">
+                  <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
+                    <Icon icon="solar:user-circle-linear" />
+                  </div>
+                  <span class="menu-label text-slate-700">Profil Saya</span>
+                </div>
+                <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
+              </div>
+
               <div class="menu-item" @click="router.push({ name: 'Home' }); visibleDrawer = false;">
                 <div class="flex items-center gap-3">
                   <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
@@ -433,6 +454,16 @@ onMounted(() => {
             
             <!-- BUYER MODE LINKS -->
             <template v-else-if="userMode === 'buyer'">
+              <div class="menu-item" @click="router.push({ name: 'AlumniProfile' }); visibleDrawer = false;">
+                <div class="flex items-center gap-3">
+                  <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
+                    <Icon icon="solar:user-circle-linear" />
+                  </div>
+                  <span class="menu-label text-slate-700">Profil Saya</span>
+                </div>
+                <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
+              </div>
+
               <div class="menu-item" @click="router.push({ name: 'Home' }); visibleDrawer = false;">
                 <div class="flex items-center gap-3">
                   <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
