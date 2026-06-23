@@ -109,9 +109,9 @@ const formatRupiah = (v) => 'Rp' + Number(v || 0).toLocaleString('id-ID')
         </div>
         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 flex items-center justify-between">
           <div>
-            <span class="block text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mb-1">Produk & Jasa</span>
-            <strong class="text-2xl font-black text-slate-800">{{ adminStats.total_produk + adminStats.total_jasa }}</strong>
-            <span class="block text-[9px] text-slate-400 mt-0.5 font-bold">{{ adminStats.total_produk }} Produk | {{ adminStats.total_jasa }} Jasa</span>
+            <span class="block text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mb-1">Total Produk</span>
+            <strong class="text-2xl font-black text-slate-800">{{ adminStats.total_produk }}</strong>
+            <span class="block text-[9px] text-slate-400 mt-0.5 font-bold">{{ adminStats.total_produk }} Produk aktif</span>
           </div>
           <div class="p-3 bg-blue-50 text-blue-600 rounded-2xl"><Icon icon="solar:box-bold-duotone" class="text-2xl" /></div>
         </div>

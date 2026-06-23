@@ -55,7 +55,6 @@ const formatPrice = (v) => parseFloat(v || 0).toLocaleString('id-ID')
 
 const quickActions = [
   { label: 'Produk',  icon: 'solar:box-bold',        route: 'SellerProducts', desc: 'Kelola katalog' },
-  { label: 'Jasa',    icon: 'solar:case-bold',       route: 'SellerServices', desc: 'Portofolio jasa' },
   { label: 'Pesanan', icon: 'solar:bill-list-bold',  route: 'SellerOrders',   desc: 'Pesanan masuk' },
   { label: 'Toko',    icon: 'solar:settings-bold',   route: 'SellerStore',    desc: 'Pengaturan toko' },
 ]

@@ -38,19 +38,6 @@ const isRouteActive = (name) => {
       <span class="text-[9px] font-extrabold uppercase">Produk</span>
     </div>
 
-    <!-- Jasa -->
-    <div 
-      class="flex flex-col items-center gap-1 cursor-pointer w-14 text-center transition-colors"
-      :class="isRouteActive('SellerServices') ? 'text-primary' : 'text-slate-400'"
-      @click="router.push({ name: 'SellerServices' })"
-    >
-      <Icon 
-        :icon="isRouteActive('SellerServices') ? 'solar:case-bold' : 'solar:case-linear'" 
-        class="text-xl" 
-      />
-      <span class="text-[9px] font-extrabold uppercase">Jasa</span>
-    </div>
-
     <!-- Pesanan Masuk -->
     <div 
       class="flex flex-col items-center gap-1 cursor-pointer w-14 text-center transition-colors"

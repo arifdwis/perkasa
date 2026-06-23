@@ -32,12 +32,9 @@ const pageTitle = computed(() => {
     'SellerOrders': 'Pesanan Masuk',
     'SellerOrderDetail': 'Detail Pesanan',
     'SellerProducts': 'Kelola Produk',
-    'SellerServices': 'Kelola Jasa',
     'SellerStore': 'Toko Saya',
     'SellerProductEdit': 'Ubah Produk',
     'SellerProductCreate': 'Tambah Produk',
-    'SellerServiceEdit': 'Ubah Jasa',
-    'SellerServiceCreate': 'Tambah Jasa',
   }
   return nameMap[route.name] || route.name || 'Seller'
 })

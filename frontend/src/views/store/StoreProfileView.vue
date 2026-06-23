@@ -24,11 +24,9 @@ const storeId = route.params.id
 const store = ref(null)
 const loading = ref(true)
 
-const activeTab = ref('product') // 'product' | 'service'
+const activeTab = ref('product')
 const products = ref([])
-const services = ref([])
 const productsLoading = ref(false)
-const servicesLoading = ref(false)
 
 const favoritedIds = ref(new Set())
 const isLoggedIn = ref(false)
@@ -49,7 +47,6 @@ const fetchFavorites = async () => {
     const response = await axios.get('/favorites')
     const ids = new Set()
     response.data.products?.forEach(p => ids.add(p.id))
-    response.data.services?.forEach(s => ids.add(s.id))
     favoritedIds.value = ids
   } catch (err) {
     console.error('Failed to load favorites', err)
@@ -68,28 +65,15 @@ const fetchStoreProducts = async () => {
   }
 }
 
-const fetchStoreServices = async () => {
-  servicesLoading.value = true
-  try {
-    const response = await axios.get('/services', { params: { store_id: storeId } })
-    services.value = response.data.data || []
-  } catch (err) {
-    console.error('Failed to load store services', err)
-  } finally {
-    servicesLoading.value = false
-  }
-}
-
 const fetchStoreProfile = async () => {
   loading.value = true
   try {
     const response = await axios.get(`/stores/${storeId}`)
     store.value = response.data.store
     
-    // Fetch products, services, and favorites in parallel after store details are successfully loaded
+    // Fetch products and favorites in parallel after store details are successfully loaded
     await Promise.all([
       fetchStoreProducts(),
-      fetchStoreServices(),
       fetchFavorites()
     ])
   } catch (err) {
@@ -195,8 +179,6 @@ const toggleFavorite = async (event, item, type) => {
 const navigateToDetail = (item, type) => {
   if (type === 'product') {
     router.push({ name: 'ProductDetail', params: { slug: item.slug } })
-  } else if (type === 'service') {
-    router.push({ name: 'ServiceDetail', params: { slug: item.slug } })
   }
 }
 
@@ -291,14 +273,6 @@ onMounted(() => {
                   >
                     <i class="pi pi-box text-xs"></i>
                     <span>Produk ({{ products.length }})</span>
-                  </button>
-                  <button 
-                    class="px-3.5 py-1.5 rounded-lg transition-all duration-200 flex items-center gap-1"
-                    :class="activeTab === 'service' ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:text-slate-800'"
-                    @click="activeTab = 'service'"
-                  >
-                    <i class="pi pi-wrench text-xs"></i>
-                    <span>Jasa ({{ services.length }})</span>
                   </button>
                 </div>
               </div>
@@ -402,75 +376,6 @@ onMounted(() => {
                     icon="pi-box"
                     title="Produk Belum Tersedia"
                     description="Toko ini belum mengunggah produk aktif saat ini."
-                  />
-                </div>
-
-                <!-- Tab Content: Services -->
-                <div v-if="activeTab === 'service'">
-                  <LoadingState v-if="servicesLoading" message="Memuat jasa..." />
-                  
-                  <div v-else-if="services.length > 0" class="grid grid-cols-2 gap-3 sm:gap-4">
-                    <!-- Service Card -->
-                    <div 
-                      v-for="item in services" 
-                      :key="item.id" 
-                      class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer flex flex-col group relative"
-                      @click="navigateToDetail(item, 'service')"
-                    >
-                      <!-- Thumbnail -->
-                      <div class="aspect-square bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                        <img v-if="item.primary_image" :src="item.primary_image.image_path" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                          <i class="pi pi-wrench text-3xl mb-1"></i>
-                          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tidak ada foto</span>
-                        </div>
-                        
-                        <!-- Favorite Toggle Button -->
-                        <button 
-                          class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/85 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
-                          @click="toggleFavorite($event, item, 'service')"
-                        >
-                          <i :class="[
-                            favoritedIds.has(item.id) ? 'pi pi-star-fill text-yellow-500' : 'pi pi-star text-slate-400',
-                            'text-xs'
-                          ]"></i>
-                        </button>
-                      </div>
-
-                      <!-- Info Details -->
-                      <div class="p-3 flex-grow flex flex-col justify-between space-y-2">
-                        <div class="space-y-1.5">
-                          <div class="flex justify-between items-center">
-                            <span class="text-xs font-bold text-primary bg-primary-soft px-1.5 py-0.5 rounded">{{ item.category?.name }}</span>
-                            <Tag v-if="item.is_featured" value="PROMO" severity="warn" class="text-xs font-black" />
-                          </div>
-                          
-                          <h4 class="text-xs font-bold text-slate-850 line-clamp-2 leading-snug group-hover:text-primary transition-colors">{{ item.name }}</h4>
-                          
-                          <div class="pt-0.5">
-                            <span class="block text-xs text-slate-400 font-bold uppercase">Mulai Dari</span>
-                            <strong class="text-sm font-black text-slate-900">
-                              Rp {{ parseFloat(item.price_from || 0).toLocaleString('id-ID') }}
-                            </strong>
-                          </div>
-                        </div>
-
-                        <div class="border-t border-slate-100 pt-2 flex items-center justify-between gap-1.5">
-                          <span class="text-xs text-slate-400 font-bold truncate">
-                            <i class="pi pi-map-marker text-primary text-xs mr-0.5"></i>
-                            {{ item.lokasi_layanan || 'Samarinda' }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <!-- Empty Services -->
-                  <EmptyState
-                    v-else
-                    icon="pi-wrench"
-                    title="Jasa Belum Tersedia"
-                    description="Toko ini belum mengunggah jasa aktif saat ini."
                   />
                 </div>
               </div>

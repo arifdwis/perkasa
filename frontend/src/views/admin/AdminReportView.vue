@@ -16,7 +16,6 @@ const reportTypes = ref([
   { label: 'Laporan Alumni', value: 'alumni' },
   { label: 'Laporan Toko', value: 'stores' },
   { label: 'Laporan Produk', value: 'products' },
-  { label: 'Laporan Jasa', value: 'services' },
   { label: 'Laporan Pesanan COD', value: 'orders' },
   { label: 'Laporan Rekap Penjualan', value: 'sales' }
 ])
@@ -50,12 +49,6 @@ const productStatusOptions = ref([
   { label: 'Stok Habis (Out of Stock)', value: 'out_of_stock' }
 ])
 
-const serviceStatusOptions = ref([
-  { label: 'Semua Status', value: '' },
-  { label: 'Tersedia (Active)', value: 'active' },
-  { label: 'Tutup Sementara (Inactive)', value: 'inactive' }
-])
-
 const orderStatusOptions = ref([
   { label: 'Semua Status', value: '' },
   { label: 'Menunggu Konfirmasi', value: 'menunggu_konfirmasi' },
@@ -66,7 +59,6 @@ const orderStatusOptions = ref([
 ])
 
 const productCategories = ref([])
-const serviceCategories = ref([])
 const loadingCategories = ref(false)
 
 const filters = reactive({
@@ -77,7 +69,6 @@ const filters = reactive({
   status: '',
   kota: '',
   product_category_id: '',
-  service_category_id: '',
   date_from: '',
   date_to: ''
 })
@@ -85,17 +76,10 @@ const filters = reactive({
 const fetchCategories = async () => {
   loadingCategories.value = true
   try {
-    const [prodRes, servRes] = await Promise.all([
-      axios.get('/product-categories'),
-      axios.get('/service-categories')
-    ])
+    const prodRes = await axios.get('/product-categories')
     productCategories.value = [
       { label: 'Semua Kategori', value: '' },
       ...prodRes.data.map(c => ({ label: c.name, value: c.id }))
-    ]
-    serviceCategories.value = [
-      { label: 'Semua Kategori', value: '' },
-      ...servRes.data.map(c => ({ label: c.name, value: c.id }))
     ]
   } catch (err) {
     console.error('Failed to fetch categories', err)
@@ -115,7 +99,6 @@ const handleExport = async (format) => {
     case 'alumni': endpoint = '/admin/reports/alumni/export'; break;
     case 'stores': endpoint = '/admin/reports/stores/export'; break;
     case 'products': endpoint = '/admin/reports/products/export'; break;
-    case 'services': endpoint = '/admin/reports/services/export'; break;
     case 'orders': endpoint = '/admin/reports/orders/export'; break;
     case 'sales': endpoint = '/admin/reports/sales/export'; break;
   }
@@ -133,9 +116,6 @@ const handleExport = async (format) => {
     } else if (selectedReportType.value === 'products') {
       if (filters.status) queryParams.status = filters.status
       if (filters.product_category_id) queryParams.product_category_id = filters.product_category_id
-    } else if (selectedReportType.value === 'services') {
-      if (filters.status) queryParams.status = filters.status
-      if (filters.service_category_id) queryParams.service_category_id = filters.service_category_id
     } else if (selectedReportType.value === 'orders') {
       if (filters.status) queryParams.status = filters.status
       if (filters.date_from) queryParams.date_from = filters.date_from
@@ -237,17 +217,6 @@ onMounted(() => { fetchCategories() })
               <div class="flex flex-col gap-1.5">
                 <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kategori Produk</label>
                 <Select v-model="filters.product_category_id" :options="productCategories" optionLabel="label" optionValue="value" placeholder="Pilih Kategori" class="w-full" />
-              </div>
-            </div>
-
-            <div v-if="selectedReportType === 'services'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Jasa</label>
-                <Select v-model="filters.status" :options="serviceStatusOptions" optionLabel="label" optionValue="value" class="w-full" />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Kategori Jasa</label>
-                <Select v-model="filters.service_category_id" :options="serviceCategories" optionLabel="label" optionValue="value" placeholder="Pilih Kategori" class="w-full" />
               </div>
             </div>
 

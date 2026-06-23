@@ -6,13 +6,11 @@ use App\Exports\AlumniExport;
 use App\Exports\OrderExport;
 use App\Exports\ProductExport;
 use App\Exports\SalesExport;
-use App\Exports\ServiceExport;
 use App\Exports\StoreExport;
 use App\Http\Controllers\Controller;
 use App\Models\AlumniProfile;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\Service;
 use App\Models\Store;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -132,46 +130,6 @@ class ReportController extends Controller
 
         $export = new ProductExport($filters);
         $fileName = 'laporan_produk_'.now()->format('YmdHis');
-
-        if ($format === 'csv') {
-            return Excel::download($export, $fileName.'.csv', \Maatwebsite\Excel\Excel::CSV);
-        }
-
-        return Excel::download($export, $fileName.'.xlsx', \Maatwebsite\Excel\Excel::XLSX);
-    }
-
-    /**
-     * Export Service Report.
-     */
-    public function exportServices(Request $request)
-    {
-        $format = $request->query('format', 'excel');
-        $filters = $request->only(['status', 'store_id', 'service_category_id']);
-
-        if ($format === 'pdf') {
-            $query = Service::with(['store.alumniProfile', 'category']);
-
-            if (! empty($filters['status'])) {
-                $query->where('status', $filters['status']);
-            }
-            if (! empty($filters['store_id'])) {
-                $query->where('store_id', $filters['store_id']);
-            }
-            if (! empty($filters['service_category_id'])) {
-                $query->where('service_category_id', $filters['service_category_id']);
-            }
-
-            $services = $query->orderBy('created_at', 'desc')->get();
-            $pdf = Pdf::loadView('exports.services', [
-                'services' => $services,
-                'is_pdf' => true,
-            ])->setPaper('a4', 'landscape');
-
-            return $pdf->download('laporan_jasa_'.now()->format('YmdHis').'.pdf');
-        }
-
-        $export = new ServiceExport($filters);
-        $fileName = 'laporan_jasa_'.now()->format('YmdHis');
 
         if ($format === 'csv') {
             return Excel::download($export, $fileName.'.csv', \Maatwebsite\Excel\Excel::CSV);

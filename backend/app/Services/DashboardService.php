@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\AlumniProfile;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\Service;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +17,6 @@ class DashboardService
         $alumniTerverifikasi = AlumniProfile::where('status_verifikasi', 'verified')->count();
         $totalToko = Store::count();
         $totalProduk = Product::count();
-        $totalJasa = Service::count();
         $totalPesanan = Order::count();
         $totalTransaksiCod = Order::where('payment_method', 'cod')
             ->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran'])
@@ -33,7 +31,6 @@ class DashboardService
             'alumni_terverifikasi' => $alumniTerverifikasi,
             'total_toko' => $totalToko,
             'total_produk' => $totalProduk,
-            'total_jasa' => $totalJasa,
             'total_pesanan' => $totalPesanan,
             'total_transaksi_cod' => $totalTransaksiCod,
             'grafik_bulanan' => $grafikBulanan,
@@ -51,7 +48,6 @@ class DashboardService
         }
 
         $totalProduk = Product::where('store_id', $storeId)->count();
-        $totalJasa = Service::where('store_id', $storeId)->count();
         $totalPesanan = Order::where('store_id', $storeId)->count();
         $totalPenjualan = Order::where('store_id', $storeId)
             ->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran'])
@@ -63,7 +59,6 @@ class DashboardService
 
         return [
             'total_produk' => $totalProduk,
-            'total_jasa' => $totalJasa,
             'total_pesanan' => $totalPesanan,
             'total_penjualan' => $totalPenjualan,
             'rating_toko' => $ratingToko,

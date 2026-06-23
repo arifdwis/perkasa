@@ -6,7 +6,7 @@ import PWAInstallButton from '../components/PWAInstallButton.vue'
 
 const route = useRoute()
 const showBottomNav = computed(() => {
-  return !['ProductDetail', 'ServiceDetail'].includes(route.name)
+  return !['ProductDetail'].includes(route.name)
 })
 </script>
 

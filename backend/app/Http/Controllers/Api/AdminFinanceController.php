@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
-use App\Models\Service;
 use App\Models\Store;
 use Illuminate\Http\Request;
 
@@ -264,7 +263,6 @@ class AdminFinanceController extends Controller
             ]);
 
         $totalProduk = Product::where('store_id', $storeId)->count();
-        $totalJasa = Service::where('store_id', $storeId)->count();
 
         return response()->json([
             'store' => [
@@ -275,7 +273,6 @@ class AdminFinanceController extends Controller
                 'status' => $store->status,
                 'rating' => $store->average_rating,
                 'total_produk' => $totalProduk,
-                'total_jasa' => $totalJasa,
                 'delivery_type' => $store->delivery_type,
                 'fixed_delivery_fee' => (int) $store->fixed_delivery_fee,
                 'delivery_fees' => $store->deliveryFees->map(fn ($f) => [

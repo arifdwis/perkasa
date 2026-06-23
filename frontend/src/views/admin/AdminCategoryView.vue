@@ -14,7 +14,6 @@ import AdminConfirmModal from '../../components/admin/AdminConfirmModal.vue'
 
 const toast = useToast()
 
-const activeTab = ref('products')
 const categories = ref([])
 const loading = ref(true)
 
@@ -32,8 +31,7 @@ const deleteLoading = ref(false)
 const fetchCategories = async () => {
   loading.value = true
   try {
-    const endpoint = activeTab.value === 'products' ? '/product-categories' : '/service-categories'
-    const response = await axios.get(endpoint, { params: { all: 1 } })
+    const response = await axios.get('/product-categories', { params: { all: 1 } })
     categories.value = response.data
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat kategori.', life: 3000 })
@@ -41,8 +39,6 @@ const fetchCategories = async () => {
 }
 
 onMounted(() => { fetchCategories() })
-
-const handleTabChange = (tab) => { activeTab.value = tab; fetchCategories() }
 
 const openNew = () => {
   isEdit.value = false
@@ -59,13 +55,12 @@ const openEdit = (cat) => {
 const saveCategory = async () => {
   if (!form.value.name.trim()) return
   saving.value = true
-  const baseEndpoint = activeTab.value === 'products' ? '/admin/product-categories' : '/admin/service-categories'
   try {
     if (isEdit.value) {
-      await axios.put(`${baseEndpoint}/${form.value.id}`, { name: form.value.name, is_active: form.value.is_active })
+      await axios.put(`/admin/product-categories/${form.value.id}`, { name: form.value.name, is_active: form.value.is_active })
       toast.add({ severity: 'success', summary: 'Sukses', detail: 'Kategori berhasil diperbarui.', life: 3000 })
     } else {
-      await axios.post(baseEndpoint, { name: form.value.name, is_active: form.value.is_active })
+      await axios.post('/admin/product-categories', { name: form.value.name, is_active: form.value.is_active })
       toast.add({ severity: 'success', summary: 'Sukses', detail: 'Kategori baru berhasil ditambahkan.', life: 3000 })
     }
     formVisible.value = false
@@ -82,9 +77,8 @@ const openDelete = (cat) => {
 
 const handleDelete = async () => {
   deleteLoading.value = true
-  const baseEndpoint = activeTab.value === 'products' ? '/admin/product-categories' : '/admin/service-categories'
   try {
-    await axios.delete(`${baseEndpoint}/${deleteTarget.value.id}`)
+    await axios.delete(`/admin/product-categories/${deleteTarget.value.id}`)
     toast.add({ severity: 'success', summary: 'Sukses', detail: 'Kategori berhasil dihapus.', life: 3000 })
     deleteVisible.value = false
     fetchCategories()
@@ -101,90 +95,68 @@ const statusPill = (active) => active
 <template>
   <div class="space-y-6">
     <Toast />
-    <AdminPageHeader icon="solar:tag-bold-duotone" title="Kelola Kategori Produk & Jasa" subtitle="Klasifikasikan etalase produk fisik dan jenis layanan penawaran alumni." />
-
-    <!-- Tabs -->
-    <div class="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl w-fit">
-      <button class="px-4 py-2 text-xs font-bold rounded-lg transition-all"
-              :class="activeTab === 'products' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'"
-              @click="handleTabChange('products')">
-        <i class="pi pi-box mr-1"></i> Kategori Produk
-      </button>
-      <button class="px-4 py-2 text-xs font-bold rounded-lg transition-all"
-              :class="activeTab === 'services' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-slate-100'"
-              @click="handleTabChange('services')">
-        <i class="pi pi-wrench mr-1"></i> Kategori Jasa
-      </button>
-    </div>
+    <AdminPageHeader icon="solar:tag-bold-duotone" title="Kelola Kategori Produk" subtitle="Klasifikasikan etalase produk fisik alumni." />
 
     <!-- Header row -->
-    <div class="flex justify-between items-center">
-      <h3 class="text-sm font-black text-slate-800 uppercase tracking-wider">Daftar Kategori {{ activeTab === 'products' ? 'Produk' : 'Jasa' }}</h3>
+    <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+      <AdminPanel class="flex-grow">
+        <div class="relative w-full sm:flex-grow">
+          <i class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <InputText v-model="search" placeholder="Cari nama kategori..." class="w-full !pl-10" />
+        </div>
+      </AdminPanel>
       <Button label="Tambah Kategori" icon="pi pi-plus" size="small" @click="openNew" />
     </div>
 
-    <!-- Card list -->
-    <div class="space-y-2.5">
-      <AdminState v-if="loading" mode="loading" />
-      <template v-else>
+    <!-- Category List -->
+    <AdminState v-if="loading" mode="loading" />
+    <template v-else>
+      <div class="space-y-2.5">
         <div v-for="cat in categories" :key="cat.id"
-             class="bg-white border border-slate-200 rounded-xl px-4 py-3
-                    flex items-center gap-4 hover:border-primary/40 hover:shadow-sm transition-all">
-          <!-- Icon tile -->
-          <div class="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0">
-            <i class="pi pi-tag text-lg"></i>
+             class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-4 hover:border-primary/40 hover:shadow-sm transition-all">
+          <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0 font-bold text-sm">
+            {{ cat.name?.substring(0, 2).toUpperCase() }}
           </div>
-          <!-- Name + slug -->
           <div class="min-w-0 flex-1">
             <p class="text-sm font-bold text-slate-800 truncate">{{ cat.name }}</p>
-            <p class="text-xs text-slate-400 font-mono truncate">{{ cat.slug }}</p>
+            <p class="text-[10px] text-slate-400 font-medium">{{ cat.products_count || 0 }} produk</p>
           </div>
-          <!-- Status pill -->
           <span class="px-2.5 py-1 rounded-full text-[11px] font-bold" :class="statusPill(cat.is_active)">
-            {{ cat.is_active ? 'AKTIF' : 'NON-AKTIF' }}
+            {{ cat.is_active ? 'AKTIF' : 'NONAKTIF' }}
           </span>
-          <!-- Actions -->
           <div class="flex gap-1.5">
-            <Button icon="pi pi-pencil" size="small" severity="secondary" outlined @click="openEdit(cat)" />
-            <Button icon="pi pi-trash" size="small" severity="danger" outlined @click="openDelete(cat)" />
+            <Button icon="pi pi-pencil" size="small" text rounded @click="openEdit(cat)" />
+            <Button icon="pi pi-trash" size="small" text rounded severity="danger" @click="openDelete(cat)" />
           </div>
         </div>
-        <AdminState v-if="!categories.length && !loading" mode="empty" text="Belum ada kategori." />
-      </template>
-    </div>
+        <AdminState v-if="!categories.length && !loading" mode="empty" icon="solar:tag-bold" text="Belum ada kategori." />
+      </div>
+    </template>
 
     <!-- Form Slide-Over -->
     <AdminSlideOver :visible="formVisible" @update:visible="formVisible = $event"
-                    :icon="isEdit ? 'solar:pen-bold' : 'solar:add-circle-bold'"
-                    :title="isEdit ? 'Ubah Kategori' : 'Tambah Kategori Baru'"
-                    subtitle="Isi informasi kategori"
-                    width="420px">
-      <div class="space-y-5">
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nama Kategori *</label>
-          <InputText v-model="form.name" placeholder="Contoh: Otomotif" class="w-full text-sm" />
+                    :icon="isEdit ? 'solar:pen-bold-duotone' : 'solar:add-circle-bold-duotone'"
+                    :title="isEdit ? 'Edit Kategori' : 'Tambah Kategori'" subtitle="Atur nama dan status kategori" width="420px">
+      <div class="space-y-4">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Nama Kategori *</label>
+          <InputText v-model="form.name" class="w-full" placeholder="Contoh: Makanan & Minuman" />
         </div>
-        <div class="flex items-center gap-2 pt-2">
-          <Checkbox id="catActive" v-model="form.is_active" :binary="true" />
-          <label for="catActive" class="text-sm font-semibold text-slate-700 cursor-pointer">Kategori Aktif & Ditampilkan</label>
+        <div class="flex items-center gap-2">
+          <Checkbox v-model="form.is_active" :binary="true" inputId="cat_active" />
+          <label for="cat_active" class="text-sm font-semibold text-slate-700 cursor-pointer">Aktif</label>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+          <Button label="Batal" severity="secondary" size="small" outlined @click="formVisible = false" />
+          <Button :label="isEdit ? 'Simpan' : 'Tambah'" icon="pi pi-check" size="small" :loading="saving" @click="saveCategory" />
         </div>
       </div>
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <Button label="Batal" severity="secondary" size="small" outlined @click="formVisible = false" />
-          <Button label="Simpan" :loading="saving" size="small" @click="saveCategory" />
-        </div>
-      </template>
     </AdminSlideOver>
 
     <!-- Delete Confirm Modal -->
     <AdminConfirmModal :visible="deleteVisible" @update:visible="deleteVisible = $event"
-      title="Hapus Kategori"
-      :message="`Apakah Anda yakin ingin menghapus kategori &quot;${deleteTarget?.name}&quot;? Tindakan ini tidak dapat dibatalkan.`"
-      icon="solar:trash-bin-minimalistic-bold"
-      tone="danger"
-      confirmLabel="Hapus"
-      :loading="deleteLoading"
-      @confirm="handleDelete" />
+      title="Hapus Kategori" message="Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat dibatalkan."
+      icon="solar:trash-bin-minimalistic-bold" tone="danger" confirmLabel="Hapus"
+      :loading="deleteLoading" @confirm="handleDelete" />
   </div>
 </template>

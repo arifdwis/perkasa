@@ -17,8 +17,6 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SellerOrderController;
-use App\Http\Controllers\Api\ServiceCategoryController;
-use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\StoreController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,12 +27,9 @@ Route::middleware('throttle:login')->group(function () {
 });
 Route::get('/stores/{id}', [StoreController::class, 'show'])->where('id', '(?!my-store)[^/]+');
 Route::get('/product-categories', [ProductCategoryController::class, 'index']);
-Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/id/{id}', [ProductController::class, 'showById']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
-Route::get('/services', [ServiceController::class, 'index']);
-Route::get('/services/{slug}', [ServiceController::class, 'show']);
 Route::get('/catalog', [CatalogController::class, 'index']);
 Route::get('/catalog/locations', [CatalogController::class, 'locations']);
 Route::get('/reviews', [ReviewController::class, 'index']);
@@ -67,16 +62,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/seller/products/{id}/image', [ProductController::class, 'uploadImage']);
         Route::post('/seller/products/{id}/gallery', [ProductController::class, 'uploadGallery']);
         Route::delete('/seller/products/{productId}/images/{imageId}', [ProductController::class, 'deleteImage']);
-
-        // Seller Services
-        Route::get('/seller/services', [ServiceController::class, 'sellerServices']);
-        Route::post('/seller/services', [ServiceController::class, 'store']);
-        Route::get('/seller/services/{id}', [ServiceController::class, 'sellerShow']);
-        Route::put('/seller/services/{id}', [ServiceController::class, 'update']);
-        Route::delete('/seller/services/{id}', [ServiceController::class, 'destroy']);
-        Route::post('/seller/services/{id}/image', [ServiceController::class, 'uploadImage']);
-        Route::post('/seller/services/{id}/portfolio', [ServiceController::class, 'uploadPortfolio']);
-        Route::delete('/seller/services/{serviceId}/images/{imageId}', [ServiceController::class, 'deleteImage']);
 
         // Favorites
         Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
@@ -126,7 +111,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/reports/alumni/export', [ReportController::class, 'exportAlumni']);
         Route::get('/admin/reports/stores/export', [ReportController::class, 'exportStores']);
         Route::get('/admin/reports/products/export', [ReportController::class, 'exportProducts']);
-        Route::get('/admin/reports/services/export', [ReportController::class, 'exportServices']);
         Route::get('/admin/reports/orders/export', [ReportController::class, 'exportOrders']);
         Route::get('/admin/reports/sales/export', [ReportController::class, 'exportSales']);
 
@@ -153,11 +137,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/admin/products/{product}', [ProductController::class, 'adminDestroy']);
         Route::patch('/admin/products/{product}/status', [ProductController::class, 'adminToggleStatus']);
 
-        // Admin Service Moderation
-        Route::get('/admin/stores/{store}/services', [ServiceController::class, 'adminStoreServices']);
-        Route::delete('/admin/services/{service}', [ServiceController::class, 'adminDestroy']);
-        Route::patch('/admin/services/{service}/status', [ServiceController::class, 'adminToggleStatus']);
-
         // Admin Finance
         Route::get('/admin/finance/summary', [App\Http\Controllers\Api\AdminFinanceController::class, 'summary']);
         Route::get('/admin/finance/per-store', [App\Http\Controllers\Api\AdminFinanceController::class, 'perStore']);
@@ -167,9 +146,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/product-categories', [ProductCategoryController::class, 'store']);
         Route::put('/admin/product-categories/{id}', [ProductCategoryController::class, 'update']);
         Route::delete('/admin/product-categories/{id}', [ProductCategoryController::class, 'destroy']);
-
-        Route::post('/admin/service-categories', [ServiceCategoryController::class, 'store']);
-        Route::put('/admin/service-categories/{id}', [ServiceCategoryController::class, 'update']);
-        Route::delete('/admin/service-categories/{id}', [ServiceCategoryController::class, 'destroy']);
     });
 });

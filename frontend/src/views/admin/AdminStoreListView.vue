@@ -88,23 +88,18 @@ const handleModeration = async () => {
   } finally { confirmLoading.value = false }
 }
 
-// Product/Service moderation in slide-over
+// Product moderation in slide-over
 const detailTab = ref('products')
 const storeProducts = ref([])
-const storeServices = ref([])
 const loadingItems = ref(false)
 
 const fetchStoreItems = async (storeId) => {
   loadingItems.value = true
   try {
-    const [prodRes, servRes] = await Promise.all([
-      axios.get(`/admin/stores/${storeId}/products`),
-      axios.get(`/admin/stores/${storeId}/services`)
-    ])
+    const prodRes = await axios.get(`/admin/stores/${storeId}/products`)
     storeProducts.value = prodRes.data
-    storeServices.value = servRes.data
   } catch (err) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat produk/jasa toko.', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat produk toko.', life: 3000 })
   } finally { loadingItems.value = false }
 }
 
@@ -127,9 +122,7 @@ const handleItemAction = async () => {
   const type = itemConfirmType.value
   const item = itemConfirmTarget.value
   const action = itemConfirmAction.value
-  const endpoint = type === 'product'
-    ? (action === 'delete' ? `/admin/products/${item.id}` : `/admin/products/${item.id}/status`)
-    : (action === 'delete' ? `/admin/services/${item.id}` : `/admin/services/${item.id}/status`)
+  const endpoint = action === 'delete' ? `/admin/products/${item.id}` : `/admin/products/${item.id}/status`
 
   try {
     const response = action === 'delete'
@@ -150,7 +143,7 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
   <div class="space-y-6">
     <Toast />
     <AdminPageHeader icon="solar:shop-bold-duotone" title="Moderasi Toko Alumni"
-                     subtitle="Setujui pengajuan toko baru, tangguhkan operasional, atau moderasi produk/jasa." />
+                     subtitle="Setujui pengajuan toko baru, tangguhkan operasional, atau moderasi produk." />
 
     <AdminPanel>
       <div class="flex flex-col sm:flex-row gap-4 items-center">
@@ -202,7 +195,7 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
     <!-- Detail Slide-Over with Product/Service Moderation -->
     <AdminSlideOver :visible="detailVisible" @update:visible="detailVisible = $event"
                     icon="solar:shop-bold-duotone" title="Detail Toko & Moderasi"
-                    subtitle="Profil toko, produk, dan jasa" width="560px">
+                    subtitle="Profil toko dan produk" width="560px">
       <template v-if="selectedStore">
         <div class="space-y-5">
           <!-- Store header -->
@@ -263,11 +256,6 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
                       @click="detailTab = 'products'">
                 <i class="pi pi-box mr-1"></i> Produk ({{ storeProducts.length }})
               </button>
-              <button class="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all"
-                      :class="detailTab === 'services' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:bg-white'"
-                      @click="detailTab = 'services'">
-                <i class="pi pi-wrench mr-1"></i> Jasa ({{ storeServices.length }})
-              </button>
             </div>
 
             <AdminState v-if="loadingItems" mode="loading" />
@@ -299,30 +287,6 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
               </div>
 
               <!-- Services tab -->
-              <div v-if="detailTab === 'services'" class="space-y-2">
-                <div v-for="serv in storeServices" :key="serv.id"
-                     class="bg-white border border-slate-200 rounded-lg px-3 py-2.5 flex items-center gap-3">
-                  <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden">
-                    <img v-if="serv.primary_image" :src="serv.primary_image.image_path" class="w-full h-full object-cover" />
-                    <i v-else class="pi pi-image text-slate-300 text-xs"></i>
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="text-xs font-bold text-slate-800 truncate">{{ serv.name }}</p>
-                    <p class="text-[10px] text-slate-400">Mulai Rp{{ Number(serv.price_from || 0).toLocaleString('id-ID') }}</p>
-                  </div>
-                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold" :class="statusPill(serv.status)">
-                    {{ serv.status?.toUpperCase() }}
-                  </span>
-                  <div class="flex gap-1">
-                    <Button icon="pi pi-eye-slash" size="small" text rounded
-                            :title="serv.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'"
-                            @click="openItemAction('service', serv, 'status')" />
-                    <Button icon="pi pi-trash" size="small" text rounded severity="danger"
-                            title="Hapus" @click="openItemAction('service', serv, 'delete')" />
-                  </div>
-                </div>
-                <div v-if="!storeServices.length" class="py-4 text-center text-slate-400 text-xs">Toko belum memiliki jasa</div>
-              </div>
             </template>
           </div>
         </div>
@@ -342,12 +306,12 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
       @update:reason="confirmReason = $event"
       @confirm="handleModeration" />
 
-    <!-- Item Action Confirm Modal (Product/Service) -->
+    <!-- Item Action Confirm Modal (Product) -->
     <AdminConfirmModal :visible="itemConfirmVisible" @update:visible="itemConfirmVisible = $event"
-      :title="itemConfirmAction === 'delete' ? `Hapus ${itemConfirmType === 'product' ? 'Produk' : 'Jasa'}` : `Nonaktifkan ${itemConfirmType === 'product' ? 'Produk' : 'Jasa'}`"
+      :title="itemConfirmAction === 'delete' ? 'Hapus Produk' : 'Nonaktifkan Produk'"
       :message="itemConfirmAction === 'delete'
-        ? `Apakah Anda yakin ingin menghapus ${itemConfirmType === 'product' ? 'produk' : 'jasa'} &quot;${itemConfirmTarget?.name}&quot;? Tindakan ini tidak dapat dibatalkan.`
-        : `Apakah Anda yakin ingin mengubah status ${itemConfirmType === 'product' ? 'produk' : 'jasa'} &quot;${itemConfirmTarget?.name}&quot;?`"
+        ? `Apakah Anda yakin ingin menghapus produk &quot;${itemConfirmTarget?.name}&quot;? Tindakan ini tidak dapat dibatalkan.`
+        : `Apakah Anda yakin ingin mengubah status produk &quot;${itemConfirmTarget?.name}&quot;?`"
       :icon="itemConfirmAction === 'delete' ? 'solar:trash-bin-minimalistic-bold' : 'solar:warning-bold'"
       :tone="itemConfirmAction === 'delete' ? 'danger' : 'warn'"
       :confirmLabel="itemConfirmAction === 'delete' ? 'Hapus' : 'Ubah Status'"

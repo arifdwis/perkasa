@@ -84,7 +84,6 @@ const pricePresets = [
 
 const tabConfig = [
   { key: 'product', label: 'Produk', icon: 'solar:box-bold-duotone' },
-  { key: 'service', label: 'Jasa', icon: 'solar:widget-bold-duotone' },
   { key: 'store', label: 'Toko', icon: 'solar:shop-bold-duotone' }
 ]
 
@@ -118,9 +117,6 @@ const fetchCategories = async () => {
     if (activeTab.value === 'product') {
       const response = await axios.get('/product-categories')
       categories.value = response.data.map(c => ({ label: c.name, value: c.id }))
-    } else if (activeTab.value === 'service') {
-      const response = await axios.get('/service-categories')
-      categories.value = response.data.map(c => ({ label: c.name, value: c.id }))
     } else if (activeTab.value === 'store') {
       categories.value = storeKategoriOptions.value
     }
@@ -144,7 +140,6 @@ const fetchFavorites = async () => {
     const response = await axios.get('/favorites')
     const ids = new Set()
     response.data.products?.forEach(p => ids.add(p.id))
-    response.data.services?.forEach(s => ids.add(s.id))
     response.data.stores?.forEach(st => ids.add(st.id))
     favoritedIds.value = ids
   } catch (err) {
@@ -166,7 +161,7 @@ const fetchCatalog = async (page = 1) => {
       sort: selectedSort.value
     }
 
-    if (activeTab.value === 'product' || activeTab.value === 'service') {
+    if (activeTab.value === 'product') {
       params.kategori_id = selectedCategory.value || undefined
       params.harga_min = appliedPriceMin.value ? parseInt(appliedPriceMin.value) || undefined : undefined
       params.harga_max = appliedPriceMax.value ? parseInt(appliedPriceMax.value) || undefined : undefined
@@ -387,8 +382,6 @@ onMounted(async () => {
 const navigateToDetail = (item) => {
   if (activeTab.value === 'product') {
     router.push({ name: 'ProductDetail', params: { slug: item.slug } })
-  } else if (activeTab.value === 'service') {
-    router.push({ name: 'ServiceDetail', params: { slug: item.slug } })
   } else if (activeTab.value === 'store') {
     router.push({ name: 'StoreProfile', params: { id: item.id } })
   }
@@ -409,7 +402,7 @@ watch(selectedSort, () => {
     <BuyerPageHeader
       icon="solar:compass-square-bold-duotone"
       title="Katalog Jejaring Bisnis & Alumni"
-      subtitle="Temukan produk unggulan, jasa professional, toko terpercaya, serta jejaring lulusan FEB Universitas Mulawarman."
+      subtitle="Temukan produk unggulan, toko terpercaya, serta jejaring lulusan FEB Universitas Mulawarman."
     />
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow pb-24 lg:pb-8 w-full">
@@ -434,7 +427,7 @@ watch(selectedSort, () => {
             <Icon icon="solar:magnifer-linear" class="absolute left-4 text-slate-400 text-xl z-10" />
             <InputText
               v-model="search"
-              placeholder="Cari produk, jasa, atau toko alumni..."
+              placeholder="Cari produk atau toko alumni..."
               class="w-full !pl-12 !pr-10 !py-3 text-sm rounded-2xl border-slate-200"
               @keyup.enter="applyFilters"
             />
@@ -459,7 +452,7 @@ watch(selectedSort, () => {
           </button>
         </div>
 
-        <div v-if="categories.length > 0 && (activeTab === 'product' || activeTab === 'service' || activeTab === 'store')" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div v-if="categories.length > 0 && (activeTab === 'product' || activeTab === 'store')" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           <button
             class="px-3.5 py-1.5 text-xs font-bold rounded-full whitespace-nowrap transition-all duration-200 shrink-0"
             :class="!selectedCategory ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'"
@@ -523,7 +516,7 @@ watch(selectedSort, () => {
                     <Select v-model="selectedKecamatan" :options="locations.kecamatan.map(k => ({ label: k, value: k }))" optionLabel="label" optionValue="value" placeholder="Semua Kecamatan" class="w-full text-xs" showClear />
                   </div>
 
-                  <div v-if="activeTab === 'product' || activeTab === 'service'" class="flex flex-col gap-2">
+                  <div v-if="activeTab === 'product'" class="flex flex-col gap-2">
                     <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rentang Harga</label>
                     <div class="grid grid-cols-2 gap-2">
                       <InputText v-model="priceMin" placeholder="Min" inputmode="numeric" pattern="[0-9]*" class="w-full text-xs" />
@@ -562,7 +555,7 @@ watch(selectedSort, () => {
                   <Select v-model="selectedSort" :options="sortOptions" optionLabel="label" optionValue="value" class="!text-xs !w-36" />
                 </div>
 
-                <div v-if="activeTab === 'product' || activeTab === 'service'" class="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <div v-if="activeTab === 'product'" class="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                   <button
                     class="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
                     :class="viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-slate-400 hover:text-slate-600'"
@@ -621,7 +614,7 @@ watch(selectedSort, () => {
 
             <div v-else class="flex flex-col gap-6">
 
-              <div v-if="(activeTab === 'product' || activeTab === 'service') && items.length > 0"
+              <div v-if="(activeTab === 'product') && items.length > 0"
                    :class="viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4' : 'flex flex-col gap-3'">
 
                 <div
@@ -637,7 +630,7 @@ watch(selectedSort, () => {
                   >
                     <img v-if="item.primary_image" :src="item.primary_image.image_path" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300">
-                      <Icon :icon="activeTab === 'product' ? 'solar:box-bold-duotone' : 'solar:widget-bold-duotone'" class="text-3xl mb-1" />
+                      <Icon icon="solar:box-bold-duotone" class="text-3xl mb-1" />
                       <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tidak ada foto</span>
                     </div>
 
@@ -677,9 +670,8 @@ watch(selectedSort, () => {
                       </div>
 
                       <div class="pt-0.5">
-                        <span v-if="activeTab === 'service'" class="block text-[10px] text-slate-400 font-bold uppercase">Mulai Dari</span>
                         <strong class="text-base font-black text-slate-900">
-                          Rp {{ formatPrice(item.price || item.price_from) }}
+                          Rp {{ formatPrice(item.price) }}
                         </strong>
                       </div>
                     </div>
@@ -869,7 +861,7 @@ watch(selectedSort, () => {
           <Select v-model="selectedKecamatan" :options="locations.kecamatan.map(k => ({ label: k, value: k }))" optionLabel="label" optionValue="value" placeholder="Semua Kecamatan" class="w-full text-xs" showClear />
         </div>
 
-        <div v-if="activeTab === 'product' || activeTab === 'service'" class="flex flex-col gap-2">
+        <div v-if="activeTab === 'product'" class="flex flex-col gap-2">
           <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rentang Harga</label>
           <div class="grid grid-cols-2 gap-2">
             <InputText v-model="priceMin" placeholder="Min" inputmode="numeric" pattern="[0-9]*" class="w-full text-xs" />

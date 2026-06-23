@@ -13,7 +13,6 @@ import InputText from 'primevue/inputtext'
 import Tag from 'primevue/tag'
 import { Icon } from '@iconify/vue'
 import ProductCard from '../../components/ProductCard.vue'
-import ServiceCard from '../../components/ServiceCard.vue'
 import StoreCard from '../../components/StoreCard.vue'
 import BecomeSellerCard from '../../components/BecomeSellerCard.vue'
 import AppNavbar from '../../components/AppNavbar.vue'
@@ -33,7 +32,6 @@ const angkatan = ref('')
 
 const buyerStats = ref(null)
 const products = ref([])
-const services = ref([])
 const stores = ref([])
 const loading = ref(true)
 
@@ -139,8 +137,7 @@ const fetchCategoryShortcuts = async () => {
       return { id: cat.id, name: cat.name, type: 'product', categoryName: cat.name, icon: style.icon, color: style.color }
     })
     categoryShortcuts.value = [
-      ...prodCats,
-      { id: null, name: 'Semua Jasa', type: 'service', categoryName: null, icon: 'solar:widget-bold-duotone', color: 'text-indigo-500 bg-indigo-500/10' }
+      ...prodCats
     ]
   } catch (err) {
     console.error('Failed to load categories', err)
@@ -179,11 +176,7 @@ const fetchData = async () => {
     const productsRes = await axios.get('/catalog', { params: { type: 'product', sort: 'latest', page: 1 } })
     products.value = productsRes.data.data.slice(0, 6)
 
-    // 3. Featured Services
-    const servicesRes = await axios.get('/catalog', { params: { type: 'service', sort: 'latest', page: 1 } })
-    services.value = servicesRes.data.data.slice(0, 6)
-
-    // 4. Popular Stores
+    // 3. Popular Stores
     const storesRes = await axios.get('/catalog', { params: { type: 'store', sort: 'latest', page: 1 } })
     stores.value = storesRes.data.data.slice(0, 4)
   } catch (err) {
@@ -215,7 +208,7 @@ onMounted(() => {
         <input 
           v-model="searchKeyword" 
           type="text" 
-          placeholder="Cari makanan, baju, jasa tutor..." 
+          placeholder="Cari makanan, baju, atau produk lain..." 
           class="w-full pl-10 pr-12 py-2.5 bg-white border border-slate-200/80 rounded-2xl text-xs font-semibold placeholder:text-slate-400 focus:outline-hidden focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all shadow-xs"
           @keyup.enter="handleSearch"
         />
@@ -256,7 +249,7 @@ onMounted(() => {
           <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Kata Kunci</label>
           <div class="relative flex items-center">
             <Icon icon="solar:magnifer-linear" class="absolute left-3.5 text-slate-400" />
-            <InputText v-model="searchKeyword" placeholder="Cari produk, jasa, toko..." class="w-full !pl-10 rounded-2xl text-xs py-2.5" @keyup.enter="handleSearch" />
+            <InputText v-model="searchKeyword" placeholder="Cari produk atau toko..." class="w-full !pl-10 rounded-2xl text-xs py-2.5" @keyup.enter="handleSearch" />
           </div>
         </div>
 
@@ -357,25 +350,6 @@ onMounted(() => {
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="product in products" :key="product.id" class="h-full">
             <ProductCard :product="product" @add-to-cart="openQtyDialog(product)" />
-          </div>
-        </div>
-      </section>
-
-      <!-- Section: Featured Services -->
-      <section class="space-y-4" v-if="services.length > 0">
-        <div class="flex items-center justify-between">
-          <SectionHeader icon="solar:bolt-bold-duotone" title="Jasa & Keahlian Alumni" />
-          <a 
-            class="text-xs font-extrabold uppercase text-primary hover:underline cursor-pointer flex items-center gap-0.5"
-            @click="router.push({ name: 'Catalog', query: { tab: 'service' } })"
-          >
-            Lihat Semua
-            <Icon icon="solar:arrow-right-linear" />
-          </a>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div v-for="service in services" :key="service.id" class="h-full">
-            <ServiceCard :service="service" />
           </div>
         </div>
       </section>

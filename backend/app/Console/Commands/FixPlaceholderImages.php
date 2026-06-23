@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\ProductImage;
-use App\Models\ServiceImage;
 use Illuminate\Console\Command;
 
 class FixPlaceholderImages extends Command
@@ -15,19 +14,17 @@ class FixPlaceholderImages extends Command
     {
         $replaced = 0;
 
-        foreach ([ProductImage::class, ServiceImage::class] as $model) {
-            $model::query()
-                ->where('image_path', 'like', '%loremflickr%')
-                ->chunk(100, function ($images) use (&$replaced) {
-                    foreach ($images as $image) {
-                        $newUrl = $this->replaceUrl($image->image_path);
-                        if ($newUrl) {
-                            $image->forceFill(['image_path' => $newUrl])->save();
-                            $replaced++;
-                        }
+        ProductImage::query()
+            ->where('image_path', 'like', '%loremflickr%')
+            ->chunk(100, function ($images) use (&$replaced) {
+                foreach ($images as $image) {
+                    $newUrl = $this->replaceUrl($image->image_path);
+                    if ($newUrl) {
+                        $image->forceFill(['image_path' => $newUrl])->save();
+                        $replaced++;
                     }
-                });
-        }
+                }
+            });
 
         $this->info("{$replaced} placeholder image URLs replaced.");
     }

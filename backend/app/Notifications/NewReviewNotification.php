@@ -29,10 +29,7 @@ class NewReviewNotification extends Notification
 
     public function toArray($notifiable): array
     {
-        $isProduct = $this->review->reviewable_type === 'App\Models\Product';
-        $actionUrl = $isProduct
-            ? '/buyer/products/'.$this->slugOrOrderId
-            : '/buyer/services/'.$this->slugOrOrderId;
+        $actionUrl = '/buyer/orders/'.$this->slugOrOrderId;
 
         return [
             'title' => 'Ulasan Baru Diterima',

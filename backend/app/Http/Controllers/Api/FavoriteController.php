@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Favorite;
 use App\Models\Product;
-use App\Models\Service;
 use App\Models\Store;
 use Illuminate\Http\Request;
 
@@ -18,27 +17,22 @@ class FavoriteController extends Controller
     {
         $request->validate([
             'favoritable_id' => ['required', 'uuid'],
-            'favoritable_type' => ['required', 'string', 'in:product,service,store'],
+            'favoritable_type' => ['required', 'string', 'in:product,store'],
         ]);
 
         $id = $request->favoritable_id;
         $typeString = $request->favoritable_type;
 
-        // Map type string to full model class namespace
         $modelClass = null;
         switch ($typeString) {
             case 'product':
                 $modelClass = Product::class;
-                break;
-            case 'service':
-                $modelClass = Service::class;
                 break;
             case 'store':
                 $modelClass = Store::class;
                 break;
         }
 
-        // Verify if the target model exists
         $target = $modelClass::find($id);
         if (! $target) {
             return response()->json(['message' => 'Item tidak ditemukan.'], 404);
@@ -79,33 +73,21 @@ class FavoriteController extends Controller
     {
         $userId = $request->user()->id;
 
-        // Fetch all favorites
         $favorites = Favorite::where('user_id', $userId)->get();
 
         $productIds = [];
-        $serviceIds = [];
         $storeIds = [];
 
         foreach ($favorites as $fav) {
             if ($fav->favoritable_type === Product::class) {
                 $productIds[] = $fav->favoritable_id;
-            } elseif ($fav->favoritable_type === Service::class) {
-                $serviceIds[] = $fav->favoritable_id;
             } elseif ($fav->favoritable_type === Store::class) {
                 $storeIds[] = $fav->favoritable_id;
             }
         }
 
-        // Retrieve items with matching relations
         $products = Product::with(['category', 'primaryImage', 'store'])
             ->whereIn('id', $productIds)
-            ->whereHas('store', function ($q) {
-                $q->where('status', 'active');
-            })
-            ->get();
-
-        $services = Service::with(['category', 'primaryImage', 'store'])
-            ->whereIn('id', $serviceIds)
             ->whereHas('store', function ($q) {
                 $q->where('status', 'active');
             })
@@ -118,7 +100,6 @@ class FavoriteController extends Controller
 
         return response()->json([
             'products' => $products,
-            'services' => $services,
             'stores' => $stores,
         ]);
     }

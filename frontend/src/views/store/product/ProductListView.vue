@@ -98,9 +98,6 @@ onMounted(() => fetchProducts())
             <button class="flex-1 px-2 sm:px-3 py-1.5 text-[11px] font-bold rounded-lg bg-primary text-white shadow-sm flex items-center justify-center gap-1">
               <i class="pi pi-box text-xs"></i> <span class="hidden sm:inline">Produk</span>
             </button>
-            <button class="flex-1 px-2 sm:px-3 py-1.5 text-[11px] font-bold rounded-lg text-slate-500 hover:bg-slate-50 transition-colors flex items-center justify-center gap-1" @click="router.push({ name: 'SellerServices' })">
-              <i class="pi pi-briefcase text-xs"></i> <span class="hidden sm:inline">Jasa</span>
-            </button>
           </div>
           <button class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white hover:bg-primary-dark text-[11px] font-bold transition-colors" @click="openCreate">
             <i class="pi pi-plus text-xs"></i> <span class="hidden sm:inline">Tambah</span>

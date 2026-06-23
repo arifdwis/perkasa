@@ -9,7 +9,6 @@ import { Icon } from '@iconify/vue'
 
 import AppNavbar from '../components/AppNavbar.vue'
 import ProductCard from '../components/ProductCard.vue'
-import ServiceCard from '../components/ServiceCard.vue'
 import StoreCard from '../components/StoreCard.vue'
 import LoadingState from '../components/LoadingState.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -22,7 +21,6 @@ const activeTab = ref('product')
 const loading = ref(true)
 const favorites = ref({
   products: [],
-  services: [],
   stores: []
 })
 
@@ -31,7 +29,6 @@ const isVerified = ref(false)
 
 const tabConfig = [
   { key: 'product', label: 'Produk', icon: 'solar:box-bold-duotone' },
-  { key: 'service', label: 'Jasa', icon: 'solar:widget-bold-duotone' },
   { key: 'store', label: 'Toko', icon: 'solar:shop-bold-duotone' }
 ]
 
@@ -45,12 +42,11 @@ const checkAuth = () => {
 }
 
 const totalFavorites = computed(() => {
-  return favorites.value.products.length + favorites.value.services.length + favorites.value.stores.length
+  return favorites.value.products.length + favorites.value.stores.length
 })
 
 const tabCount = (key) => {
   if (key === 'product') return favorites.value.products.length
-  if (key === 'service') return favorites.value.services.length
   return favorites.value.stores.length
 }
 
@@ -60,7 +56,6 @@ const fetchFavorites = async () => {
     const response = await axios.get('/favorites')
     favorites.value = {
       products: response.data.products || [],
-      services: response.data.services || [],
       stores: response.data.stores || []
     }
   } catch (err) {
@@ -91,8 +86,6 @@ const toggleFavorite = async (event, item, type) => {
     if (!response.data.favorited) {
       if (type === 'product') {
         favorites.value.products = favorites.value.products.filter(p => p.id !== item.id)
-      } else if (type === 'service') {
-        favorites.value.services = favorites.value.services.filter(s => s.id !== item.id)
       } else if (type === 'store') {
         favorites.value.stores = favorites.value.stores.filter(st => st.id !== item.id)
       }
@@ -119,7 +112,7 @@ onMounted(() => {
     <Toast />
     <AppNavbar />
 
-    <BuyerPageHeader icon="solar:heart-bold-duotone" title="Favorit Saya" subtitle="Produk, jasa, dan toko yang Anda simpan.">
+    <BuyerPageHeader icon="solar:heart-bold-duotone" title="Favorit Saya" subtitle="Produk dan toko yang Anda simpan.">
       <template #action>
         <span v-if="!loading && totalFavorites > 0"
               class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-full text-xs font-bold">
@@ -196,30 +189,6 @@ onMounted(() => {
               icon="solar:box-bold-duotone"
               actionLabel="Jelajahi Produk"
               @action="router.push({ name: 'Catalog', query: { type: 'product' } })"
-            />
-          </div>
-
-          <!-- SERVICES -->
-          <div v-if="activeTab === 'service'">
-            <div v-if="favorites.services.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div v-for="item in favorites.services" :key="item.id" class="relative group">
-                <ServiceCard :service="item" />
-                <button
-                  class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors z-10"
-                  title="Hapus dari Favorit"
-                  @click="toggleFavorite($event, item, 'service')"
-                >
-                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
-                </button>
-              </div>
-            </div>
-            <EmptyState
-              v-else
-              title="Belum ada jasa favorit"
-              description="Simpan jasa keahlian yang Anda minati."
-              icon="solar:widget-bold-duotone"
-              actionLabel="Jelajahi Jasa"
-              @action="router.push({ name: 'Catalog', query: { type: 'service' } })"
             />
           </div>
 

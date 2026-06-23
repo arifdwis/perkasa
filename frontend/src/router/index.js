@@ -68,11 +68,6 @@ const routes = [
         component: () => import('../views/product/ProductDetailView.vue')
       },
       {
-        path: 'services/:slug',
-        name: 'ServiceDetail',
-        component: () => import('../views/service/ServiceDetailView.vue')
-      },
-      {
         path: 'notifications',
         name: 'Notifications',
         component: () => import('../views/NotificationListView.vue')
@@ -115,21 +110,6 @@ const routes = [
         path: 'products/:id/edit',
         name: 'SellerProductEdit',
         component: () => import('../views/store/product/ProductFormView.vue')
-      },
-      {
-        path: 'services',
-        name: 'SellerServices',
-        component: () => import('../views/store/service/ServiceListView.vue')
-      },
-      {
-        path: 'services/create',
-        name: 'SellerServiceCreate',
-        component: () => import('../views/store/service/ServiceFormView.vue')
-      },
-      {
-        path: 'services/:id/edit',
-        name: 'SellerServiceEdit',
-        component: () => import('../views/store/service/ServiceFormView.vue')
       },
       {
         path: 'orders',
@@ -334,10 +314,6 @@ router.beforeEach((to, from) => {
 
   if (to.path.startsWith('/products/')) {
     return { name: 'ProductDetail', params: { slug: to.params.slug || to.path.split('/').pop() } }
-  }
-
-  if (to.path.startsWith('/services/')) {
-    return { name: 'ServiceDetail', params: { slug: to.params.slug || to.path.split('/').pop() } }
   }
 
   if (to.path.startsWith('/stores/')) {

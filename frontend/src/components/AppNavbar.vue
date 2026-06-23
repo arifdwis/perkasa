@@ -420,16 +420,6 @@ onMounted(() => {
                 <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
               </div>
 
-              <div class="menu-item" @click="router.push({ name: 'SellerServices' }); visibleDrawer = false;">
-                <div class="flex items-center gap-3">
-                  <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
-                    <Icon icon="solar:widget-linear" />
-                  </div>
-                  <span class="menu-label text-slate-700">Kelola Jasa</span>
-                </div>
-                <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
-              </div>
-
               <div class="menu-item" @click="router.push({ name: 'SellerOrders' }); visibleDrawer = false;">
                 <div class="flex items-center gap-3">
                   <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
