@@ -126,8 +126,8 @@ class ProductMediaAndCategorySeeder extends Seeder
         $seed = crc32($slug);
 
         return [
-            "https://loremflickr.com/900/900/{$safeQuery}?lock=" . ($seed % 100000),
-            "https://loremflickr.com/900/900/{$safeQuery}?lock=" . (($seed + 31) % 100000),
+            "https://picsum.photos/seed/" . ($seed % 100000) . "/900/900",
+            "https://picsum.photos/seed/" . (($seed + 31) % 100000) . "/900/900",
         ];
     }
 

@@ -15,7 +15,9 @@ export const useNotificationStore = defineStore('notification', () => {
       const response = await axios.get('/notifications/unread-count')
       unreadCount.value = response.data.unread_count || 0
     } catch (err) {
-      console.error('Failed to fetch unread notifications count', err)
+      if (err.response?.status !== 401) {
+        console.error('Failed to fetch unread notifications count', err)
+      }
     }
   }
 

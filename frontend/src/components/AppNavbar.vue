@@ -98,7 +98,11 @@ onMounted(() => {
   if (localStorage.getItem('token')) {
     notificationStore.fetchUnreadCount()
     // Poll unread count every 30 seconds
-    setInterval(() => {
+    const pollInterval = setInterval(() => {
+      if (!localStorage.getItem('token')) {
+        clearInterval(pollInterval)
+        return
+      }
       notificationStore.fetchUnreadCount()
     }, 30000)
   }
