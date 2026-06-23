@@ -261,6 +261,40 @@ class StoreController extends Controller
     }
 
     /**
+     * Close (nonaktifkan) owner's store.
+     */
+    public function closeMyStore(Request $request)
+    {
+        $profile = $request->user()->profile;
+        if (! $profile || ! $profile->store) {
+            return response()->json([
+                'message' => 'Toko tidak ditemukan.',
+            ], 404);
+        }
+
+        $store = $profile->store;
+        Gate::authorize('update', $store);
+
+        if ($store->status !== 'active') {
+            return response()->json([
+                'message' => 'Toko sudah tidak aktif.',
+            ], 400);
+        }
+
+        $store->update(['status' => 'closed']);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($store)
+            ->log("Menutup toko secara permanen: {$store->name}");
+
+        return response()->json([
+            'message' => 'Toko berhasil ditutup.',
+            'store' => $store->fresh()->load('deliveryFees'),
+        ]);
+    }
+
+    /**
      * View public store profile.
      */
     public function show($id)

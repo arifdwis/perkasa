@@ -9,6 +9,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Toast from 'primevue/toast'
+import Dialog from 'primevue/dialog'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
@@ -358,6 +359,23 @@ const onLogoChange = async (event) => {
   event.target.value = ''
 }
 
+const showCloseConfirm = ref(false)
+const closingStore = ref(false)
+
+const closeStore = async () => {
+  closingStore.value = true
+  try {
+    const response = await axios.post('/stores/my-store/close')
+    toast.add({ severity: 'success', summary: 'Toko Ditutup', detail: response.data.message, life: 4000 })
+    showCloseConfirm.value = false
+    fetchMyStore()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal menutup toko.', life: 3000 })
+  } finally {
+    closingStore.value = false
+  }
+}
+
 const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
 </script>
 
@@ -635,6 +653,10 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
                     <template #icon><Icon icon="solar:chart-square-bold-duotone" class="text-sm" /></template>
                     Dashboard
                   </Button>
+                  <Button size="small" severity="danger" outlined class="!text-[11px] !font-bold !border-red-200 hover:!bg-red-50" @click="showCloseConfirm = true">
+                    <template #icon><Icon icon="solar:close-circle-bold" class="text-sm" /></template>
+                    Tutup Toko
+                  </Button>
                 </div>
               </div>
             </div>
@@ -806,6 +828,26 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
       </div>
 
     </div>
+
+    <!-- Close Store Confirmation Dialog -->
+    <Dialog v-model:visible="showCloseConfirm" modal header="Tutup Toko" :style="{ width: '420px' }" :draggable="false">
+      <div class="space-y-4 py-2">
+        <div class="flex items-start gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
+          <Icon icon="solar:warning-bold" class="text-red-500 text-xl shrink-0 mt-0.5" />
+          <div class="space-y-1">
+            <p class="text-sm font-bold text-red-700">Apakah Anda yakin?</p>
+            <p class="text-xs text-red-600 leading-relaxed">
+              Toko <strong>"{{ store?.name }}"</strong> akan ditutup. Produk & jasa tidak akan tampil di katalog. Tindakan ini dapat dibatalkan oleh admin.
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-end pt-2">
+          <Button label="Batal" severity="secondary" outlined @click="showCloseConfirm = false" />
+          <Button label="Ya, Tutup Toko" icon="pi pi-trash" severity="danger" :loading="closingStore" @click="closeStore" />
+        </div>
+      </div>
+    </Dialog>
+
   </div>
 </template>
 

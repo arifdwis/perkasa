@@ -46,7 +46,7 @@ class AdminStoreController extends Controller
         $store = Store::findOrFail($id);
 
         $request->validate([
-            'action' => ['required', 'string', Rule::in(['approve', 'suspend'])],
+            'action' => ['required', 'string', Rule::in(['approve', 'suspend', 'close'])],
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
@@ -61,6 +61,8 @@ class AdminStoreController extends Controller
             }
         } elseif ($request->action === 'suspend') {
             $status = 'suspended';
+        } elseif ($request->action === 'close') {
+            $status = 'closed';
         }
 
         $store->update([

@@ -186,8 +186,10 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
             {{ item.status?.toUpperCase() }}
           </span>
           <div class="flex gap-1.5">
-            <Button v-if="item.status !== 'active'" label="Setujui" icon="pi pi-check" size="small" severity="success" class="text-xs" @click.stop="openModeration(item, 'approve')" />
+            <Button v-if="item.status === 'pending'" label="Setujui" icon="pi pi-check" size="small" severity="success" class="text-xs" @click.stop="openModeration(item, 'approve')" />
+            <Button v-if="item.status === 'suspended'" label="Aktifkan" icon="pi pi-check" size="small" severity="success" class="text-xs" @click.stop="openModeration(item, 'approve')" />
             <Button v-if="item.status === 'active'" label="Suspend" icon="pi pi-ban" size="small" severity="danger" class="text-xs" @click.stop="openModeration(item, 'suspend')" />
+            <Button v-if="item.status !== 'active' && item.status !== 'closed'" label="Tutup" icon="pi pi-trash" size="small" severity="danger" class="text-xs" outlined @click.stop="openModeration(item, 'close')" />
           </div>
         </div>
         <AdminState v-if="!storeList.length && !loading" mode="empty" icon="solar:shop-linear" text="Belum ada toko terdaftar." />
@@ -245,10 +247,12 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
           <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
             <Button label="Lihat Halaman Toko" icon="pi pi-external-link" size="small" severity="secondary" outlined
                     @click="router.push({ name: 'StoreProfile', params: { id: selectedStore.id } })" />
-            <Button v-if="selectedStore.status !== 'active'" label="Setujui" icon="pi pi-check" size="small" severity="success"
+            <Button v-if="selectedStore.status === 'pending' || selectedStore.status === 'suspended'" label="Setujui" icon="pi pi-check" size="small" severity="success"
                     @click="detailVisible = false; openModeration(selectedStore, 'approve')" />
             <Button v-if="selectedStore.status === 'active'" label="Suspend" icon="pi pi-ban" size="small" severity="danger"
                     @click="detailVisible = false; openModeration(selectedStore, 'suspend')" />
+            <Button v-if="selectedStore.status !== 'active' && selectedStore.status !== 'closed'" label="Tutup" icon="pi pi-trash" size="small" severity="danger" outlined
+                    @click="detailVisible = false; openModeration(selectedStore, 'close')" />
           </div>
 
           <!-- Product/Service tabs -->
@@ -327,11 +331,11 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
 
     <!-- Moderation Confirm Modal (Toko) -->
     <AdminConfirmModal :visible="confirmVisible" @update:visible="confirmVisible = $event"
-      :title="confirmAction === 'approve' ? 'Setujui Pengajuan Toko' : 'Suspend Toko'"
-      :message="`Apakah Anda yakin ingin ${confirmAction === 'approve' ? 'menyetujui' : 'menangguhkan'} toko &quot;${selectedStore?.name}&quot;?`"
+      :title="confirmAction === 'approve' ? 'Setujui Pengajuan Toko' : (confirmAction === 'suspend' ? 'Suspend Toko' : 'Tutup Toko')"
+      :message="`Apakah Anda yakin ingin ${confirmAction === 'approve' ? 'menyetujui' : (confirmAction === 'suspend' ? 'menangguhkan' : 'menutup')} toko &quot;${selectedStore?.name}&quot;?`"
       :icon="confirmAction === 'approve' ? 'solar:check-circle-bold' : 'solar:warning-bold'"
       :tone="confirmAction === 'approve' ? 'primary' : 'danger'"
-      :confirmLabel="confirmAction === 'approve' ? 'Setujui' : 'Suspend'"
+      :confirmLabel="confirmAction === 'approve' ? 'Setujui' : (confirmAction === 'suspend' ? 'Suspend' : 'Tutup')"
       :loading="confirmLoading"
       withReason :reasonRequired="true"
       :reason="confirmReason"
