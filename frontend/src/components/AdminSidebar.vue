@@ -8,20 +8,20 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 
-const isRouteActive = (name) => {
-  return route.name === name
+const isSuperAdmin = computed(() =>
+  authStore.permissions.includes('super_admin') || authStore.permissions.includes('*')
+)
+
+const isRouteActive = (name) => route.name === name
+
+const showMenuItem = (permission) => {
+  if (isSuperAdmin.value) return true
+  return authStore.hasPermission(permission)
 }
 
 const handleLogout = async () => {
   authStore.clearAuth()
   router.push({ name: 'Login' })
-}
-
-const switchMode = (mode) => {
-  authStore.setUserMode(mode)
-  router.push({ name: 'Home' }).then(() => {
-    window.location.reload()
-  })
 }
 </script>
 
@@ -55,52 +55,52 @@ const switchMode = (mode) => {
         Dashboard Admin
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="showMenuItem('view_alumni_list')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AlumniList') || isRouteActive('AlumniImport') || isRouteActive('AlumniDetail') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AlumniList' })">
         <Icon icon="solar:shield-user-linear" class="text-lg" />
         Verifikasi Alumni
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="showMenuItem('verify_store')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminStores') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminStores' })">
         <Icon icon="solar:shop-linear" class="text-lg" />
         Moderasi Toko
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="showMenuItem('manage_categories')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminCategories') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminCategories' })">
         <Icon icon="solar:tag-linear" class="text-lg" />
         Kelola Kategori
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="isSuperAdmin" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminRoles') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminRoles' })">
         <Icon icon="solar:key-linear" class="text-lg" />
         Matriks Role & Izin
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="showMenuItem('view_all_orders')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminFinance') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminFinance' })">
         <Icon icon="solar:wallet-money-bold-duotone" class="text-lg" />
         Keuangan
       </a>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+      <a v-if="showMenuItem('view_reports')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminReports') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminReports' })">
         <Icon icon="solar:document-text-linear" class="text-lg" />
         Laporan & Export
       </a>
 
-      <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-3 block pt-4 mb-2">Aksi Lain</span>
+      <span v-if="isSuperAdmin" class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-3 block pt-4 mb-2">Aksi Lain</span>
 
-      <a class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-sky-500 hover:bg-sky-50 hover:text-sky-600 transition-all cursor-pointer"
-         @click="switchMode('buyer')">
+      <a v-if="isSuperAdmin" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-sky-500 hover:bg-sky-50 hover:text-sky-600 transition-all cursor-pointer"
+         @click="authStore.setUserMode('buyer'); router.push({ name: 'Home' }).then(() => window.location.reload())">
         <Icon icon="solar:shopping-cart-bold" class="text-lg" />
         Beralih ke Mode Belanja
       </a>

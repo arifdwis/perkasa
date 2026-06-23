@@ -288,14 +288,19 @@ router.beforeEach((to, from) => {
     }
   }
 
-  // 3. Admin Permission Check
+  // 3. Admin — block from accessing buyer/seller routes
+  if (isAdmin && (to.path.startsWith('/buyer') || to.path.startsWith('/seller'))) {
+    return { name: 'AdminDashboard' }
+  }
+
+  // 4. Admin Permission Check
   if (to.matched.some(record => record.meta.requiresAdmin) || to.path.startsWith('/admin')) {
     if (!isAdmin) {
       return { name: 'BuyerHome' }
     }
   }
 
-  // 4. Seller Mode Check
+  // 5. Seller Mode Check
   if (to.matched.some(record => record.meta.requiresSellerMode) || to.path.startsWith('/seller')) {
     if (to.name === 'SellerStore') {
       return true

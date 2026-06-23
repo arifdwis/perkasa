@@ -61,6 +61,17 @@ const isAdmin = computed(() => {
   return permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
 })
 
+const isSuperAdmin = computed(() => {
+  const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+  return permissions.includes('super_admin') || permissions.includes('*')
+})
+
+const hasPermission = (perm) => {
+  if (isSuperAdmin.value) return true
+  const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+  return permissions.includes(perm)
+}
+
 const isSeller = computed(() => {
   return authStore.user?.roles?.some(r => r.name === 'alumni_penjual') || false
 })
@@ -508,7 +519,7 @@ onMounted(() => {
               </div>
               
               <div class="flex flex-col gap-1.5 mt-2">
-                <div class="menu-item" @click="router.push({ name: 'AdminReports' }); visibleDrawer = false;">
+                <div v-if="hasPermission('view_reports')" class="menu-item" @click="router.push({ name: 'AdminReports' }); visibleDrawer = false;">
                   <div class="flex items-center gap-3">
                     <div class="menu-icon-wrapper text-amber-600 bg-amber-50">
                       <Icon icon="solar:document-text-linear" />
@@ -518,7 +529,7 @@ onMounted(() => {
                   <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
                 </div>
 
-                <div class="menu-item" @click="router.push({ name: 'AlumniList' }); visibleDrawer = false;">
+                <div v-if="hasPermission('view_alumni_list')" class="menu-item" @click="router.push({ name: 'AlumniList' }); visibleDrawer = false;">
                   <div class="flex items-center gap-3">
                     <div class="menu-icon-wrapper text-amber-600 bg-amber-50">
                       <Icon icon="solar:verified-check-linear" />
@@ -528,7 +539,7 @@ onMounted(() => {
                   <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
                 </div>
 
-                <div class="menu-item" @click="router.push({ name: 'AdminRoles' }); visibleDrawer = false;">
+                <div v-if="isSuperAdmin" class="menu-item" @click="router.push({ name: 'AdminRoles' }); visibleDrawer = false;">
                   <div class="flex items-center gap-3">
                     <div class="menu-icon-wrapper text-amber-600 bg-amber-50">
                       <Icon icon="solar:shield-keyhole-linear" />
@@ -538,7 +549,7 @@ onMounted(() => {
                   <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
                 </div>
 
-                <div class="menu-item" @click="router.push({ name: 'AdminStores' }); visibleDrawer = false;">
+                <div v-if="hasPermission('verify_store')" class="menu-item" @click="router.push({ name: 'AdminStores' }); visibleDrawer = false;">
                   <div class="flex items-center gap-3">
                     <div class="menu-icon-wrapper text-amber-600 bg-amber-50">
                       <Icon icon="solar:shop-linear" />
@@ -548,7 +559,7 @@ onMounted(() => {
                   <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
                 </div>
 
-                <div class="menu-item" @click="router.push({ name: 'AdminCategories' }); visibleDrawer = false;">
+                <div v-if="hasPermission('manage_categories')" class="menu-item" @click="router.push({ name: 'AdminCategories' }); visibleDrawer = false;">
                   <div class="flex items-center gap-3">
                     <div class="menu-icon-wrapper text-amber-600 bg-amber-50">
                       <Icon icon="solar:widget-3-linear" />
