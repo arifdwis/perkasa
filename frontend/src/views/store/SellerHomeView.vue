@@ -54,9 +54,10 @@ const formatDate = (d) => {
 const formatPrice = (v) => parseFloat(v || 0).toLocaleString('id-ID')
 
 const quickActions = [
-  { label: 'Produk',  icon: 'solar:box-bold',        route: 'SellerProducts', desc: 'Kelola katalog' },
-  { label: 'Pesanan', icon: 'solar:bill-list-bold',  route: 'SellerOrders',   desc: 'Pesanan masuk' },
-  { label: 'Toko',    icon: 'solar:settings-bold',   route: 'SellerStore',    desc: 'Pengaturan toko' },
+  { label: 'Produk',     icon: 'solar:box-bold',          route: 'SellerProducts',       desc: 'Kelola katalog' },
+  { label: 'Pesanan',    icon: 'solar:bill-list-bold',     route: 'SellerOrders',         desc: 'Pesanan masuk' },
+  { label: 'Toko',       icon: 'solar:shop-bold',          route: 'SellerStore',          desc: 'Pengaturan toko' },
+  { label: 'Tambah',     icon: 'solar:add-circle-bold',    route: 'SellerProductCreate',  desc: 'Produk baru' },
 ]
 </script>
 
@@ -64,38 +65,46 @@ const quickActions = [
   <div>
     <Toast />
 
-    <main class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-5 w-full space-y-4">
-      <!-- Welcome line -->
-      <div class="flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <h2 class="text-lg sm:text-xl font-black text-slate-800 truncate">Halo, {{ authStore.user?.name }}</h2>
-          <p class="text-xs text-slate-400 font-medium">Pantau kinerja toko Anda hari ini.</p>
+    <main class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-5 w-full space-y-5">
+
+      <!-- Welcome Header -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center shrink-0">
+            <Icon icon="solar:shop-2-bold-duotone" class="text-2xl" />
+          </div>
+          <div class="min-w-0">
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 truncate">{{ authStore.user?.profile?.store?.name || 'Toko Saya' }}</h2>
+            <p class="text-xs text-slate-400 font-medium mt-0.5">Selamat datang kembali, {{ authStore.user?.name }}</p>
+          </div>
         </div>
-        <button class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-[11px] font-bold transition-colors" @click="router.push({ name: 'StoreProfile', params: { id: authStore.user?.profile?.store?.id } })">
+        <button class="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark text-xs font-bold transition-colors shadow-sm" @click="router.push({ name: 'StoreProfile', params: { id: authStore.user?.profile?.store?.id } })">
           <i class="pi pi-external-link text-xs"></i> Lihat Toko
         </button>
       </div>
 
       <!-- Quick Actions -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <button v-for="a in quickActions" :key="a.label"
-          class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col items-center gap-2 hover:border-primary/30 hover:shadow-md transition-all duration-200"
+          class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col items-center gap-2.5 hover:border-primary/30 hover:shadow-md transition-all duration-200 group"
           @click="router.push({ name: a.route })">
-          <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all">
             <Icon :icon="a.icon" class="text-xl" />
           </div>
-          <span class="text-xs font-black text-slate-800">{{ a.label }}</span>
-          <span class="text-[10px] text-slate-400 font-medium text-center leading-tight">{{ a.desc }}</span>
+          <div class="text-center">
+            <span class="text-xs font-black text-slate-800 block">{{ a.label }}</span>
+            <span class="text-[10px] text-slate-400 font-medium leading-tight block mt-0.5">{{ a.desc }}</span>
+          </div>
         </button>
       </div>
 
       <!-- Stats -->
-      <div v-if="statsLoading" class="py-12 bg-white rounded-2xl border border-slate-100">
+      <div v-if="statsLoading" class="py-8 bg-white rounded-2xl border border-slate-100">
         <LoadingState message="Memuat data..." />
       </div>
-      <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
             <Icon icon="solar:wallet-money-bold" class="text-emerald-600 text-lg" />
           </div>
           <div class="min-w-0">
@@ -103,8 +112,8 @@ const quickActions = [
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Omzet</p>
           </div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
             <Icon icon="solar:bag-bold" class="text-blue-600 text-lg" />
           </div>
           <div class="min-w-0">
@@ -112,17 +121,17 @@ const quickActions = [
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pesanan</p>
           </div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-primary-soft/50 flex items-center justify-center shrink-0">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-primary-soft/50 flex items-center justify-center shrink-0">
             <Icon icon="solar:box-bold" class="text-primary text-lg" />
           </div>
           <div class="min-w-0">
-            <p class="text-sm font-black text-slate-800 truncate">{{ (sellerStats?.total_produk || 0) + (sellerStats?.total_jasa || 0) }}</p>
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Katalog</p>
+            <p class="text-sm font-black text-slate-800 truncate">{{ sellerStats?.total_produk || 0 }}</p>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Produk</p>
           </div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
             <Icon icon="solar:star-bold" class="text-amber-500 text-lg" />
           </div>
           <div class="min-w-0">
@@ -133,7 +142,7 @@ const quickActions = [
       </div>
 
       <!-- Low Stock Alert -->
-      <div v-if="lowStockProducts.length > 0" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
+      <div v-if="lowStockProducts.length > 0" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
         <div class="flex items-center gap-2.5">
           <Icon icon="solar:bell-bing-bold-duotone" class="text-amber-500 text-xl shrink-0" />
           <p class="text-xs font-bold text-amber-800">Ada {{ lowStockProducts.length }} produk dengan stok menipis</p>
@@ -141,10 +150,10 @@ const quickActions = [
         <Button label="Kelola" size="small" severity="warn" text class="text-[10px] font-bold shrink-0" @click="router.push({ name: 'SellerProducts' })" />
       </div>
 
-      <!-- Main Content -->
+      <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-        <!-- Orders -->
+        <!-- Orders (wider) -->
         <div class="lg:col-span-8 space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-black text-slate-800 flex items-center gap-1.5">
@@ -187,7 +196,7 @@ const quickActions = [
           </div>
         </div>
 
-        <!-- Top Products -->
+        <!-- Top Products (sidebar) -->
         <div class="lg:col-span-4 space-y-3">
           <h3 class="text-sm font-black text-slate-800 flex items-center gap-1.5">
             <Icon icon="solar:fire-bold-duotone" class="text-amber-500 text-lg" />
@@ -204,7 +213,7 @@ const quickActions = [
 
           <div v-else class="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-100 overflow-hidden">
             <div v-for="(prod, idx) in sellerStats.produk_terlaris" :key="prod.id"
-              class="flex items-center gap-3 px-4 py-3"
+              class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
             >
               <span class="w-6 h-6 rounded-full bg-slate-50 text-slate-500 text-[10px] font-black flex items-center justify-center shrink-0 border border-slate-100">{{ idx + 1 }}</span>
               <div class="flex-1 min-w-0">
