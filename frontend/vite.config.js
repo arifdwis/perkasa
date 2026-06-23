@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: 'inline',
+      injectRegister: null,
       manifest: {
         name: 'Marketplace Alumni FEB Universitas Mulawarman',
         short_name: 'Marketplace Alumni FEB',
