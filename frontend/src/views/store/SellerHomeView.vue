@@ -57,7 +57,7 @@ const quickActions = [
   { label: 'Produk',     icon: 'solar:box-bold',          route: 'SellerProducts',       desc: 'Kelola katalog' },
   { label: 'Pesanan',    icon: 'solar:bill-list-bold',     route: 'SellerOrders',         desc: 'Pesanan masuk' },
   { label: 'Toko',       icon: 'solar:shop-bold',          route: 'SellerStore',          desc: 'Pengaturan toko' },
-  { label: 'Tambah',     icon: 'solar:add-circle-bold',    route: 'SellerProductCreate',  desc: 'Produk baru' },
+  { label: 'Pendapatan', icon: 'solar:wallet-money-bold',  route: 'SellerFinance',        desc: 'Omzet & laporan' },
 ]
 </script>
 

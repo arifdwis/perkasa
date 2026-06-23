@@ -22,7 +22,7 @@ const isRouteActive = (name) => {
         :icon="isRouteActive('SellerHome') ? 'solar:chart-square-bold' : 'solar:chart-square-linear'" 
         class="text-xl" 
       />
-      <span class="text-[9px] font-extrabold uppercase">Dashboard</span>
+      <span class="text-[9px] font-extrabold uppercase">Home</span>
     </div>
 
     <!-- Produk -->
@@ -38,7 +38,20 @@ const isRouteActive = (name) => {
       <span class="text-[9px] font-extrabold uppercase">Produk</span>
     </div>
 
-    <!-- Pesanan Masuk -->
+    <!-- Pendapatan -->
+    <div 
+      class="flex flex-col items-center gap-1 cursor-pointer w-14 text-center transition-colors"
+      :class="isRouteActive('SellerFinance') ? 'text-primary' : 'text-slate-400'"
+      @click="router.push({ name: 'SellerFinance' })"
+    >
+      <Icon 
+        :icon="isRouteActive('SellerFinance') ? 'solar:wallet-money-bold' : 'solar:wallet-money-linear'" 
+        class="text-xl" 
+      />
+      <span class="text-[9px] font-extrabold uppercase">Omzet</span>
+    </div>
+
+    <!-- Pesanan -->
     <div 
       class="flex flex-col items-center gap-1 cursor-pointer w-14 text-center transition-colors"
       :class="isRouteActive('SellerOrders') ? 'text-primary' : 'text-slate-400'"
@@ -51,7 +64,7 @@ const isRouteActive = (name) => {
       <span class="text-[9px] font-extrabold uppercase">Pesanan</span>
     </div>
 
-    <!-- Toko Saya -->
+    <!-- Toko -->
     <div 
       class="flex flex-col items-center gap-1 cursor-pointer w-14 text-center transition-colors"
       :class="isRouteActive('SellerStore') ? 'text-primary' : 'text-slate-400'"
@@ -61,7 +74,7 @@ const isRouteActive = (name) => {
         :icon="isRouteActive('SellerStore') ? 'solar:shop-bold' : 'solar:shop-linear'" 
         class="text-xl" 
       />
-      <span class="text-[9px] font-extrabold uppercase">Toko Saya</span>
+      <span class="text-[9px] font-extrabold uppercase">Toko</span>
     </div>
   </nav>
 </template>

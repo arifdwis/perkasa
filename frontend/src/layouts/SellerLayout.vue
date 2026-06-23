@@ -32,6 +32,7 @@ const pageTitle = computed(() => {
     'SellerOrders': 'Pesanan Masuk',
     'SellerOrderDetail': 'Detail Pesanan',
     'SellerProducts': 'Kelola Produk',
+    'SellerFinance': 'Pendapatan & Omzet',
     'SellerStore': 'Toko Saya',
     'SellerProductEdit': 'Ubah Produk',
     'SellerProductCreate': 'Tambah Produk',

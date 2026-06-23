@@ -117,6 +117,11 @@ const routes = [
         component: () => import('../views/store/order/SellerOrdersView.vue')
       },
       {
+        path: 'finance',
+        name: 'SellerFinance',
+        component: () => import('../views/store/SellerFinanceView.vue')
+      },
+      {
         path: 'orders/:id',
         name: 'SellerOrderDetail',
         component: () => import('../views/order/OrderDetailView.vue')

@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Seller Orders
         Route::get('/seller/orders', [SellerOrderController::class, 'index']);
         Route::get('/seller/orders/stats', [SellerOrderController::class, 'stats']);
+        Route::get('/seller/orders/finance', [SellerOrderController::class, 'finance']);
         Route::get('/seller/orders/{id}', [SellerOrderController::class, 'show']);
         Route::put('/seller/orders/{id}/status', [SellerOrderController::class, 'updateStatus']);
 

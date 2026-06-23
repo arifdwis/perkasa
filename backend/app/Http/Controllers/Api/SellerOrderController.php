@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
 use App\Notifications\OrderStatusUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -94,6 +96,83 @@ class SellerOrderController extends Controller
 
         return response()->json([
             'order' => $order,
+        ]);
+    }
+
+    /**
+     * Get finance/earnings summary for the seller's store.
+     */
+    public function finance(Request $request)
+    {
+        $user = $request->user();
+        $store = $user->profile?->store;
+
+        if (! $store) {
+            return response()->json(['message' => 'Anda tidak memiliki toko.'], 403);
+        }
+
+        $allOrders = Order::where('store_id', $store->id)->get();
+        $completedOrders = $allOrders->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran']);
+
+        $totalOmzet = (int) $completedOrders->sum('total');
+        $totalSubtotal = (int) $completedOrders->sum('subtotal');
+        $totalOngkir = (int) $completedOrders->sum('biaya_antar');
+        $totalTransaksi = $allOrders->count();
+        $totalSelesai = $allOrders->where('status', 'selesai')->count();
+        $totalDibatalkan = $allOrders->where('status', 'dibatalkan')->count();
+        $rata2Order = $totalTransaksi > 0 ? round($totalOmzet / $totalTransaksi) : 0;
+
+        // Monthly trend (last 12 months)
+        $months = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $months[] = now()->subMonths($i)->format('Y-m');
+        }
+        $monthlyTrend = [];
+        foreach ($months as $month) {
+            $y = substr($month, 0, 4);
+            $m = substr($month, 5, 2);
+            $monthOrders = $allOrders->where('created_at', '>=', "{$y}-{$m}-01")
+                ->where('created_at', '<', now()->setDate((int) $y, (int) $m, 1)->addMonth()->toDateString());
+            $monthCompleted = $monthOrders->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran']);
+            $monthlyTrend[] = [
+                'bulan' => $month,
+                'omzet' => (int) $monthCompleted->sum('total'),
+                'pesanan' => $monthOrders->count(),
+            ];
+        }
+
+        // Top products by revenue
+        $topProducts = OrderItem::whereIn('order_id', $completedOrders->pluck('id'))
+            ->selectRaw('product_id, name, sum(quantity) as total_qty, sum(price * quantity) as total_revenue')
+            ->groupBy('product_id', 'name')
+            ->orderByDesc('total_revenue')
+            ->limit(10)
+            ->get();
+
+        // Recent completed orders
+        $recentCompleted = $allOrders->where('status', 'selesai')
+            ->sortByDesc('created_at')
+            ->take(10)
+            ->map(fn ($o) => [
+                'id' => $o->id,
+                'order_number' => $o->order_number,
+                'buyer' => $o->nama_penerima,
+                'total' => (int) $o->total,
+                'created_at' => $o->created_at->format('Y-m-d H:i:s'),
+            ])
+            ->values();
+
+        return response()->json([
+            'total_omzet' => $totalOmzet,
+            'total_subtotal' => $totalSubtotal,
+            'total_ongkir' => $totalOngkir,
+            'total_transaksi' => $totalTransaksi,
+            'total_selesai' => $totalSelesai,
+            'total_dibatalkan' => $totalDibatalkan,
+            'rata2_order' => $rata2Order,
+            'monthly_trend' => $monthlyTrend,
+            'top_products' => $topProducts,
+            'recent_completed' => $recentCompleted,
         ]);
     }
 
