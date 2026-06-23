@@ -614,10 +614,10 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
       </div>
 
       <!-- ===== Active / Closed Store ===== -->
-      <div v-else-if="store.status === 'active' || store.status === 'closed'" class="space-y-5 pb-24">
+      <div v-else-if="store.status === 'active' || store.status === 'suspended'" class="space-y-5 pb-24">
 
         <!-- Closed Banner -->
-        <div v-if="store.status === 'closed'" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+        <div v-if="store.status === 'suspended'" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-3">
           <div class="flex items-center gap-2.5">
             <Icon icon="solar:pause-circle-bold-duotone" class="text-amber-500 text-xl shrink-0" />
             <div>
@@ -682,7 +682,7 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
                   <Button v-if="store.status === 'active'" size="small" severity="danger" label="Tutup" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showCloseConfirm = true">
                     <template #icon><Icon icon="solar:close-circle-bold" class="text-sm" /></template>
                   </Button>
-                  <Button v-else-if="store.status === 'closed'" size="small" severity="success" label="Buka Kembali" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showReopenConfirm = true">
+                  <Button v-else-if="store.status === 'suspended'" size="small" severity="success" label="Buka Kembali" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showReopenConfirm = true">
                     <template #icon><Icon icon="solar:play-circle-bold" class="text-sm" /></template>
                   </Button>
                 </div>

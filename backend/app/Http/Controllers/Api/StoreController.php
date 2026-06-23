@@ -281,7 +281,7 @@ class StoreController extends Controller
             ], 400);
         }
 
-        $store->update(['status' => 'closed']);
+        $store->update(['status' => 'suspended']);
 
         activity()
             ->causedBy($request->user())
@@ -309,7 +309,7 @@ class StoreController extends Controller
         $store = $profile->store;
         Gate::authorize('update', $store);
 
-        if ($store->status !== 'closed') {
+        if ($store->status !== 'suspended') {
             return response()->json([
                 'message' => 'Toko tidak dalam status tertutup.',
             ], 400);
