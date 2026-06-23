@@ -93,8 +93,8 @@ onUnmounted(() => {
 
         <!-- Header -->
         <div class="flex flex-col items-center text-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0">
-            <Icon icon="solar:download-bold-duotone" class="text-2xl text-primary" />
+          <div class="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0 p-2">
+            <img src="/logo_unmul.png" alt="Logo Unmul" class="w-full h-full object-contain" />
           </div>
           <div class="flex flex-col gap-1">
             <h3 class="text-base font-black text-slate-800">Instal Aplikasi</h3>
