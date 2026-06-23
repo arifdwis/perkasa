@@ -224,8 +224,8 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
 
         <!-- Actions -->
         <div class="flex flex-wrap gap-2 mb-6 pb-4 border-b border-slate-100">
-          <Button v-if="detailAlumni.status_verifikasi !== 'verified'" label="Approve" icon="pi pi-check" severity="success" size="small" @click="openVerify('approve')" />
-          <Button v-if="detailAlumni.status_verifikasi !== 'rejected'" label="Reject" icon="pi pi-times" severity="danger" size="small" outlined @click="openVerify('reject')" />
+          <Button v-if="detailAlumni.status_verifikasi === 'pending' || detailAlumni.status_verifikasi === 'suspended'" label="Approve" icon="pi pi-check" severity="success" size="small" @click="openVerify('approve')" />
+          <Button v-if="detailAlumni.status_verifikasi === 'pending'" label="Reject" icon="pi pi-times" severity="danger" size="small" outlined @click="openVerify('reject')" />
           <Button v-if="detailAlumni.status_verifikasi === 'verified'" label="Suspend" icon="pi pi-ban" severity="danger" size="small" @click="openVerify('suspend')" />
         </div>
 

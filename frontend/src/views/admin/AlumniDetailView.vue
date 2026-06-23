@@ -116,8 +116,8 @@ const handleVerification = async () => {
               </span>
             </div>
             <div class="flex flex-wrap justify-center sm:justify-start gap-2 pt-2 border-t border-slate-100">
-              <Button v-if="alumni.status_verifikasi !== 'verified'" label="Approve" icon="pi pi-check" severity="success" size="small" @click="openVerifyDialog('approve')" />
-              <Button v-if="alumni.status_verifikasi !== 'rejected'" label="Reject" icon="pi pi-times" severity="danger" size="small" outlined @click="openVerifyDialog('reject')" />
+              <Button v-if="alumni.status_verifikasi === 'pending' || alumni.status_verifikasi === 'suspended'" label="Approve" icon="pi pi-check" severity="success" size="small" @click="openVerifyDialog('approve')" />
+              <Button v-if="alumni.status_verifikasi === 'pending'" label="Reject" icon="pi pi-times" severity="danger" size="small" outlined @click="openVerifyDialog('reject')" />
               <Button v-if="alumni.status_verifikasi === 'verified'" label="Suspend" icon="pi pi-ban" severity="danger" size="small" @click="openVerifyDialog('suspend')" />
             </div>
           </div>
