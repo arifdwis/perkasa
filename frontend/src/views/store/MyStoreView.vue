@@ -645,17 +645,14 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
                   <Icon icon="solar:map-point-bold-duotone" class="text-slate-400 text-sm" /> {{ store.kota }}{{ store.kecamatan ? ', Kec. ' + store.kecamatan : '' }}{{ store.kelurahan ? ', Kel. ' + store.kelurahan : '' }}
                 </p>
                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2">
-                  <Button size="small" severity="secondary" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'StoreProfile', params: { id: store.id } })">
+                  <Button size="small" severity="secondary" label="Profil" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'StoreProfile', params: { id: store.id } })">
                     <template #icon><Icon icon="solar:external-link-bold" class="text-sm" /></template>
-                    Lihat Profil Publik
                   </Button>
-                  <Button size="small" severity="secondary" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'SellerHome' })">
+                  <Button size="small" severity="secondary" label="Dashboard" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'SellerHome' })">
                     <template #icon><Icon icon="solar:chart-square-bold-duotone" class="text-sm" /></template>
-                    Dashboard
                   </Button>
-                  <Button size="small" severity="danger" class="!text-[11px] !font-bold !rounded-xl" @click="showCloseConfirm = true">
+                  <Button size="small" severity="danger" label="Tutup" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showCloseConfirm = true">
                     <template #icon><Icon icon="solar:close-circle-bold" class="text-sm" /></template>
-                    Tutup Toko
                   </Button>
                 </div>
               </div>
