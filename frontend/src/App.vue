@@ -6,10 +6,12 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useAuthStore } from './stores/auth'
 import SplashScreen from './components/SplashScreen.vue'
 import PWAInstallGuide from './components/PWAInstallGuide.vue'
+import { Icon } from '@iconify/vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
 const isMobileAdmin = ref(false)
+const isOnline = ref(navigator.onLine)
 
 const showSplash = ref(false)
 const activeSplashRole = ref('')
@@ -33,9 +35,14 @@ const checkIfMobileAdmin = () => {
   isMobileAdmin.value = isAdminPage && window.innerWidth < 1024
 }
 
+const handleOnline = () => { isOnline.value = true }
+const handleOffline = () => { isOnline.value = false }
+
 onMounted(() => {
   checkIfMobileAdmin()
   window.addEventListener('resize', checkIfMobileAdmin)
+  window.addEventListener('online', handleOnline)
+  window.addEventListener('offline', handleOffline)
   
   // Show PWA install guide on first visit (not logged in)
   const guideShown = localStorage.getItem('pwa_guide_shown')
@@ -53,6 +60,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkIfMobileAdmin)
+  window.removeEventListener('online', handleOnline)
+  window.removeEventListener('offline', handleOffline)
 })
 
 watch(() => route.path, checkIfMobileAdmin)
@@ -78,6 +87,27 @@ const closePWAGuide = () => {
     <!-- PWA Install Guide (first visit) -->
     <PWAInstallGuide v-if="showPWAGuide" @close="closePWAGuide" />
 
+    <!-- Offline Overlay -->
+    <Transition name="offline-fade">
+      <div v-if="!isOnline"
+           class="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-white select-none">
+        <div class="flex flex-col items-center text-center px-6 gap-6 max-w-sm">
+          <div class="w-28 h-28 animate-offline-logo">
+            <img src="/logo_unmul.png" alt="Logo Universitas Mulawarman" class="w-full h-full object-contain drop-shadow-lg" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <h1 class="text-2xl font-black text-slate-800">Tidak Ada Koneksi</h1>
+            <p class="text-sm text-slate-500 leading-relaxed">
+              Aplikasi akan aktif kembali setelah jaringan internet terhubung.
+            </p>
+          </div>
+          <div class="flex items-center gap-3 text-slate-400">
+            <Icon icon="solar:wifi-off-bold-duotone" class="text-3xl text-slate-300" />
+          </div>
+        </div>
+      </div>
+    </Transition>
+
     <!-- Role-based PWA Splash Screen -->
     <SplashScreen :role="activeSplashRole" :visible="showSplash" />
 
@@ -100,5 +130,20 @@ const closePWAGuide = () => {
 </template>
 
 <style>
-/* Any custom override styles can go here */
+.offline-fade-enter-active,
+.offline-fade-leave-active {
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.offline-fade-enter-from,
+.offline-fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes offlineLogoPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+.animate-offline-logo {
+  animation: offlineLogoPulse 2.5s ease-in-out infinite;
+}
 </style>
