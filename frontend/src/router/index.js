@@ -15,11 +15,6 @@ const routes = [
     component: () => import('../views/auth/RegisterView.vue'),
     meta: { guestOnly: true }
   },
-  {
-    path: '/email/verify/:id/:hash',
-    name: 'EmailVerify',
-    component: () => import('../views/auth/EmailVerifyView.vue')
-  },
 
   // Parent: Buyer App Layout Wrapper
   {

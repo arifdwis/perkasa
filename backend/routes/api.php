@@ -39,16 +39,10 @@ Route::get('/catalog', [CatalogController::class, 'index']);
 Route::get('/catalog/locations', [CatalogController::class, 'locations']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
-// Email verification public link
-Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
-
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-
-    // Email verification resend
-    Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail']);
 
     // Alumni Profile (any authenticated user with profile)
     Route::get('/me/profile', [AlumniProfileController::class, 'show']);

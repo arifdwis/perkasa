@@ -90,7 +90,7 @@ const handleRegister = async () => {
       whatsapp: form.value.whatsapp
     })
 
-    success.value = response.data.message || 'Registrasi berhasil! Menunggu verifikasi.'
+    success.value = response.data.message || 'Registrasi berhasil! Silakan masuk.'
 
     form.value = {
       nim: '',

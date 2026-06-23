@@ -65,14 +65,11 @@ class AuthController extends Controller
             return $user;
         });
 
-        // Trigger Registered event to auto-send Laravel verification email
-        event(new Registered($user));
-
         // Send database notification
         $user->notify(new AlumniRegisteredNotification);
 
         return response()->json([
-            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk melakukan verifikasi. Akun Anda sedang menunggu verifikasi data Perkasa.',
+            'message' => 'Registrasi berhasil! Silakan masuk dengan akun Anda.',
             'user' => $user->load('profile'),
         ], 201);
     }
