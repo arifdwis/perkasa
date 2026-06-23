@@ -286,10 +286,44 @@ class StoreController extends Controller
         activity()
             ->causedBy($request->user())
             ->performedOn($store)
-            ->log("Menutup toko secara permanen: {$store->name}");
+            ->log("Menutup toko: {$store->name}");
 
         return response()->json([
-            'message' => 'Toko berhasil ditutup.',
+            'message' => 'Toko berhasil ditutup. Anda dapat membuka kembali kapan saja.',
+            'store' => $store->fresh()->load('deliveryFees'),
+        ]);
+    }
+
+    /**
+     * Reopen owner's store.
+     */
+    public function reopenMyStore(Request $request)
+    {
+        $profile = $request->user()->profile;
+        if (! $profile || ! $profile->store) {
+            return response()->json([
+                'message' => 'Toko tidak ditemukan.',
+            ], 404);
+        }
+
+        $store = $profile->store;
+        Gate::authorize('update', $store);
+
+        if ($store->status !== 'closed') {
+            return response()->json([
+                'message' => 'Toko tidak dalam status tertutup.',
+            ], 400);
+        }
+
+        $store->update(['status' => 'active']);
+
+        activity()
+            ->causedBy($request->user())
+            ->performedOn($store)
+            ->log("Membuka kembali toko: {$store->name}");
+
+        return response()->json([
+            'message' => 'Toko berhasil dibuka kembali.',
             'store' => $store->fresh()->load('deliveryFees'),
         ]);
     }

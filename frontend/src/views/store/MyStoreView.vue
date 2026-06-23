@@ -361,6 +361,8 @@ const onLogoChange = async (event) => {
 
 const showCloseConfirm = ref(false)
 const closingStore = ref(false)
+const showReopenConfirm = ref(false)
+const reopeningStore = ref(false)
 
 const closeStore = async () => {
   closingStore.value = true
@@ -373,6 +375,20 @@ const closeStore = async () => {
     toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal menutup toko.', life: 3000 })
   } finally {
     closingStore.value = false
+  }
+}
+
+const reopenStore = async () => {
+  reopeningStore.value = true
+  try {
+    const response = await axios.post('/stores/my-store/reopen')
+    toast.add({ severity: 'success', summary: 'Toko Dibuka', detail: response.data.message, life: 4000 })
+    showReopenConfirm.value = false
+    fetchMyStore()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal membuka toko.', life: 3000 })
+  } finally {
+    reopeningStore.value = false
   }
 }
 
@@ -597,8 +613,20 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
         </div>
       </div>
 
-      <!-- ===== Active Store ===== -->
-      <div v-else-if="store.status === 'active'" class="space-y-5 pb-24">
+      <!-- ===== Active / Closed Store ===== -->
+      <div v-else-if="store.status === 'active' || store.status === 'closed'" class="space-y-5 pb-24">
+
+        <!-- Closed Banner -->
+        <div v-if="store.status === 'closed'" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <Icon icon="solar:pause-circle-bold-duotone" class="text-amber-500 text-xl shrink-0" />
+            <div>
+              <p class="text-xs font-bold text-amber-800">Toko Sedang Ditutup</p>
+              <p class="text-[10px] text-amber-600">Produk tidak tampil di katalog. Klik "Buka Kembali" untuk mengaktifkan.</p>
+            </div>
+          </div>
+          <Button size="small" severity="success" label="Buka Kembali" class="!text-[10px] !font-bold !rounded-lg shrink-0" @click="showReopenConfirm = true" />
+        </div>
 
         <!-- Identity & Branding Hero -->
         <section class="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
@@ -651,8 +679,11 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
                   <Button size="small" severity="secondary" label="Dashboard" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'SellerHome' })">
                     <template #icon><Icon icon="solar:chart-square-bold-duotone" class="text-sm" /></template>
                   </Button>
-                  <Button size="small" severity="danger" label="Tutup" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showCloseConfirm = true">
+                  <Button v-if="store.status === 'active'" size="small" severity="danger" label="Tutup" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showCloseConfirm = true">
                     <template #icon><Icon icon="solar:close-circle-bold" class="text-sm" /></template>
+                  </Button>
+                  <Button v-else-if="store.status === 'closed'" size="small" severity="success" label="Buka Kembali" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="showReopenConfirm = true">
+                    <template #icon><Icon icon="solar:play-circle-bold" class="text-sm" /></template>
                   </Button>
                 </div>
               </div>
@@ -829,18 +860,37 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
     <!-- Close Store Confirmation Dialog -->
     <Dialog v-model:visible="showCloseConfirm" modal header="Tutup Toko" :style="{ width: '420px' }" :draggable="false">
       <div class="space-y-4 py-2">
-        <div class="flex items-start gap-3 p-4 bg-red-50 rounded-2xl border border-red-100">
-          <Icon icon="solar:warning-bold" class="text-red-500 text-xl shrink-0 mt-0.5" />
+        <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+          <Icon icon="solar:warning-bold" class="text-amber-500 text-xl shrink-0 mt-0.5" />
           <div class="space-y-1">
-            <p class="text-sm font-bold text-red-700">Apakah Anda yakin?</p>
-            <p class="text-xs text-red-600 leading-relaxed">
-              Toko <strong>"{{ store?.name }}"</strong> akan ditutup. Produk & jasa tidak akan tampil di katalog. Tindakan ini dapat dibatalkan oleh admin.
+            <p class="text-sm font-bold text-amber-700">Tutup Toko?</p>
+            <p class="text-xs text-amber-600 leading-relaxed">
+              Toko <strong>"{{ store?.name }}"</strong> akan ditutup sementara. Produk tidak akan tampil di katalog. Anda dapat membuka kembali kapan saja.
             </p>
           </div>
         </div>
         <div class="flex gap-2 justify-end pt-2">
           <Button label="Batal" severity="secondary" outlined @click="showCloseConfirm = false" />
-          <Button label="Ya, Tutup Toko" icon="pi pi-trash" severity="danger" :loading="closingStore" @click="closeStore" />
+          <Button label="Ya, Tutup Toko" icon="pi pi-times-circle" severity="danger" :loading="closingStore" @click="closeStore" />
+        </div>
+      </div>
+    </Dialog>
+
+    <!-- Reopen Store Confirmation Dialog -->
+    <Dialog v-model:visible="showReopenConfirm" modal header="Buka Kembali Toko" :style="{ width: '420px' }" :draggable="false">
+      <div class="space-y-4 py-2">
+        <div class="flex items-start gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+          <Icon icon="solar:check-circle-bold" class="text-emerald-500 text-xl shrink-0 mt-0.5" />
+          <div class="space-y-1">
+            <p class="text-sm font-bold text-emerald-700">Buka Kembali Toko?</p>
+            <p class="text-xs text-emerald-600 leading-relaxed">
+              Toko <strong>"{{ store?.name }}"</strong> akan aktif kembali dan produk akan tampil di katalog.
+            </p>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-end pt-2">
+          <Button label="Batal" severity="secondary" outlined @click="showReopenConfirm = false" />
+          <Button label="Ya, Buka Toko" icon="pi pi-check-circle" severity="success" :loading="reopeningStore" @click="reopenStore" />
         </div>
       </div>
     </Dialog>

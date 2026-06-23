@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/stores/my-store/logo', [StoreController::class, 'uploadLogo']);
         Route::post('/stores/my-store/banner', [StoreController::class, 'uploadBanner']);
         Route::post('/stores/my-store/close', [StoreController::class, 'closeMyStore']);
+        Route::post('/stores/my-store/reopen', [StoreController::class, 'reopenMyStore']);
 
         // Seller Products
         Route::get('/seller/products', [ProductController::class, 'sellerProducts']);
