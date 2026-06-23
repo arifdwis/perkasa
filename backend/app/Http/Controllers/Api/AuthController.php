@@ -110,9 +110,11 @@ class AuthController extends Controller
         // Get effective permissions
         $permissions = $user->getAllPermissions()->pluck('name');
 
-        // Bypassing check if super_admin
+        // Push role names for frontend role-based checks
         if ($user->hasRole('super_admin')) {
             $permissions->push('super_admin');
+        } elseif ($user->hasRole('admin_marketplace')) {
+            $permissions->push('admin_marketplace');
         }
 
         return response()->json([
@@ -145,6 +147,8 @@ class AuthController extends Controller
         $permissions = $user->getAllPermissions()->pluck('name');
         if ($user->hasRole('super_admin')) {
             $permissions->push('super_admin');
+        } elseif ($user->hasRole('admin_marketplace')) {
+            $permissions->push('admin_marketplace');
         }
 
         return response()->json([
