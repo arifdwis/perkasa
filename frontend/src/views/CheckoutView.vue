@@ -15,13 +15,14 @@ import AppNavbar from '../components/AppNavbar.vue'
 import LoadingState from '../components/LoadingState.vue'
 import EmptyState from '../components/EmptyState.vue'
 import BuyerPageHeader from '../components/buyer/BuyerPageHeader.vue'
+import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const route = useRoute()
 const cartStore = useCartStore()
 const toast = useToast()
 
-const directProductId = computed(() => route.query.product_id ? parseInt(route.query.product_id) : null)
+const directProductId = computed(() => route.query.product_id ? route.query.product_id : null)
 const directQuantity = computed(() => route.query.quantity ? parseInt(route.query.quantity) : 1)
 const isDirectCheckout = computed(() => !!directProductId.value)
 
@@ -83,6 +84,14 @@ const subtotal = computed(() => {
   }
   return cartStore.subtotal
 })
+
+const totalItems = computed(() => {
+  let count = 0
+  groupedItems.value.forEach(g => g.items.forEach(i => count += parseInt(i.quantity || 0)))
+  return count
+})
+
+const totalStores = computed(() => groupedItems.value.length)
 
 const checkoutLoading = computed(() => {
   if (isDirectCheckout.value) return directProductLoading.value
@@ -147,14 +156,30 @@ const wilayahOptions = computed(() => {
 // Get delivery fee for a specific store order
 const getDeliveryFee = (storeGroup) => {
   if (storeGroup.delivery_type === 'fixed') {
-    return storeGroup.fixed_delivery_fee
+    return parseFloat(storeGroup.fixed_delivery_fee || 0)
   }
   if (storeGroup.delivery_type === 'per_wilayah') {
     if (!selectedWilayah.value) return null // indicates region not selected yet
     const option = storeGroup.delivery_fees.find(df => df.wilayah === selectedWilayah.value)
-    return option ? option.fee : 0
+    return option ? parseFloat(option.fee || 0) : 0
   }
   return 0
+}
+
+const itemSubtotal = (storeGroup) => {
+  return storeGroup.items.reduce((sum, item) => sum + parseFloat(item.subtotal || 0), 0)
+}
+
+// Per-store total (subtotal + delivery fee)
+const storeTotal = (storeGroup) => {
+  const sub = itemSubtotal(storeGroup)
+  const fee = getDeliveryFee(storeGroup)
+  return sub + (fee || 0)
+}
+
+const isStoreUnserved = (storeGroup) => {
+  if (storeGroup.delivery_type !== 'per_wilayah' || !selectedWilayah.value) return false
+  return !storeGroup.delivery_fees.some(df => df.wilayah === selectedWilayah.value)
 }
 
 // Check if any store in the cart doesn't serve the selected region
@@ -190,9 +215,9 @@ const handleCheckout = async () => {
   if (requiresWilayah.value && !selectedWilayah.value) {
     toast.add({
       severity: 'warn',
-      summary: 'Wilayah Antar Wajib',
-      detail: 'Mohon pilih wilayah pengantaran Anda.',
-      life: 2500
+      summary: 'Wilayah Belum Terdeteksi',
+      detail: 'Mohon lengkapi kecamatan atau kelurahan Anda agar wilayah pengantaran dapat terdeteksi otomatis.',
+      life: 3000
     })
     return
   }
@@ -417,6 +442,27 @@ const initMap = () => {
   })
 }
 
+// Auto-detect wilayah from kecamatan/kelurahan
+const autoDetectWilayah = () => {
+  if (!requiresWilayah.value || !wilayahOptions.value.length) return
+
+  const fields = [kecamatan.value, kelurahan.value].filter(Boolean)
+  for (const field of fields) {
+    const match = wilayahOptions.value.find(opt =>
+      opt.value.toLowerCase().includes(field.toLowerCase()) ||
+      field.toLowerCase().includes(opt.value.toLowerCase())
+    )
+    if (match) {
+      selectedWilayah.value = match.value
+      return
+    }
+  }
+}
+
+watch([kecamatan, kelurahan], () => {
+  autoDetectWilayah()
+})
+
 watch(() => cartStore.loading, (newVal) => {
   if (!isDirectCheckout.value && !newVal && cartStore.groupedItems.length > 0) {
     setTimeout(initMap, 100)
@@ -448,24 +494,26 @@ onMounted(async () => {
     <AppNavbar />
 
     <!-- Page Banner -->
-    <BuyerPageHeader icon="solar:credit-card-bold-duotone" title="Proses Checkout" subtitle="Silakan lengkapi formulir informasi pengantaran untuk memproses pesanan COD Anda." />
+    <BuyerPageHeader icon="solar:card-bold-duotone" title="Proses Checkout" subtitle="Silakan lengkapi formulir informasi pengantaran untuk memproses pesanan COD Anda." />
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full pb-24 lg:pb-8">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full pb-28 lg:pb-8">
       <LoadingState v-if="checkoutLoading" message="Memproses informasi checkout..." />
 
-      <div v-else-if="groupedItems.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div v-else-if="groupedItems.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Left Column: Form & Split Items List (Takes 7 columns) -->
-        <form @submit.prevent="handleCheckout" class="lg:col-span-7 space-y-6">
+        <!-- Left Column: Form & Split Items List -->
+        <form @submit.prevent="handleCheckout" class="lg:col-span-7 space-y-5">
           
           <!-- Recipient Form -->
-          <Card class="shadow-sm border border-slate-100">
-            <template #title>
-              <span class="text-base font-black text-slate-800"><i class="pi pi-map text-primary mr-1.5"></i>Alamat Pengantaran</span>
-            </template>
-            <template #content>
-              <div class="space-y-4 pt-2 text-xs">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div class="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Icon icon="solar:map-point-bold-duotone" class="text-lg" />
+              </div>
+              <h3 class="text-sm font-black text-slate-800">Alamat Pengantaran</h3>
+            </div>
+            <div class="space-y-4 pt-4 text-xs">
                 <!-- Nama Penerima -->
                 <div class="flex flex-col gap-1.5">
                   <label class="font-bold text-slate-500 uppercase">Nama Penerima</label>
@@ -478,19 +526,18 @@ onMounted(async () => {
                   <InputText v-model="teleponPenerima" placeholder="Contoh: 0812345678" required class="w-full text-xs" />
                 </div>
 
-                <!-- Wilayah Antar (conditional) -->
+                <!-- Wilayah Antar (auto-detected) -->
                 <div v-if="requiresWilayah" class="flex flex-col gap-1.5">
                   <label class="font-bold text-slate-500 uppercase">Wilayah Pengantaran</label>
-                  <Select 
-                    v-model="selectedWilayah" 
-                    :options="wilayahOptions" 
-                    optionLabel="label" 
-                    optionValue="value" 
-                    placeholder="Pilih wilayah kota Samarinda" 
-                    required 
-                    class="w-full text-xs" 
-                  />
-                  <small class="text-xs text-slate-400">Pilihan wilayah dibutuhkan untuk menghitung tarif ongkos kirim per wilayah secara otomatis.</small>
+                  <div v-if="selectedWilayah" class="flex items-center gap-2 px-3 py-2.5 bg-primary-soft border border-primary/20 rounded-xl">
+                    <Icon icon="solar:map-point-bold" class="text-primary text-sm shrink-0" />
+                    <span class="text-xs font-bold text-primary">{{ selectedWilayah }}</span>
+                    <span class="text-[10px] text-primary/60 font-medium ml-auto">otomatis terdeteksi</span>
+                  </div>
+                  <div v-else class="flex items-center gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                    <Icon icon="solar:danger-triangle-bold" class="text-amber-500 text-sm shrink-0" />
+                    <span class="text-xs font-medium text-amber-700">Wilayah belum terdeteksi. Lengkapi kecamatan atau kelurahan Anda.</span>
+                  </div>
                 </div>
 
                 <!-- Map Picker & Search -->
@@ -505,7 +552,6 @@ onMounted(async () => {
                     />
                     <Button 
                       label="Cari" 
-                      icon="pi pi-search" 
                       size="small" 
                       class="text-xs shrink-0" 
                       :loading="searchLoading"
@@ -521,7 +567,7 @@ onMounted(async () => {
                       class="px-4 py-2.5 hover:bg-slate-50 cursor-pointer flex items-start gap-2 text-slate-700 transition-colors"
                       @click="selectSearchResult(res)"
                     >
-                      <i class="pi pi-map-marker text-primary mt-0.5 shrink-0"></i>
+                      <Icon icon="solar:map-point-bold" class="text-primary mt-0.5 shrink-0 text-sm" />
                       <div class="min-w-0">
                         <p class="font-bold text-slate-800 line-clamp-1 text-xs">{{ res.name || res.display_name.split(',')[0] }}</p>
                         <p class="text-xs text-slate-400 truncate">{{ res.display_name }}</p>
@@ -562,22 +608,29 @@ onMounted(async () => {
                   <InputText v-model="catatan" placeholder="Contoh: Titip di satpam, baju warna biru ukuran L" class="w-full text-xs" />
                 </div>
               </div>
-            </template>
-          </Card>
+          </div>
 
           <!-- Split Order Items Preview -->
           <div class="space-y-4">
-            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Detail Rincian Barang per Toko</h3>
+            <h3 class="text-xs font-black text-slate-400 uppercase tracking-wider">Detail Rincian Barang per Toko</h3>
             
             <div 
               v-for="storeGroup in groupedItems" 
               :key="storeGroup.store_id"
-              class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3"
+              class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3"
             >
               <!-- Store Header -->
-              <div class="flex items-center justify-between pb-2 border-b border-slate-100 text-xs">
-                <span class="font-black text-slate-800"><i class="pi pi-shopping-bag text-primary"></i> {{ storeGroup.store_name }}</span>
-                <span class="font-medium text-slate-400"><i class="pi pi-map-marker"></i> {{ storeGroup.store_kota }}</span>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-8 h-8 rounded-lg bg-primary-soft flex items-center justify-center shrink-0">
+                    <Icon icon="solar:shop-bold-duotone" class="text-sm text-primary" />
+                  </div>
+                  <span class="text-sm font-black text-slate-800 truncate">{{ storeGroup.store_name }}</span>
+                </div>
+                <span class="text-xs text-slate-400 font-medium flex items-center gap-1 shrink-0">
+                  <Icon icon="solar:map-point-bold" class="text-xs" />
+                  {{ storeGroup.store_kota }}
+                </span>
               </div>
 
               <!-- Product items -->
@@ -585,33 +638,38 @@ onMounted(async () => {
                 <div 
                   v-for="item in storeGroup.items" 
                   :key="item.id"
-                  class="py-2.5 flex items-center justify-between text-xs"
+                  class="py-2.5 flex items-center justify-between text-xs gap-3"
                 >
-                  <div class="min-w-0 pr-4">
+                  <div class="min-w-0">
                     <p class="font-bold text-slate-700 truncate">{{ item.name }}</p>
                     <span class="text-slate-400 font-medium">{{ item.quantity }} x Rp{{ item.price.toLocaleString('id-ID') }}</span>
                   </div>
-                  <strong class="text-slate-800 flex-shrink-0">Rp{{ item.subtotal.toLocaleString('id-ID') }}</strong>
+                  <strong class="text-slate-800 flex-shrink-0 font-black">Rp{{ item.subtotal.toLocaleString('id-ID') }}</strong>
                 </div>
               </div>
 
               <!-- Store Specific Shipping Details -->
-              <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-xs space-y-1.5 text-slate-500">
+              <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-xs space-y-2 text-slate-500">
                 <div class="flex justify-between">
-                  <span>Subtotal Toko:</span>
+                  <span>Subtotal Barang</span>
                   <span class="font-bold text-slate-700">Rp{{ itemSubtotal(storeGroup).toLocaleString('id-ID') }}</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>Ongkos Kirim COD:</span>
+                  <span>Ongkos Kirim</span>
                   <span v-if="getDeliveryFee(storeGroup) !== null" class="font-bold text-slate-700">
                     Rp{{ getDeliveryFee(storeGroup).toLocaleString('id-ID') }}
                   </span>
                   <span v-else class="text-red-500 font-bold">
-                    Pilih Wilayah Terlebih Dahulu
+                    Pilih Wilayah
                   </span>
                 </div>
-                <div v-if="isStoreUnserved(storeGroup)" class="text-xs text-red-500 font-bold">
-                  <i class="pi pi-exclamation-circle text-xs"></i> Toko ini tidak melayani wilayah pengantaran terpilih!
+                <div class="flex justify-between pt-2 border-t border-slate-200">
+                  <span class="font-black text-slate-700">Total Toko</span>
+                  <span class="font-black text-slate-800">Rp{{ storeTotal(storeGroup).toLocaleString('id-ID') }}</span>
+                </div>
+                <div v-if="isStoreUnserved(storeGroup)" class="text-xs text-red-500 font-bold flex items-center gap-1">
+                  <Icon icon="solar:danger-triangle-bold" class="text-sm" />
+                  Toko ini tidak melayani wilayah pengantaran terpilih!
                 </div>
               </div>
             </div>
@@ -619,62 +677,66 @@ onMounted(async () => {
 
         </form>
 
-        <!-- Right Column: Final Summary & COD Confirmation (Takes 5 columns) -->
+        <!-- Right Column: Final Summary & COD Confirmation -->
         <div class="lg:col-span-5">
-          <Card class="shadow-sm border border-slate-100 lg:sticky lg:top-20">
-            <template #title>
-              <span class="text-base font-black text-slate-800">Pembayaran COD</span>
-            </template>
-            <template #content>
-              <div class="space-y-4 pt-2 text-xs">
-                
-                <!-- Payment method placeholder (COD only) -->
-                <div class="p-4 bg-amber-50/70 border border-amber-100 rounded-2xl flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xl">
-                    <i class="pi pi-wallet"></i>
-                  </div>
-                  <div>
-                    <h4 class="font-bold text-amber-800 text-xs">Cash on Delivery (COD)</h4>
-                    <p class="text-xs text-amber-700">Bayar secara tunai langsung ke kurir alumni saat pesanan tiba di alamat Anda.</p>
-                  </div>
-                </div>
-
-                <!-- Price Breakdowns -->
-                <div class="space-y-2.5 border-t border-b border-slate-100 py-3">
-                  <div class="flex justify-between font-bold text-slate-500">
-                    <span>Total Belanja</span>
-                    <span>Rp{{ subtotal.toLocaleString('id-ID') }}</span>
-                  </div>
-
-                  <div class="flex justify-between font-bold text-slate-500">
-                    <span>Total Ongkos Kirim</span>
-                    <span v-if="requiresWilayah && !selectedWilayah" class="text-red-500">Menunggu Wilayah</span>
-                    <span v-else>Rp{{ totalDeliveryFee.toLocaleString('id-ID') }}</span>
-                  </div>
-                </div>
-
-                <div class="flex justify-between items-baseline py-1">
-                  <span class="font-black text-slate-800 text-sm">Total Pembayaran</span>
-                  <strong class="text-2xl font-black text-primary">
-                    Rp{{ grandTotal.toLocaleString('id-ID') }}
-                  </strong>
-                </div>
-
-                <div class="p-3 bg-slate-50 rounded-2xl text-xs text-slate-400 leading-relaxed">
-                  <i class="pi pi-lock text-xs text-primary"></i> Dengan menekan tombol di bawah, Anda menyetujui untuk melakukan transaksi pembelian secara sah melalui jaringan COD alumni FEB Universitas Mulawarman.
-                </div>
-
-                <Button 
-                  label="Buat Pesanan (COD)" 
-                  icon="pi pi-check" 
-                  class="w-full text-base font-bold py-3 mt-2" 
-                  :loading="loading"
-                  :disabled="loading || hasUnservedStore || (requiresWilayah && !selectedWilayah)"
-                  @click="handleCheckout"
-                />
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 lg:sticky lg:top-32 space-y-4 text-xs">
+            
+            <div class="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Icon icon="solar:wallet-bold-duotone" class="text-lg" />
               </div>
-            </template>
-          </Card>
+              <h3 class="text-sm font-black text-slate-800">Pembayaran COD</h3>
+            </div>
+
+            <!-- Payment method -->
+            <div class="p-4 bg-amber-50/70 border border-amber-100 rounded-xl flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                <Icon icon="solar:hand-money-bold-duotone" class="text-xl" />
+              </div>
+              <div>
+                <h4 class="font-bold text-amber-800 text-xs">Cash on Delivery (COD)</h4>
+                <p class="text-[11px] text-amber-700 leading-relaxed">Bayar tunai langsung ke kurir alumni saat pesanan tiba.</p>
+              </div>
+            </div>
+
+            <!-- Price Breakdowns -->
+            <div class="space-y-2.5 border-t border-b border-slate-100 py-3">
+              <div class="flex justify-between text-slate-500">
+                <span>Subtotal ({{ totalItems }} item)</span>
+                <span class="font-bold text-slate-700">Rp{{ subtotal.toLocaleString('id-ID') }}</span>
+              </div>
+
+              <div class="flex justify-between text-slate-500">
+                <span>Ongkos Kirim ({{ totalStores }} toko)</span>
+                <span v-if="requiresWilayah && !selectedWilayah" class="text-red-500 font-bold">Pilih Wilayah</span>
+                <span v-else class="font-bold text-slate-700">Rp{{ totalDeliveryFee.toLocaleString('id-ID') }}</span>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-baseline py-1">
+              <span class="font-black text-slate-800 text-sm">Total Pembayaran</span>
+              <strong class="text-2xl font-black text-primary">
+                Rp{{ grandTotal.toLocaleString('id-ID') }}
+              </strong>
+            </div>
+
+            <div class="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-400 leading-relaxed flex items-start gap-1.5">
+              <Icon icon="solar:lock-keyhole-bold" class="text-sm text-primary mt-0.5 shrink-0" />
+              Dengan menekan tombol di bawah, Anda menyetujui transaksi pembelian secara sah melalui jaringan COD alumni FEB Universitas Mulawarman.
+            </div>
+
+            <Button 
+              label="Buat Pesanan (COD)" 
+              class="w-full text-sm font-bold py-3 !rounded-2xl" 
+              :loading="loading"
+              :disabled="loading || hasUnservedStore || (requiresWilayah && !selectedWilayah)"
+              @click="handleCheckout"
+            >
+              <template #icon>
+                <Icon icon="solar:check-circle-bold" class="text-base" />
+              </template>
+            </Button>
+          </div>
         </div>
 
       </div>
@@ -691,18 +753,3 @@ onMounted(async () => {
     </main>
   </div>
 </template>
-
-<script>
-// Helper computed properties inside standard vue instance style to mix with setup
-export default {
-  methods: {
-    itemSubtotal(storeGroup) {
-      return storeGroup.items.reduce((sum, item) => sum + item.subtotal, 0)
-    },
-    isStoreUnserved(storeGroup) {
-      if (storeGroup.delivery_type !== 'per_wilayah' || !this.selectedWilayah) return false
-      return !storeGroup.delivery_fees.some(df => df.wilayah === this.selectedWilayah)
-    }
-  }
-}
-</script>

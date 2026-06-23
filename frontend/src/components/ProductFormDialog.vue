@@ -323,28 +323,26 @@ const handleSave = async () => {
           <!-- Primary Image -->
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase">Foto Utama *</span>
+            
+            <input type="file" ref="primaryFileRef" accept="image/*" class="hidden" @change="onPrimaryFileChange($event)" />
 
-            <!-- Edit: has existing image -->
-            <div v-if="isEdit && primaryImage" class="relative group w-36 aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+            <div v-if="isEdit && primaryImage" class="relative group w-32 aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
               <img :src="primaryImage.image_path" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                <button class="px-3 py-1.5 bg-white text-slate-800 text-[10px] font-bold rounded-lg shadow hover:bg-slate-50" @click="triggerPrimaryFile">Ubah</button>
+                <Button label="Ubah" icon="pi pi-camera" size="small" class="!py-1 !px-2 text-[10px]" @click="primaryFileRef?.click()" />
               </div>
             </div>
 
-            <!-- Create: local preview -->
-            <div v-else-if="!isEdit && localPrimaryPreview" class="relative w-36 aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
+            <div v-else-if="!isEdit && localPrimaryPreview" class="relative w-32 aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
               <img :src="localPrimaryPreview" class="w-full h-full object-cover" />
-              <button class="absolute top-1.5 right-1.5 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-[10px] shadow hover:bg-red-600" @click="localPrimaryFile = null; localPrimaryPreview = null">
+              <button class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]" @click="localPrimaryFile = null; localPrimaryPreview = null">
                 <i class="pi pi-times"></i>
               </button>
             </div>
 
-            <!-- Empty state -->
-            <div v-else class="border-2 border-dashed border-slate-200 rounded-xl w-36 aspect-square flex flex-col items-center justify-center bg-slate-50 text-center p-3 hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer" @click="triggerPrimaryFile">
-              <Icon icon="solar:gallery-add-bold" class="text-2xl text-slate-300 mb-1" />
-              <span class="text-[10px] font-bold text-primary">Pilih Foto Utama</span>
-              <span class="text-[9px] text-slate-400 mt-0.5">Max 2MB</span>
+            <div v-else class="border-2 border-dashed border-slate-200 rounded-xl w-32 aspect-square flex flex-col items-center justify-center bg-slate-50 text-center p-2 cursor-pointer hover:border-primary/40 transition-colors" @click="primaryFileRef?.click()">
+              <i class="pi pi-image text-xl text-slate-300 mb-1"></i>
+              <span class="text-[10px] font-bold text-slate-500">Pilih Foto</span>
             </div>
           </div>
 
@@ -352,28 +350,23 @@ const handleSave = async () => {
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <span class="text-[10px] font-bold text-slate-500 uppercase">Galeri (Maks 5)</span>
-              <button class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-primary text-white text-[10px] font-bold rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      :disabled="isEdit ? galleryImages.length >= 5 : localGalleryFiles.length >= 5"
-                      @click="triggerGalleryFile">
-                <i class="pi pi-plus text-[8px]"></i> Tambah
-              </button>
+              <input type="file" ref="galleryFileRef" accept="image/*" multiple class="hidden" @change="onGalleryFileChange($event)" />
+              <Button label="Tambah" icon="pi pi-plus" size="small" outlined class="!py-1 !px-2 text-[10px]" :disabled="isEdit ? galleryImages.length >= 5 : localGalleryFiles.length >= 5" @click="galleryFileRef?.click()" />
             </div>
 
-            <!-- Edit gallery -->
-            <div v-if="isEdit && galleryImages.length" class="flex gap-2.5 flex-wrap">
-              <div v-for="img in galleryImages" :key="img.id" class="relative group w-24 aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+            <div v-if="isEdit && galleryImages.length" class="flex gap-2 flex-wrap">
+              <div v-for="img in galleryImages" :key="img.id" class="relative group w-20 aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
                 <img :src="img.image_path" class="w-full h-full object-cover" />
-                <button class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" @click="deleteGalleryImage(img.id)">
-                  <i class="pi pi-times"></i>
+                <button class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity" @click="deleteGalleryImage(img.id)">
+                  <i class="pi pi-trash text-sm"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Create gallery -->
-            <div v-else-if="!isEdit && localGalleryFiles.length" class="flex gap-2.5 flex-wrap">
-              <div v-for="(file, idx) in localGalleryFiles" :key="idx" class="relative group w-24 aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
+            <div v-else-if="!isEdit && localGalleryFiles.length" class="flex gap-2 flex-wrap">
+              <div v-for="(file, idx) in localGalleryFiles" :key="idx" class="relative group w-20 aspect-square rounded-lg border border-slate-200 overflow-hidden bg-slate-100">
                 <img :src="file.preview" class="w-full h-full object-cover" />
-                <button class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow opacity-100 sm:opacity-100" @click="removeLocalGalleryFile(idx)">
+                <button class="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]" @click="removeLocalGalleryFile(idx)">
                   <i class="pi pi-times"></i>
                 </button>
               </div>

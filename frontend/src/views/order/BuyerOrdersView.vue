@@ -5,6 +5,7 @@ import axios from 'axios'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
+import { Icon } from '@iconify/vue'
 import AppNavbar from '../../components/AppNavbar.vue'
 import LoadingState from '../../components/LoadingState.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -53,21 +54,26 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
     <Toast />
     <AppNavbar />
 
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-5 pb-24 lg:pb-8">
-      
-      <!-- Page Title -->
-      <BuyerPageHeader icon="solar:clipboard-list-bold-duotone" title="Pesanan Saya" subtitle="Pantau status pesanan COD Anda.">
-        <template #action>
-          <Button label="Belanja" icon="pi pi-plus" size="small" class="text-xs" @click="router.push({ name: 'Catalog' })" />
-        </template>
-      </BuyerPageHeader>
+    <BuyerPageHeader icon="solar:clipboard-list-bold-duotone" title="Pesanan Saya" subtitle="Pantau status pesanan COD Anda.">
+      <template #action>
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-xl hover:bg-primary/20 transition-colors"
+          @click="router.push({ name: 'Catalog' })"
+        >
+          <Icon icon="solar:add-circle-bold" class="text-sm" />
+          Belanja
+        </button>
+      </template>
+    </BuyerPageHeader>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-5 pb-24 lg:pb-8">
 
       <!-- Filter Tabs -->
       <div class="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-        <button 
+        <button
           v-for="opt in statusOptions" :key="opt.value"
-          class="px-3 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition-all border"
-          :class="selectedStatus === opt.value ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:border-primary/30'"
+          class="px-3.5 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition-all border"
+          :class="selectedStatus === opt.value ? 'bg-primary text-white border-primary shadow-sm shadow-primary/20' : 'bg-white text-slate-500 border-slate-200 hover:border-primary/30'"
           @click="selectedStatus = opt.value"
         >
           {{ opt.label }}
@@ -80,7 +86,7 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
       <!-- Empty -->
       <EmptyState
         v-else-if="orders.length === 0"
-        icon="pi-inbox"
+        icon="solar:clipboard-list-bold-duotone"
         title="Belum ada pesanan"
         description="Mulai jelajahi katalog dan lakukan pembelian pertama Anda."
         actionLabel="Mulai Belanja"
@@ -89,20 +95,20 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
 
       <!-- Orders -->
       <div v-else class="space-y-3">
-        <div 
+        <div
           v-for="order in orders" :key="order.id"
-          class="bg-white rounded-3xl border border-slate-100 hover:border-primary/20 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+          class="bg-white rounded-2xl border border-slate-100 hover:border-primary/20 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
           @click="router.push({ name: 'OrderDetail', params: { id: order.id } })"
         >
           <!-- Header -->
-          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-50">
-            <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <i class="pi pi-shopping-bag text-primary text-sm"></i>
+          <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Icon icon="solar:shop-bold-duotone" class="text-sm text-primary" />
               </div>
-              <div>
-                <p class="text-xs font-bold text-slate-800">{{ order.store?.name || 'Toko Alumni' }}</p>
-                <p class="text-xs text-slate-400 font-mono">{{ order.order_number }}</p>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800 truncate">{{ order.store?.name || 'Toko Alumni' }}</p>
+                <p class="text-[11px] text-slate-400 font-mono">{{ order.order_number }}</p>
               </div>
             </div>
             <StatusTag :status="order.status" />
@@ -112,7 +118,7 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
           <div class="px-4 py-3 space-y-1.5">
             <div v-for="(item, idx) in order.items.slice(0, 3)" :key="item.id" class="flex items-center justify-between text-xs">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-400 shrink-0">{{ idx + 1 }}</span>
+                <span class="w-5 h-5 rounded bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-400 shrink-0">{{ idx + 1 }}</span>
                 <span class="text-slate-600 truncate">{{ item.name }}</span>
                 <span class="text-slate-400 shrink-0">x{{ item.quantity }}</span>
               </div>
@@ -122,14 +128,14 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
           </div>
 
           <!-- Footer -->
-          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 border-t border-slate-50">
+          <div class="flex items-center justify-between px-4 py-2.5 bg-slate-50/80 border-t border-slate-100">
             <div class="flex items-center gap-3">
               <span class="text-xs text-slate-400">{{ formatDate(order.created_at) }}</span>
-              <span class="px-1.5 py-0.5 bg-primary/10 rounded text-xs font-bold text-primary">COD</span>
+              <span class="px-1.5 py-0.5 bg-primary/10 rounded text-[10px] font-black text-primary uppercase">COD</span>
             </div>
             <div class="flex items-center gap-2">
               <strong class="text-sm font-black text-primary">Rp{{ formatPrice(order.total) }}</strong>
-              <i class="pi pi-chevron-right text-slate-300 text-xs"></i>
+              <Icon icon="solar:alt-arrow-right-bold" class="text-slate-300 text-sm" />
             </div>
           </div>
         </div>
@@ -137,10 +143,10 @@ onMounted(() => { if (!localStorage.getItem('token')) { router.push({ name: 'Log
         <!-- Pagination -->
         <div v-if="pagination.last_page > 1" class="flex justify-center items-center gap-3 pt-4">
           <Button icon="pi pi-chevron-left" severity="secondary" outlined size="small" :disabled="pagination.current_page === 1" @click="fetchOrders(pagination.current_page - 1)" />
-          <span class="text-xs font-semibold text-slate-500">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+          <span class="text-xs font-bold text-slate-500">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
           <Button icon="pi pi-chevron-right" severity="secondary" outlined size="small" :disabled="pagination.current_page === pagination.last_page" @click="fetchOrders(pagination.current_page + 1)" />
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>

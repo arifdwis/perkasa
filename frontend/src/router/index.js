@@ -227,11 +227,10 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'CatchAll',
-    redirect: to => {
+    redirect: () => {
       const token = localStorage.getItem('token')
       if (!token) return { name: 'Login' }
 
-      // Resolve userMode redirect
       const userMode = localStorage.getItem('userMode')
       const user = JSON.parse(localStorage.getItem('user') || '{}')
       const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
@@ -257,11 +256,11 @@ const router = createRouter({
 })
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
-  
+
   const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
   const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
   const store = user?.profile?.store || null
@@ -270,49 +269,40 @@ router.beforeEach((to, from, next) => {
   // 1. Guest Only Routes
   if (to.matched.some(record => record.meta.guestOnly)) {
     if (token) {
-      // Redirect to proper role home
       const userMode = localStorage.getItem('userMode')
       if (userMode === 'admin' && isAdmin) {
-        next({ name: 'AdminDashboard' })
+        return { name: 'AdminDashboard' }
       } else if (userMode === 'seller' && isStoreActive) {
-        next({ name: 'SellerHome' })
+        return { name: 'SellerHome' }
       } else {
-        next({ name: 'BuyerHome' })
+        return { name: 'BuyerHome' }
       }
-    } else {
-      next()
     }
-    return
+    return true
   }
 
   // 2. Authentication Check
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!token) {
-      next({ name: 'Login' })
-      return
+      return { name: 'Login' }
     }
   }
 
   // 3. Admin Permission Check
   if (to.matched.some(record => record.meta.requiresAdmin) || to.path.startsWith('/admin')) {
     if (!isAdmin) {
-      next({ name: 'BuyerHome' })
-      return
+      return { name: 'BuyerHome' }
     }
   }
 
   // 4. Seller Mode Check
   if (to.matched.some(record => record.meta.requiresSellerMode) || to.path.startsWith('/seller')) {
-    // Exception: Allow seller profile settings/pengajuan toko if store is pending
     if (to.name === 'SellerStore') {
-      next()
-      return
+      return true
     }
 
     if (!isSeller || !isStoreActive) {
-      // Redirect to buyer home if not a valid seller or store is not active yet
-      next({ name: 'BuyerHome' })
-      return
+      return { name: 'BuyerHome' }
     }
   }
 
@@ -320,66 +310,35 @@ router.beforeEach((to, from, next) => {
   if (to.path === '/') {
     const userMode = localStorage.getItem('userMode')
     if (userMode === 'admin' && isAdmin) {
-      next({ name: 'AdminDashboard' })
+      return { name: 'AdminDashboard' }
     } else if (userMode === 'seller' && isStoreActive) {
-      next({ name: 'SellerHome' })
+      return { name: 'SellerHome' }
     } else {
-      next({ name: 'BuyerHome' })
+      return { name: 'BuyerHome' }
     }
-    return
   }
 
-  if (to.path === '/my-store') {
-    next({ name: 'SellerStore' })
-    return
-  }
-
-  if (to.path === '/orders') {
-    next({ name: 'BuyerOrders' })
-    return
-  }
-
-  if (to.path === '/catalog') {
-    next({ name: 'Catalog' })
-    return
-  }
-
-  if (to.path === '/favorites') {
-    next({ name: 'Favorites' })
-    return
-  }
-
-  if (to.path === '/cart') {
-    next({ name: 'Cart' })
-    return
-  }
-
-  if (to.path === '/checkout') {
-    next({ name: 'Checkout' })
-    return
-  }
-
-  if (to.path === '/notifications') {
-    next({ name: 'Notifications' })
-    return
-  }
+  if (to.path === '/my-store') return { name: 'SellerStore' }
+  if (to.path === '/orders') return { name: 'BuyerOrders' }
+  if (to.path === '/catalog') return { name: 'Catalog' }
+  if (to.path === '/favorites') return { name: 'Favorites' }
+  if (to.path === '/cart') return { name: 'Cart' }
+  if (to.path === '/checkout') return { name: 'Checkout' }
+  if (to.path === '/notifications') return { name: 'Notifications' }
 
   if (to.path.startsWith('/products/')) {
-    next({ name: 'ProductDetail', params: { slug: to.params.slug || to.path.split('/').pop() } })
-    return
+    return { name: 'ProductDetail', params: { slug: to.params.slug || to.path.split('/').pop() } }
   }
 
   if (to.path.startsWith('/services/')) {
-    next({ name: 'ServiceDetail', params: { slug: to.params.slug || to.path.split('/').pop() } })
-    return
+    return { name: 'ServiceDetail', params: { slug: to.params.slug || to.path.split('/').pop() } }
   }
 
   if (to.path.startsWith('/stores/')) {
-    next({ name: 'StoreProfile', params: { id: to.params.id || to.path.split('/').pop() } })
-    return
+    return { name: 'StoreProfile', params: { id: to.params.id || to.path.split('/').pop() } }
   }
 
-  next()
+  return true
 })
 
 export default router

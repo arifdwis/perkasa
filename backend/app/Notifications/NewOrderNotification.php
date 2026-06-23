@@ -42,7 +42,7 @@ class NewOrderNotification extends Notification
             'message' => 'Ada pesanan baru masuk #'.$this->order->order_number.' senilai Rp'.number_format($this->order->total, 0, ',', '.'),
             'order_id' => $this->order->id,
             'type' => 'new_order',
-            'action_url' => '/my-store/orders/'.$this->order->id,
+            'action_url' => '/seller/orders/'.$this->order->id,
         ];
     }
 }

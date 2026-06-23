@@ -20,10 +20,20 @@ class Store extends Model
         'kategori_usaha',
         'whatsapp',
         'kota',
+        'kecamatan',
+        'kelurahan',
+        'latitude',
+        'longitude',
         'tahun_berdiri',
         'status',
         'delivery_type',
         'fixed_delivery_fee',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
+        'fixed_delivery_fee' => 'decimal:2',
     ];
 
     protected $appends = [

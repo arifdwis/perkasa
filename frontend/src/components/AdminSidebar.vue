@@ -19,7 +19,9 @@ const handleLogout = async () => {
 
 const switchMode = (mode) => {
   authStore.setUserMode(mode)
-  router.push({ name: 'BuyerHome' })
+  router.push({ name: 'Home' }).then(() => {
+    window.location.reload()
+  })
 }
 </script>
 

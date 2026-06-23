@@ -31,8 +31,8 @@ class NewReviewNotification extends Notification
     {
         $isProduct = $this->review->reviewable_type === 'App\Models\Product';
         $actionUrl = $isProduct
-            ? '/orders/'.$this->slugOrOrderId
-            : '/services/'.$this->slugOrOrderId;
+            ? '/buyer/products/'.$this->slugOrOrderId
+            : '/buyer/services/'.$this->slugOrOrderId;
 
         return [
             'title' => 'Ulasan Baru Diterima',

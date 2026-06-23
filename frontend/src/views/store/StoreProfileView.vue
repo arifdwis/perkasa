@@ -262,7 +262,7 @@ onMounted(() => {
             <span v-else class="text-slate-400">Belum ada ulasan</span>
             <span class="hidden sm:inline text-slate-300">|</span>
             <span class="flex items-center gap-1"><i class="pi pi-tag text-primary text-xs"></i> {{ store.kategori_usaha }}</span>
-            <span class="flex items-center gap-1"><i class="pi pi-map-marker text-primary text-xs"></i> {{ store.kota }}</span>
+            <span class="flex items-center gap-1"><i class="pi pi-map-marker text-primary text-xs"></i> {{ store.kota }}{{ store.kecamatan ? ', ' + store.kecamatan : '' }}{{ store.kelurahan ? ', Kel. ' + store.kelurahan : '' }}</span>
             <span class="flex items-center gap-1"><i class="pi pi-calendar text-primary text-xs"></i> Tahun {{ store.tahun_berdiri }}</span>
           </div>
         </div>

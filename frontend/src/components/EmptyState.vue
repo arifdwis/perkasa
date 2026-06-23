@@ -1,7 +1,9 @@
 <script setup>
+import { computed } from 'vue'
 import Button from 'primevue/button'
+import { Icon } from '@iconify/vue'
 
-defineProps({
+const props = defineProps({
   title: {
     type: String,
     default: 'Tidak ada data ditemukan'
@@ -21,27 +23,47 @@ defineProps({
 })
 
 defineEmits(['action'])
+
+const isPrimeIcon = computed(() => props.icon.startsWith('pi-'))
+const solarIcon = computed(() => {
+  if (isPrimeIcon.value) return 'solar:box-bold-duotone'
+  return props.icon
+})
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center text-center py-12 px-6 bg-white border border-slate-100 rounded-3xl shadow-xs space-y-4 max-w-md mx-auto">
-    <div class="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-300 text-3xl">
-      <i :class="['pi', icon]" class="animate-pulse"></i>
+  <div class="flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto select-none">
+    <!-- Decorative illustration -->
+    <div class="relative mb-6">
+      <!-- Soft gradient blob background -->
+      <div class="absolute inset-0 -m-8 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-2xl"></div>
+
+      <!-- Icon container with layered rings -->
+      <div class="relative w-24 h-24 flex items-center justify-center">
+        <div class="absolute inset-0 rounded-full bg-slate-50 border border-slate-100"></div>
+        <div class="absolute inset-2 rounded-full bg-white border border-slate-50 shadow-sm"></div>
+        <div class="relative w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+          <Icon v-if="!isPrimeIcon" :icon="solarIcon" class="text-2xl" />
+          <i v-else :class="['pi', icon]" class="text-xl text-slate-400"></i>
+        </div>
+      </div>
     </div>
-    
-    <div class="space-y-1.5">
-      <h3 class="text-sm font-extrabold text-slate-800 tracking-tight">{{ title }}</h3>
-      <p class="text-[11px] text-slate-400 leading-relaxed font-medium px-4">
+
+    <!-- Text content -->
+    <div class="space-y-2 mb-6">
+      <h3 class="text-base font-black text-slate-800 tracking-tight">{{ title }}</h3>
+      <p class="text-xs text-slate-400 leading-relaxed font-medium px-2">
         {{ description }}
       </p>
     </div>
-    
-    <Button 
-      v-if="actionLabel" 
-      :label="actionLabel" 
+
+    <!-- Action button -->
+    <Button
+      v-if="actionLabel"
+      :label="actionLabel"
       size="small"
-      class="text-xs font-bold px-4 rounded-xl"
-      @click="$emit('action')" 
+      class="text-xs font-bold px-5 !rounded-xl shadow-sm"
+      @click="$emit('action')"
     />
   </div>
 </template>

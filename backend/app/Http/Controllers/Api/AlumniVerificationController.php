@@ -56,7 +56,7 @@ class AlumniVerificationController extends Controller
      */
     public function index(Request $request)
     {
-        $query = AlumniProfile::with('user');
+        $query = AlumniProfile::with(['user', 'user.roles']);
 
         // Filter by verification status
         if ($request->has('status') && ! empty($request->status)) {

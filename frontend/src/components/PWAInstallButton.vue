@@ -88,78 +88,79 @@ onUnmounted(() => {
 <template>
   <Transition name="fade">
     <div v-if="showPopup"
-         class="fixed inset-0 z-[99997] flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-         @click.self="dismiss(false)">
-      <div class="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden">
+         class="fixed inset-0 z-[99997] flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div class="w-full max-w-[340px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col gap-5 p-5">
 
-        <div class="bg-gradient-to-br from-primary to-primary-dark p-6 text-center text-white relative">
-          <button class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                  @click="dismiss(false)">
-            <Icon icon="solar:close-bold" class="text-sm" />
-          </button>
-          <div class="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center mx-auto mb-3">
-            <Icon icon="solar:download-bold-duotone" class="text-3xl" />
+        <!-- Header -->
+        <div class="flex flex-col items-center text-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0">
+            <Icon icon="solar:download-bold-duotone" class="text-2xl text-primary" />
           </div>
-          <h3 class="text-lg font-black">Instal Aplikasi</h3>
-          <p class="text-xs text-white/70 mt-1">Akses lebih cepat dari layar utama</p>
+          <div class="flex flex-col gap-1">
+            <h3 class="text-base font-black text-slate-800">Instal Aplikasi</h3>
+            <p class="text-[11px] text-slate-500">Akses lebih cepat dari layar utama</p>
+          </div>
         </div>
 
-        <div class="p-5">
+        <!-- Body: iOS instructions -->
+        <div v-if="platform === 'ios'" class="flex flex-col gap-3">
+          <p class="text-xs font-bold text-slate-800">Cara instal di iPhone/iPad:</p>
+          <ol class="flex flex-col gap-2.5">
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Tekan tombol <strong class="text-slate-800">Share</strong>
+                <Icon icon="solar:share-bold" class="inline text-primary text-sm align-middle" /> di Safari</span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Tambah</strong></span>
+            </li>
+          </ol>
+        </div>
 
-          <div v-if="platform === 'ios'">
-            <p class="text-xs font-bold text-slate-800 mb-3">Cara instal di iPhone/iPad:</p>
-            <ol class="space-y-2.5">
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Tekan tombol <strong class="text-slate-800">Share</strong>
-                  <Icon icon="solar:share-bold" class="inline text-primary text-sm align-middle" /> di Safari</span>
-              </li>
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
-              </li>
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Tambah</strong></span>
-              </li>
-            </ol>
-          </div>
-
-          <div v-else-if="deferredPrompt">
-            <p class="text-xs text-slate-600 mb-4 leading-relaxed">Tambahkan aplikasi ke perangkat Anda untuk akses instan.</p>
-            <button class="w-full py-3 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
-                    :disabled="isInstalling"
-                    @click="installApp">
-              <Icon v-if="isInstalling" icon="solar:spinner-bold" class="text-base animate-spin" />
-              <Icon v-else icon="solar:download-bold" class="text-base" />
-              <span>{{ isInstalling ? 'Menginstal...' : 'Instal Sekarang' }}</span>
-            </button>
-          </div>
-
-          <div v-else>
-            <p class="text-xs font-bold text-slate-800 mb-3">Cara instal:</p>
-            <ol class="space-y-2.5">
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Buka menu browser
-                  <Icon icon="solar:menu-dots-bold" class="inline text-slate-500 text-sm align-middle" /></span>
-              </li>
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
-              </li>
-              <li class="flex items-start gap-2.5">
-                <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-                <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Instal</strong></span>
-              </li>
-            </ol>
-          </div>
-
-          <button class="w-full mt-4 text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition-colors py-1"
-                  @click="dismiss(true)">
-            Jangan tampilkan lagi
+        <!-- Body: Android with native prompt -->
+        <div v-else-if="platform === 'android' && deferredPrompt" class="flex flex-col gap-3">
+          <p class="text-xs text-slate-600 leading-relaxed">Tambahkan aplikasi ke perangkat Anda untuk akses instan.</p>
+          <button class="w-full py-3 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                  :disabled="isInstalling"
+                  @click="installApp">
+            <Icon v-if="isInstalling" icon="solar:spinner-bold" class="text-base animate-spin" />
+            <Icon v-else icon="solar:download-bold" class="text-base" />
+            <span>{{ isInstalling ? 'Menginstal...' : 'Instal Sekarang' }}</span>
           </button>
         </div>
+
+        <!-- Body: Android/Desktop without prompt -->
+        <div v-else class="flex flex-col gap-3">
+          <p class="text-xs font-bold text-slate-800">
+            {{ platform === 'android' ? 'Cara instal di Android:' : 'Cara instal di Desktop:' }}
+          </p>
+          <ol class="flex flex-col gap-2.5">
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Buka menu browser
+                <Icon icon="solar:menu-dots-bold" class="inline text-slate-500 text-sm align-middle" /></span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+              <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Instal</strong></span>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Footer -->
+        <button class="text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+                @click="dismiss(true)">
+          Jangan tampilkan lagi
+        </button>
       </div>
     </div>
   </Transition>
@@ -168,7 +169,7 @@ onUnmounted(() => {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fade-enter-from,
 .fade-leave-to {

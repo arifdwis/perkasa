@@ -368,6 +368,9 @@ class DemoDataSeeder extends Seeder
             ]
         );
 
+        $this->command->info('Seeding product and service media...');
+        $this->call(ProductMediaAndCategorySeeder::class);
+
         $this->command->info('Large demo dataset successfully seeded!');
     }
 }

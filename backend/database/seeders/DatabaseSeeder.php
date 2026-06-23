@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             CategorySeeder::class,
+            WilayahSamarindaSeeder::class,
         ]);
 
         // Seed Super Admin

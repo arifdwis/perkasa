@@ -2,9 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { useCartStore } from '../../stores/cart'
 import axios from 'axios'
+import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
+import Toast from 'primevue/toast'
 import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Tag from 'primevue/tag'
 import { Icon } from '@iconify/vue'
@@ -17,6 +21,11 @@ import SectionHeader from '../../components/buyer/SectionHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cartStore = useCartStore()
+const toast = useToast()
+
+const isLoggedIn = ref(false)
+const isVerified = ref(false)
 
 const searchKeyword = ref('')
 const selectedProdi = ref(null)
@@ -28,22 +37,115 @@ const services = ref([])
 const stores = ref([])
 const loading = ref(true)
 
+// Quantity picker dialog state
+const showQtyDialog = ref(false)
+const selectedProduct = ref(null)
+const qtyToBuy = ref(1)
+const addingToCart = ref(false)
+
+const checkAuth = () => {
+  const token = localStorage.getItem('token')
+  isLoggedIn.value = !!token
+  if (token) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    isVerified.value = user.profile?.status_verifikasi === 'verified'
+  }
+}
+
+const openQtyDialog = (product) => {
+  if (!isLoggedIn.value) {
+    toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
+    router.push({ name: 'Login' })
+    return
+  }
+  if (!isVerified.value) {
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya akun alumni terverifikasi yang dapat membeli produk.', life: 3500 })
+    return
+  }
+
+  selectedProduct.value = product
+  qtyToBuy.value = 1
+  showQtyDialog.value = true
+}
+
+const formatPrice = (val) => {
+  return parseFloat(val || 0).toLocaleString('id-ID')
+}
+
+const confirmAddToCart = async () => {
+  if (!selectedProduct.value) return
+  addingToCart.value = true
+  const res = await cartStore.addToCart(selectedProduct.value.id, qtyToBuy.value)
+  addingToCart.value = false
+  if (res.success) {
+    toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
+    showQtyDialog.value = false
+  } else {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: res.message, life: 2500 })
+  }
+}
+
+const confirmDirectCheckout = () => {
+  if (!selectedProduct.value) return
+  showQtyDialog.value = false
+  router.push({
+    name: 'Checkout',
+    query: {
+      product_id: selectedProduct.value.id,
+      quantity: qtyToBuy.value
+    }
+  })
+}
+
 const programStudiList = ref([
   { label: 'S1 Manajemen', value: 'S1 Manajemen' },
   { label: 'S1 Akuntansi', value: 'S1 Akuntansi' },
   { label: 'S1 Ekonomi Pembangunan', value: 'S1 Ekonomi Pembangunan' }
 ])
 
-const categoryShortcuts = [
-  { name: 'Makanan & Minuman', type: 'product', categoryName: 'Makanan dan Minuman', icon: 'solar:cup-hot-bold-duotone', color: 'text-amber-500 bg-amber-500/10' },
-  { name: 'Fashion', type: 'product', categoryName: 'Fashion', icon: 'solar:t-shirt-bold-duotone', color: 'text-pink-500 bg-pink-500/10' },
-  { name: 'Elektronik', type: 'product', categoryName: 'Elektronik', icon: 'solar:devices-bold-duotone', color: 'text-blue-500 bg-blue-500/10' },
-  { name: 'Buku', type: 'product', categoryName: 'Buku', icon: 'solar:book-2-bold-duotone', color: 'text-emerald-500 bg-emerald-500/10' },
-  { name: 'Kerajinan', type: 'product', categoryName: 'Kerajinan', icon: 'solar:palette-bold-duotone', color: 'text-violet-500 bg-violet-500/10' },
-  { name: 'Jasa Desain', type: 'service', categoryName: 'Desain Grafis & Kreatif', icon: 'solar:gallery-wide-bold-duotone', color: 'text-sky-500 bg-sky-500/10' },
-  { name: 'Jasa Bimbel', type: 'service', categoryName: 'Pendidikan & Kursus', icon: 'solar:translation-bold-duotone', color: 'text-indigo-500 bg-indigo-500/10' },
-  { name: 'Semua Jasa', type: 'service', categoryName: null, icon: 'solar:settings-bold-duotone', color: 'text-slate-500 bg-slate-500/10' }
-]
+const categoryShortcuts = ref([])
+
+const categoryIcons = {
+  'Makanan dan Minuman': { icon: 'solar:cup-hot-bold-duotone', color: 'text-amber-500 bg-amber-500/10' },
+  'Fashion': { icon: 'solar:t-shirt-bold-duotone', color: 'text-pink-500 bg-pink-500/10' },
+  'Elektronik': { icon: 'solar:devices-bold-duotone', color: 'text-blue-500 bg-blue-500/10' },
+  'Buku': { icon: 'solar:book-2-bold-duotone', color: 'text-emerald-500 bg-emerald-500/10' },
+  'Kerajinan': { icon: 'solar:palette-bold-duotone', color: 'text-violet-500 bg-violet-500/10' },
+  'Properti': { icon: 'solar:home-bold-duotone', color: 'text-teal-500 bg-teal-500/10' },
+  'Otomotif': { icon: 'solar:routing-bold-duotone', color: 'text-red-500 bg-red-500/10' },
+  'Pertanian': { icon: 'solar:leaf-bold-duotone', color: 'text-lime-500 bg-lime-500/10' },
+  'UMKM': { icon: 'solar:shop-2-bold-duotone', color: 'text-orange-500 bg-orange-500/10' },
+  'Konsultan': { icon: 'solar:briefcase-bold-duotone', color: 'text-indigo-500 bg-indigo-500/10' },
+  'Akuntan': { icon: 'solar:calculator-bold-duotone', color: 'text-cyan-500 bg-cyan-500/10' },
+  'Auditor': { icon: 'solar:checklist-bold-duotone', color: 'text-teal-500 bg-teal-500/10' },
+  'Pajak': { icon: 'solar:document-text-bold-duotone', color: 'text-sky-500 bg-sky-500/10' },
+  'Trainer': { icon: 'solar:users-group-rounded-bold-duotone', color: 'text-violet-500 bg-violet-500/10' },
+  'Fotografer': { icon: 'solar:camera-bold-duotone', color: 'text-rose-500 bg-rose-500/10' },
+  'Videografer': { icon: 'solar:video-frame-bold-duotone', color: 'text-fuchsia-500 bg-fuchsia-500/10' },
+  'Programmer': { icon: 'solar:code-bold-duotone', color: 'text-emerald-500 bg-emerald-500/10' },
+  'Desain Grafis': { icon: 'solar:pen-bold-duotone', color: 'text-pink-500 bg-pink-500/10' },
+  'Digital Marketing': { icon: 'solar:magnifer-zoom-in-bold-duotone', color: 'text-amber-500 bg-amber-500/10' },
+  'Notaris': { icon: 'solar:document-add-bold-duotone', color: 'text-blue-500 bg-blue-500/10' },
+  'Pengacara': { icon: 'solar:scale-bold-duotone', color: 'text-slate-500 bg-slate-500/10' },
+}
+
+const defaultCategoryStyle = { icon: 'solar:widget-bold-duotone', color: 'text-slate-500 bg-slate-500/10' }
+
+const fetchCategoryShortcuts = async () => {
+  try {
+    const prodRes = await axios.get('/product-categories')
+    const prodCats = (prodRes.data || []).map(cat => {
+      const style = categoryIcons[cat.name] || defaultCategoryStyle
+      return { id: cat.id, name: cat.name, type: 'product', categoryName: cat.name, icon: style.icon, color: style.color }
+    })
+    categoryShortcuts.value = [
+      ...prodCats,
+      { id: null, name: 'Semua Jasa', type: 'service', categoryName: null, icon: 'solar:widget-bold-duotone', color: 'text-indigo-500 bg-indigo-500/10' }
+    ]
+  } catch (err) {
+    console.error('Failed to load categories', err)
+  }
+}
 
 const handleSearch = () => {
   router.push({
@@ -57,23 +159,13 @@ const handleSearch = () => {
 }
 
 const navigateToCategory = (shortcut) => {
-  if (shortcut.type === 'product') {
-    router.push({
-      name: 'Catalog',
-      query: {
-        tab: 'product',
-        search: shortcut.categoryName
-      }
-    })
-  } else {
-    router.push({
-      name: 'Catalog',
-      query: {
-        tab: 'service',
-        search: shortcut.categoryName || undefined
-      }
-    })
-  }
+  router.push({
+    name: 'Catalog',
+    query: {
+      type: shortcut.type,
+      kategori_id: shortcut.id
+    }
+  })
 }
 
 const fetchData = async () => {
@@ -102,12 +194,15 @@ const fetchData = async () => {
 }
 
 onMounted(() => {
+  checkAuth()
   fetchData()
+  fetchCategoryShortcuts()
 })
 </script>
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col">
+    <Toast />
     <!-- Navbar -->
     <AppNavbar />
 
@@ -210,7 +305,7 @@ onMounted(() => {
           >
             <Icon :icon="shortcut.icon" class="text-2xl" />
           </div>
-          <span class="text-xs font-black text-slate-700 leading-snug group-hover:text-primary transition-colors max-w-[70px] truncate">
+          <span class="text-xs font-black text-slate-700 leading-snug group-hover:text-primary transition-colors text-center min-w-0 w-full">
             {{ shortcut.name }}
           </span>
         </div>
@@ -261,7 +356,7 @@ onMounted(() => {
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="product in products" :key="product.id" class="h-full">
-            <ProductCard :product="product" />
+            <ProductCard :product="product" @add-to-cart="openQtyDialog(product)" />
           </div>
         </div>
       </section>
@@ -305,5 +400,67 @@ onMounted(() => {
       </section>
     </template>
     </main>
+
+    <!-- Quantity Picker Dialog -->
+    <Dialog
+      v-model:visible="showQtyDialog"
+      modal
+      header="Atur Jumlah Pembelian"
+      class="w-full max-w-sm mx-4"
+      :breakpoints="{ '640px': '90vw' }"
+      :draggable="false"
+      dismissableMask
+    >
+      <div v-if="selectedProduct" class="space-y-5 pt-2">
+        <div class="flex gap-3 items-center">
+          <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+            <img
+              v-if="selectedProduct.primary_image || selectedProduct.primary_image_path"
+              :src="selectedProduct.primary_image?.image_path || selectedProduct.primary_image_path"
+              alt="Cover"
+              class="w-full h-full object-cover"
+            />
+            <Icon v-else icon="solar:box-bold-duotone" class="text-slate-300 text-2xl" />
+          </div>
+          <div class="min-w-0">
+            <h4 class="text-xs font-bold text-slate-800 line-clamp-1 leading-snug">{{ selectedProduct.name }}</h4>
+            <span class="block text-xs font-extrabold text-primary mt-1">
+              Rp {{ formatPrice(selectedProduct.price) }}
+            </span>
+            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ selectedProduct.stock }} pcs</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <span class="text-xs font-bold text-slate-600">Jumlah</span>
+
+          <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-100 flex-shrink-0 shadow-sm">
+            <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy <= 1" @click="qtyToBuy--" />
+            <span class="w-7 text-center text-xs font-bold text-slate-800">{{ qtyToBuy }}</span>
+            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy >= selectedProduct.stock" @click="qtyToBuy++" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 pt-2">
+          <Button
+            label="Checkout Langsung"
+            icon="pi pi-bolt"
+            class="w-full text-xs font-bold h-10"
+            :disabled="addingToCart"
+            @click="confirmDirectCheckout"
+          />
+          <div class="flex gap-2">
+            <Button label="Batal" severity="secondary" outlined class="flex-grow text-xs font-bold h-10" @click="showQtyDialog = false" />
+            <Button
+              label="Keranjang"
+              icon="pi pi-shopping-cart"
+              class="flex-grow text-xs font-bold h-10"
+              :loading="addingToCart"
+              @click="confirmAddToCart"
+            />
+          </div>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>

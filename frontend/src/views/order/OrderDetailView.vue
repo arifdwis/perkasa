@@ -16,6 +16,8 @@ import AppNavbar from '../../components/AppNavbar.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import StatusTag from '../../components/StatusTag.vue'
 import LoadingState from '../../components/LoadingState.vue'
+import BuyerPageHeader from '../../components/buyer/BuyerPageHeader.vue'
+import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -162,11 +164,11 @@ const openWhatsApp = () => {
 }
 
 const statusMeta = {
-  menunggu_konfirmasi: { label: 'Menunggu Konfirmasi', color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', icon: 'pi pi-clock' },
-  diproses: { label: 'Diproses', color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', icon: 'pi pi-cog' },
-  dalam_pengantaran: { label: 'Dalam Pengantaran', color: 'bg-purple-500', text: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', icon: 'pi pi-truck' },
-  selesai: { label: 'Selesai', color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'pi pi-check-circle' },
-  dibatalkan: { label: 'Dibatalkan', color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', icon: 'pi pi-ban' }
+  menunggu_konfirmasi: { label: 'Menunggu Konfirmasi', color: 'bg-amber-500', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', icon: 'solar:clock-circle-bold' },
+  diproses: { label: 'Diproses', color: 'bg-blue-500', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200', icon: 'solar:settings-bold' },
+  dalam_pengantaran: { label: 'Dalam Pengantaran', color: 'bg-purple-500', text: 'text-purple-700', bg: 'bg-purple-50', border: 'border-purple-200', icon: 'solar:box-bold' },
+  selesai: { label: 'Selesai', color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'solar:check-circle-bold' },
+  dibatalkan: { label: 'Dibatalkan', color: 'bg-rose-500', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200', icon: 'solar:close-circle-bold' }
 }
 
 const statusOrder = ['menunggu_konfirmasi', 'diproses', 'dalam_pengantaran', 'selesai']
@@ -184,7 +186,7 @@ const statusSteps = computed(() => {
   }))
 })
 
-const getMeta = (s) => statusMeta[s] || { label: s, color: 'bg-slate-400', text: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'pi pi-circle' }
+const getMeta = (s) => statusMeta[s] || { label: s, color: 'bg-slate-400', text: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-200', icon: 'solar:circle-bold' }
 
 const fmtPrice = (v) => parseFloat(v || 0).toLocaleString('id-ID')
 const fmtDate = (d) => {
@@ -205,8 +207,20 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
     <Toast />
     <AppNavbar v-if="!isSellerView" />
 
-    <!-- Mobile header -->
-    <div class="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center gap-3">
+    <BuyerPageHeader v-if="!isSellerView" icon="solar:document-text-bold-duotone" title="Detail Pesanan" :subtitle="order?.order_number || ''">
+      <template #action>
+        <button
+          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-colors"
+          @click="goBack"
+        >
+          <Icon icon="solar:alt-arrow-left-bold" class="text-sm" />
+          Kembali
+        </button>
+      </template>
+    </BuyerPageHeader>
+
+    <!-- Mobile header for seller view -->
+    <div v-if="isSellerView" class="lg:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center gap-3">
       <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="goBack" class="w-8 h-8" />
       <span class="text-sm font-bold text-slate-700">Detail Pesanan</span>
     </div>
@@ -214,15 +228,15 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
     <!-- Loading -->
     <LoadingState v-if="loading" message="Memuat detail pesanan..." />
 
-    <main v-else-if="order" class="max-w-5xl mx-auto w-full px-4 py-6 lg:py-10 space-y-6 flex-grow pb-24 lg:pb-8">
+    <main v-else-if="order" class="max-w-5xl mx-auto w-full px-4 py-6 lg:py-6 space-y-5 flex-grow pb-24 lg:pb-8">
 
-      <!-- Desktop back -->
-      <button @click="goBack" class="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-primary transition-colors">
-        <i class="pi pi-arrow-left text-xs"></i> Kembali
+      <!-- Desktop back (seller view only) -->
+      <button v-if="isSellerView" @click="goBack" class="hidden lg:inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-primary transition-colors">
+        <Icon icon="solar:alt-arrow-left-bold" class="text-sm" /> Kembali
       </button>
 
       <!-- ===== TOP BAR ===== -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nomor Pesanan</p>
@@ -244,13 +258,13 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
       </div>
 
       <!-- ===== STATUS STEPPER ===== -->
-      <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
         <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Status Pesanan</p>
 
         <!-- Dibatalkan -->
         <div v-if="order.status === 'dibatalkan'" class="flex items-center gap-3 p-3 bg-rose-50 rounded-xl border border-rose-200">
           <div class="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center shrink-0">
-            <i class="pi pi-ban text-white text-xs"></i>
+            <Icon icon="solar:close-circle-bold" class="text-white text-sm" />
           </div>
           <div>
             <p class="text-sm font-bold text-rose-700">Pesanan Dibatalkan</p>
@@ -267,11 +281,11 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
             <!-- Circle -->
             <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10 transition-all"
               :class="step.done ? getMeta(step.status).color + ' text-white shadow-sm' : step.current ? getMeta(step.status).color + ' text-white ring-4 ring-slate-100 shadow-md' : 'bg-slate-100 text-slate-400'">
-              <i :class="step.done || step.current ? getMeta(step.status).icon : 'pi pi-circle'" class="text-xs"></i>
+              <Icon :icon="step.done || step.current ? getMeta(step.status).icon : 'solar:circle-bold'" class="text-xs" />
             </div>
 
             <!-- Label -->
-            <p class="text-xs font-bold mt-2 text-center leading-tight"
+            <p class="text-[11px] font-bold mt-2 text-center leading-tight"
               :class="step.current ? getMeta(step.status).text : step.done ? 'text-slate-600' : 'text-slate-400'">
               {{ getMeta(step.status).label }}
             </p>
@@ -285,13 +299,13 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
         <div class="lg:col-span-3 space-y-6">
 
           <!-- Items -->
-          <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Barang yang Dipesan</p>
             <div class="space-y-3">
               <div v-for="item in order.items" :key="item.id" class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div class="w-12 h-12 rounded-lg bg-white border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
                   <img v-if="item.product?.primaryImage?.image_path" :src="item.product.primaryImage.image_path" class="w-full h-full object-cover" />
-                  <i v-else class="pi pi-image text-slate-300"></i>
+                  <Icon v-else icon="solar:gallery-bold-duotone" class="text-slate-300 text-lg" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-xs font-bold text-slate-800 truncate">{{ item.name }}</p>
@@ -334,7 +348,7 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
           </div>
 
           <!-- Address -->
-          <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Alamat Pengiriman</p>
             <div class="space-y-2 text-xs">
               <div class="flex justify-between"><span class="text-slate-400">Penerima</span><span class="font-bold text-slate-800">{{ order.nama_penerima }}</span></div>
@@ -342,7 +356,7 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
               <div v-if="order.wilayah_antar" class="flex justify-between"><span class="text-slate-400">Wilayah</span><span class="font-bold text-slate-800">{{ order.wilayah_antar }}</span></div>
               <p class="text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">{{ order.alamat_penerima }}</p>
               <a v-if="order.latitude && order.longitude" :href="`https://www.google.com/maps/search/?api=1&query=${order.latitude},${order.longitude}`" target="_blank" class="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                <i class="pi pi-map-marker"></i> Lihat di Peta
+                <Icon icon="solar:map-point-bold" class="text-xs" /> Lihat di Peta
               </a>
               <div v-if="order.catatan" class="bg-amber-50 border border-amber-100 rounded-lg p-2.5">
                 <p class="text-xs font-bold text-amber-600 mb-0.5">Catatan:</p>
@@ -356,7 +370,7 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
         <div class="lg:col-span-2 space-y-6">
 
           <!-- Seller actions -->
-          <div v-if="isSeller && statusOptions.length" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+          <div v-if="isSeller && statusOptions.length" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Perbarui Status</p>
             <div class="space-y-3">
               <Select v-model="selectedNewStatus" :options="statusOptions" optionLabel="label" optionValue="value" placeholder="Pilih status baru" class="w-full text-xs" />
@@ -366,7 +380,7 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
           </div>
 
           <!-- Buyer cancel -->
-          <div v-if="isBuyer && order.status === 'menunggu_konfirmasi'" class="bg-rose-50 rounded-3xl border border-rose-200 p-4 sm:p-5">
+          <div v-if="isBuyer && order.status === 'menunggu_konfirmasi'" class="bg-rose-50 rounded-2xl border border-rose-200 p-4 sm:p-5">
             <p class="text-xs font-bold text-rose-700 mb-2">Batalkan Pesanan</p>
             <p class="text-xs text-rose-600 mb-3">Anda hanya dapat membatalkan saat status masih Menunggu Konfirmasi.</p>
             <Button label="Batalkan Pesanan" icon="pi pi-ban" severity="danger" class="w-full text-xs" :loading="actionLoading" @click="handleBuyerCancel" />
@@ -375,12 +389,12 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
 
 
           <!-- Store info -->
-          <div class="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-5">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
             <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">{{ isBuyer ? 'Informasi Toko' : 'Informasi Pembeli' }}</p>
             <div class="space-y-2 text-xs">
               <div class="flex items-center gap-2.5">
                 <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                  <i :class="isBuyer ? 'pi pi-shopping-bag' : 'pi pi-user'" class="text-slate-400"></i>
+                  <Icon :icon="isBuyer ? 'solar:shop-bold-duotone' : 'solar:user-bold-duotone'" class="text-slate-400 text-sm" />
                 </div>
                 <div>
                   <p class="font-bold text-slate-800">{{ isBuyer ? order.store?.name : (order.user?.name || order.nama_penerima) }}</p>

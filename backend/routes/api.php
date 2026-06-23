@@ -26,7 +26,7 @@ Route::middleware('throttle:login')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
-Route::get('/stores/{id}', [StoreController::class, 'show']);
+Route::get('/stores/{id}', [StoreController::class, 'show'])->where('id', '(?!my-store)[^/]+');
 Route::get('/product-categories', [ProductCategoryController::class, 'index']);
 Route::get('/service-categories', [ServiceCategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
@@ -35,6 +35,7 @@ Route::get('/products/{slug}', [ProductController::class, 'show']);
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/services/{slug}', [ServiceController::class, 'show']);
 Route::get('/catalog', [CatalogController::class, 'index']);
+Route::get('/catalog/locations', [CatalogController::class, 'locations']);
 Route::get('/reviews', [ReviewController::class, 'index']);
 
 // Email verification public link

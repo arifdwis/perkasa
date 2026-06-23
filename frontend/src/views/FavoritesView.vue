@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
-import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
+import { Icon } from '@iconify/vue'
 
 import AppNavbar from '../components/AppNavbar.vue'
 import ProductCard from '../components/ProductCard.vue'
@@ -29,6 +29,12 @@ const favorites = ref({
 const isLoggedIn = ref(false)
 const isVerified = ref(false)
 
+const tabConfig = [
+  { key: 'product', label: 'Produk', icon: 'solar:box-bold-duotone' },
+  { key: 'service', label: 'Jasa', icon: 'solar:widget-bold-duotone' },
+  { key: 'store', label: 'Toko', icon: 'solar:shop-bold-duotone' }
+]
+
 const checkAuth = () => {
   const token = localStorage.getItem('token')
   isLoggedIn.value = !!token
@@ -41,6 +47,12 @@ const checkAuth = () => {
 const totalFavorites = computed(() => {
   return favorites.value.products.length + favorites.value.services.length + favorites.value.stores.length
 })
+
+const tabCount = (key) => {
+  if (key === 'product') return favorites.value.products.length
+  if (key === 'service') return favorites.value.services.length
+  return favorites.value.stores.length
+}
 
 const fetchFavorites = async () => {
   loading.value = true
@@ -107,53 +119,54 @@ onMounted(() => {
     <Toast />
     <AppNavbar />
 
-    <!-- Green Header -->
     <BuyerPageHeader icon="solar:heart-bold-duotone" title="Favorit Saya" subtitle="Produk, jasa, dan toko yang Anda simpan.">
       <template #action>
         <span v-if="!loading && totalFavorites > 0"
               class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-full text-xs font-bold">
-          <i class="pi pi-heart-fill text-xs text-rose-500"></i>{{ totalFavorites }} item
+          <Icon icon="solar:heart-bold" class="text-xs text-rose-500" />{{ totalFavorites }} item
         </span>
       </template>
     </BuyerPageHeader>
 
-    <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full pb-24 lg:pb-8">
       
       <!-- Verification Check -->
-      <div v-if="!isVerified" class="text-center py-16 bg-white rounded-3xl border border-slate-100 max-w-xl mx-auto p-8 space-y-4">
-        <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto">
-          <i class="pi pi-exclamation-triangle"></i>
+      <div v-if="!isVerified" class="flex flex-col items-center justify-center text-center py-16 px-6 max-w-md mx-auto select-none">
+        <div class="relative mb-6">
+          <div class="absolute inset-0 -m-8 bg-gradient-to-br from-amber-100/60 to-amber-50/40 rounded-full blur-2xl"></div>
+          <div class="relative w-24 h-24 flex items-center justify-center">
+            <div class="absolute inset-0 rounded-full bg-amber-50/80 border border-amber-100"></div>
+            <div class="absolute inset-2 rounded-full bg-white border border-amber-50 shadow-sm"></div>
+            <div class="relative w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center">
+              <Icon icon="solar:shield-warning-bold-duotone" class="text-2xl" />
+            </div>
+          </div>
         </div>
-        <h3 class="text-base font-black text-slate-800">Verifikasi Diperlukan</h3>
-        <p class="text-xs text-slate-500 leading-relaxed">
-          Hanya akun alumni terverifikasi yang dapat menggunakan fitur favorit.
-        </p>
-        <Button label="Kembali ke Beranda" icon="pi pi-arrow-left" size="small" @click="router.push({ name: 'Home' })" />
+        <div class="space-y-2 mb-6">
+          <h3 class="text-base font-black text-slate-800 tracking-tight">Verifikasi Diperlukan</h3>
+          <p class="text-xs text-slate-400 leading-relaxed font-medium px-2">
+            Hanya akun alumni terverifikasi yang dapat menggunakan fitur favorit.
+          </p>
+        </div>
+        <Button label="Kembali ke Beranda" size="small" class="text-xs font-bold px-5 !rounded-xl shadow-sm" @click="router.push({ name: 'Home' })">
+          <template #icon>
+            <Icon icon="solar:alt-arrow-left-bold" class="text-sm" />
+          </template>
+        </Button>
       </div>
 
-      <div v-else class="space-y-6">
+      <div v-else class="space-y-5">
         <!-- Tab Navigation -->
-        <div class="flex gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
-          <button 
-            v-for="tab in ['product', 'service', 'store']" 
-            :key="tab"
-            class="px-5 py-2.5 text-sm font-bold rounded-xl transition-all duration-200 capitalize flex-shrink-0 flex items-center gap-1.5"
-            :class="activeTab === tab ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'"
-            @click="activeTab = tab"
+        <div class="flex gap-1.5 border-b border-slate-200 pb-3 overflow-x-auto no-scrollbar">
+          <button
+            v-for="tab in tabConfig"
+            :key="tab.key"
+            class="flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 shrink-0 whitespace-nowrap"
+            :class="activeTab === tab.key ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'"
+            @click="activeTab = tab.key"
           >
-            <i :class="[
-              tab === 'product' ? 'pi pi-box' : '',
-              tab === 'service' ? 'pi pi-wrench' : '',
-              tab === 'store' ? 'pi pi-shopping-bag' : '',
-            ]"></i>
-            {{ tab === 'product' ? 'Produk' : (tab === 'service' ? 'Jasa' : 'Toko') }}
-            <span 
-              class="px-1.5 py-0.5 rounded-full text-xs"
-              :class="activeTab === tab ? 'bg-white text-primary' : 'bg-slate-100 text-slate-600'"
-            >
-              {{ tab === 'product' ? favorites.products.length : (tab === 'service' ? favorites.services.length : favorites.stores.length) }}
-            </span>
+            <Icon :icon="tab.icon" class="text-base" />
+            {{ tab.label }}
           </button>
         </div>
 
@@ -167,22 +180,22 @@ onMounted(() => {
             <div v-if="favorites.products.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div v-for="item in favorites.products" :key="item.id" class="relative group">
                 <ProductCard :product="item" />
-                <button 
+                <button
                   class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors z-10"
                   title="Hapus dari Favorit"
                   @click="toggleFavorite($event, item, 'product')"
                 >
-                  <i class="pi pi-star-fill text-yellow-500 text-sm"></i>
+                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
                 </button>
               </div>
             </div>
-            <EmptyState 
+            <EmptyState
               v-else
-              title="Belum ada produk favorit" 
-              description="Simpan produk yang Anda sukai untuk dilihat nanti." 
-              icon="pi-box" 
-              actionLabel="Jelajahi Produk" 
-              @action="router.push({ name: 'Catalog', query: { type: 'product' } })" 
+              title="Belum ada produk favorit"
+              description="Simpan produk yang Anda sukai untuk dilihat nanti."
+              icon="solar:box-bold-duotone"
+              actionLabel="Jelajahi Produk"
+              @action="router.push({ name: 'Catalog', query: { type: 'product' } })"
             />
           </div>
 
@@ -191,22 +204,22 @@ onMounted(() => {
             <div v-if="favorites.services.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div v-for="item in favorites.services" :key="item.id" class="relative group">
                 <ServiceCard :service="item" />
-                <button 
+                <button
                   class="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors z-10"
                   title="Hapus dari Favorit"
                   @click="toggleFavorite($event, item, 'service')"
                 >
-                  <i class="pi pi-star-fill text-yellow-500 text-sm"></i>
+                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
                 </button>
               </div>
             </div>
-            <EmptyState 
+            <EmptyState
               v-else
-              title="Belum ada jasa favorit" 
-              description="Simpan jasa keahlian yang Anda minati." 
-              icon="pi-wrench" 
-              actionLabel="Jelajahi Jasa" 
-              @action="router.push({ name: 'Catalog', query: { type: 'service' } })" 
+              title="Belum ada jasa favorit"
+              description="Simpan jasa keahlian yang Anda minati."
+              icon="solar:widget-bold-duotone"
+              actionLabel="Jelajahi Jasa"
+              @action="router.push({ name: 'Catalog', query: { type: 'service' } })"
             />
           </div>
 
@@ -215,22 +228,22 @@ onMounted(() => {
             <div v-if="favorites.stores.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div v-for="item in favorites.stores" :key="item.id" class="relative group">
                 <StoreCard :store="item" />
-                <button 
+                <button
                   class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shadow hover:bg-white transition-colors z-10"
                   title="Hapus dari Favorit"
                   @click="toggleFavorite($event, item, 'store')"
                 >
-                  <i class="pi pi-star-fill text-yellow-500 text-sm"></i>
+                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
                 </button>
               </div>
             </div>
-            <EmptyState 
+            <EmptyState
               v-else
-              title="Belum ada toko favorit" 
-              description="Simpan toko alumni favorit Anda." 
-              icon="pi-shopping-bag" 
-              actionLabel="Jelajahi Toko" 
-              @action="router.push({ name: 'Catalog', query: { type: 'store' } })" 
+              title="Belum ada toko favorit"
+              description="Simpan toko alumni favorit Anda."
+              icon="solar:shop-bold-duotone"
+              actionLabel="Jelajahi Toko"
+              @action="router.push({ name: 'Catalog', query: { type: 'store' } })"
             />
           </div>
         </div>

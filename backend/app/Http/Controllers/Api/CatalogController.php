@@ -7,6 +7,7 @@ use App\Models\AlumniProfile;
 use App\Models\Product;
 use App\Models\Service;
 use App\Models\Store;
+use App\Models\Wilayah;
 use Illuminate\Http\Request;
 
 class CatalogController extends Controller
@@ -63,9 +64,14 @@ class CatalogController extends Controller
         }
 
         // Location / City filter
-        if ($request->has('kota') && $request->kota) {
+        if ($request->has('kecamatan') && $request->kecamatan) {
             $query->whereHas('store', function ($q) use ($request) {
-                $q->where('kota', 'like', "%{$request->kota}%");
+                $q->where('kecamatan', $request->kecamatan);
+            });
+        }
+        if ($request->has('kelurahan') && $request->kelurahan) {
+            $query->whereHas('store', function ($q) use ($request) {
+                $q->where('kelurahan', $request->kelurahan);
             });
         }
 
@@ -140,13 +146,22 @@ class CatalogController extends Controller
             $query->where('service_category_id', $request->kategori_id);
         }
 
-        // Location filter (match lokasi_layanan or store city)
-        if ($request->has('kota') && $request->kota) {
-            $kota = $request->kota;
-            $query->where(function ($q) use ($kota) {
-                $q->where('lokasi_layanan', 'like', "%{$kota}%")
-                    ->orWhereHas('store', function ($storeQuery) use ($kota) {
-                        $storeQuery->where('kota', 'like', "%{$kota}%");
+        // Location filter (match lokasi_layanan or store kecamatan/kelurahan)
+        if ($request->has('kecamatan') && $request->kecamatan) {
+            $kecamatan = $request->kecamatan;
+            $query->where(function ($q) use ($kecamatan) {
+                $q->where('lokasi_layanan', 'like', "%{$kecamatan}%")
+                    ->orWhereHas('store', function ($storeQuery) use ($kecamatan) {
+                        $storeQuery->where('kecamatan', $kecamatan);
+                    });
+            });
+        }
+        if ($request->has('kelurahan') && $request->kelurahan) {
+            $kelurahan = $request->kelurahan;
+            $query->where(function ($q) use ($kelurahan) {
+                $q->where('lokasi_layanan', 'like', "%{$kelurahan}%")
+                    ->orWhereHas('store', function ($storeQuery) use ($kelurahan) {
+                        $storeQuery->where('kelurahan', $kelurahan);
                     });
             });
         }
@@ -214,9 +229,12 @@ class CatalogController extends Controller
             });
         }
 
-        // City filter
-        if ($request->has('kota') && $request->kota) {
-            $query->where('kota', 'like', "%{$request->kota}%");
+        // Location filter
+        if ($request->has('kecamatan') && $request->kecamatan) {
+            $query->where('kecamatan', $request->kecamatan);
+        }
+        if ($request->has('kelurahan') && $request->kelurahan) {
+            $query->where('kelurahan', $request->kelurahan);
         }
 
         // Category filter (kategori_usaha)
@@ -284,5 +302,32 @@ class CatalogController extends Controller
         $query->orderBy('created_at', 'desc');
 
         return response()->json($query->paginate(15));
+    }
+
+    /**
+     * Get unique kecamatan and kelurahan options from wilayah reference table.
+     */
+    public function locations()
+    {
+        $kecamatanList = Wilayah::distinct()->pluck('kecamatan')->sort()->values()->toArray();
+
+        $mapping = [];
+        Wilayah::orderBy('kelurahan')->chunk(100, function ($rows) use (&$mapping) {
+            foreach ($rows as $row) {
+                if (! isset($mapping[$row->kecamatan])) {
+                    $mapping[$row->kecamatan] = [];
+                }
+                $mapping[$row->kecamatan][] = $row->kelurahan;
+            }
+        });
+        foreach ($mapping as $k => &$list) {
+            sort($list);
+            $list = array_values(array_unique($list));
+        }
+
+        return response()->json([
+            'kecamatan' => $kecamatanList,
+            'kelurahan' => $mapping,
+        ]);
     }
 }

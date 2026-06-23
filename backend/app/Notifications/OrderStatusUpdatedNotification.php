@@ -49,7 +49,7 @@ class OrderStatusUpdatedNotification extends Notification
             'order_id' => $this->order->id,
             'status' => $this->newStatus,
             'type' => 'order_status_updated',
-            'action_url' => '/orders/'.$this->order->id,
+            'action_url' => '/buyer/orders/'.$this->order->id,
         ];
     }
 }
