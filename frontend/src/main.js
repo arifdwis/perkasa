@@ -75,7 +75,6 @@ app.mount('#app')
 // Register Service Worker with error handling
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .catch(() => console.warn('SW registration skipped — server may not serve sw.js'))
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {})
   })
 }
