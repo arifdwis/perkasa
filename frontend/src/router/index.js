@@ -198,7 +198,7 @@ const routes = [
       const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
       const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
       const store = user?.profile?.store || null
-      const isStoreActive = store && store.status === 'active'
+      const isStoreActive = store && (store.status === 'active' || store.status === 'suspended')
 
       if (userMode === 'admin' && isAdmin) {
         return { name: 'AdminDashboard' }
@@ -222,7 +222,7 @@ const routes = [
       const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
       const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
       const store = user?.profile?.store || null
-      const isStoreActive = store && store.status === 'active'
+      const isStoreActive = store && (store.status === 'active' || store.status === 'suspended')
 
       if (userMode === 'admin' && isAdmin) {
         return { name: 'AdminDashboard' }
@@ -249,7 +249,7 @@ router.beforeEach((to, from) => {
   const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
   const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
   const store = user?.profile?.store || null
-  const isStoreActive = store && store.status === 'active'
+  const isStoreActive = store && (store.status === 'active' || store.status === 'suspended')
 
   // 1. Guest Only Routes
   if (to.matched.some(record => record.meta.guestOnly)) {

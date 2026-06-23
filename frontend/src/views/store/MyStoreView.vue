@@ -596,23 +596,6 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
         </div>
       </div>
 
-      <!-- ===== Suspended ===== -->
-      <div v-else-if="store.status === 'suspended'" class="max-w-md mx-auto pt-8">
-        <div class="bg-white rounded-3xl border border-red-100 shadow-sm text-center py-8 px-6 space-y-6 flex flex-col items-center">
-          <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center shadow-sm">
-            <Icon icon="solar:danger-bold" class="text-red-500 text-4xl" />
-          </div>
-          <div class="space-y-2">
-            <h3 class="text-lg font-black text-red-600">Toko Ditangguhkan</h3>
-            <p class="text-sm text-slate-500 leading-relaxed">
-              Akses merchant toko <strong>"{{ store.name }}"</strong> telah ditangguhkan oleh admin marketplace.
-              Silakan hubungi admin FEB Unmul untuk informasi lebih lanjut.
-            </p>
-          </div>
-          <Button label="Kembali ke Dashboard" icon="pi pi-home" severity="secondary" outlined class="w-full" @click="router.push({ name: 'SellerHome' })" />
-        </div>
-      </div>
-
       <!-- ===== Active / Closed Store ===== -->
       <div v-else-if="store.status === 'active' || store.status === 'suspended'" class="space-y-5 pb-24">
 
