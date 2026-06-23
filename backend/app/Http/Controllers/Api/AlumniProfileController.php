@@ -36,6 +36,8 @@ class AlumniProfileController extends Controller
             'name' => ['sometimes', 'string', 'max:255'],
             'whatsapp' => ['sometimes', 'string', 'max:20'],
             'domisili' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
         ]);
 
         // Update user name
@@ -44,7 +46,7 @@ class AlumniProfileController extends Controller
         }
 
         // Update profile fields
-        $profile->update($request->only(['whatsapp', 'domisili']));
+        $profile->update($request->only(['whatsapp', 'domisili', 'latitude', 'longitude']));
 
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',

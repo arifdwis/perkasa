@@ -19,6 +19,8 @@ class AlumniProfile extends Model
         'tahun_lulus',
         'whatsapp',
         'domisili',
+        'latitude',
+        'longitude',
         'foto_profil',
         'status_verifikasi',
         'badge_verified',
@@ -26,6 +28,8 @@ class AlumniProfile extends Model
 
     protected $casts = [
         'badge_verified' => 'boolean',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     /**
