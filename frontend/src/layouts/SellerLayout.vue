@@ -1,16 +1,22 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notification'
 import SellerBottomNav from '../components/SellerBottomNav.vue'
 import RoleModeSwitcher from '../components/RoleModeSwitcher.vue'
 import PWAInstallButton from '../components/PWAInstallButton.vue'
+import Button from 'primevue/button'
+import Popover from 'primevue/popover'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+
+const notifOp = ref()
 
 const store = computed(() => authStore.user?.profile?.store || null)
 const storeName = computed(() => store.value ? store.value.name : 'Toko Saya')
@@ -38,6 +44,48 @@ const pageTitle = computed(() => {
     'SellerProductCreate': 'Tambah Produk',
   }
   return nameMap[route.name] || route.name || 'Seller'
+})
+
+const toggleNotifications = (event) => {
+  notifOp.value.toggle(event)
+  if (notificationStore.unreadCount > 0 || notificationStore.notifications.length === 0) {
+    notificationStore.fetchNotifications()
+  }
+}
+
+const handleNotificationClick = async (notif) => {
+  if (!notif.read_at) {
+    await notificationStore.markAsRead(notif.id)
+  }
+  notifOp.value.hide()
+  if (notif.data?.action_url) {
+    router.push(notif.data.action_url)
+  }
+}
+
+const timeAgo = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const now = new Date()
+  const seconds = Math.floor((now - date) / 1000)
+  if (seconds < 60) return 'Baru saja'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes} menit lalu`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} jam lalu`
+  const days = Math.floor(hours / 24)
+  return `${days} hari lalu`
+}
+
+onMounted(() => {
+  notificationStore.fetchUnreadCount()
+  const pollInterval = setInterval(() => {
+    if (!localStorage.getItem('token')) {
+      clearInterval(pollInterval)
+      return
+    }
+    notificationStore.fetchUnreadCount()
+  }, 30000)
 })
 </script>
 
@@ -75,9 +123,24 @@ const pageTitle = computed(() => {
           </div>
         </div>
 
-        <!-- Right: Mode Switcher, User Avatar & Logout -->
-        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Right: Notification, Mode Switcher, Avatar & Logout -->
+        <div class="flex items-center gap-2 shrink-0">
           <RoleModeSwitcher />
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button
+              class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+              @click="toggleNotifications"
+            >
+              <i class="pi pi-bell text-sm"></i>
+              <span
+                v-if="notificationStore.unreadCount > 0"
+                class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
+              >
+                {{ notificationStore.unreadCount }}
+              </span>
+            </button>
+          </div>
           <div class="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-xs flex items-center justify-center">
             {{ authStore.user?.name?.substring(0, 2).toUpperCase() }}
           </div>
@@ -105,6 +168,71 @@ const pageTitle = computed(() => {
 
       <router-view />
     </main>
+
+    <!-- Notification Popover -->
+    <Popover ref="notifOp" class="w-80 max-w-[90vw] shadow-lg border border-slate-100 rounded-3xl p-0 overflow-hidden z-50">
+      <div class="flex flex-col text-xs max-h-96">
+        <div class="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <span class="font-bold text-slate-800">Notifikasi ({{ notificationStore.unreadCount }} Baru)</span>
+          <Button
+            v-if="notificationStore.unreadCount > 0"
+            label="Baca Semua"
+            severity="primary"
+            text
+            size="small"
+            class="p-0 text-[10px] font-bold"
+            @click="notificationStore.markAllAsRead()"
+          />
+        </div>
+        <div class="overflow-y-auto divide-y divide-slate-50 py-1">
+          <div v-if="notificationStore.loading && notificationStore.notifications.length === 0" class="p-8 text-center">
+            <i class="pi pi-spin pi-spinner text-primary text-xl"></i>
+          </div>
+          <div v-else-if="notificationStore.notifications.length === 0" class="p-8 text-center text-slate-400 space-y-1">
+            <i class="pi pi-bell text-2xl block mx-auto text-slate-300"></i>
+            <span class="font-medium block">Tidak ada notifikasi.</span>
+          </div>
+          <div
+            v-else
+            v-for="notif in notificationStore.notifications.slice(0, 5)"
+            :key="notif.id"
+            class="p-3 hover:bg-slate-50 cursor-pointer flex gap-2.5 transition-colors"
+            :class="!notif.read_at ? 'bg-primary/5 font-semibold' : ''"
+            @click="handleNotificationClick(notif)"
+          >
+            <div class="w-8 h-8 rounded-full shrink-0 flex items-center justify-center"
+              :class="{
+                'bg-blue-50 text-blue-500': notif.data?.type === 'new_order',
+                'bg-purple-50 text-purple-500': notif.data?.type === 'order_status_updated',
+                'bg-emerald-50 text-emerald-500': notif.data?.type === 'alumni_verification' && notif.data?.status === 'verified',
+                'bg-red-50 text-red-500': notif.data?.type === 'alumni_verification' && notif.data?.status !== 'verified',
+                'bg-amber-50 text-amber-500': notif.data?.type === 'new_review',
+                'bg-slate-100 text-slate-500': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review'].includes(notif.data?.type)
+              }"
+            >
+              <i :class="{
+                'pi pi-shopping-bag': notif.data?.type === 'new_order',
+                'pi pi-cog': notif.data?.type === 'order_status_updated',
+                'pi pi-verified': notif.data?.type === 'alumni_verification' && notif.data?.status === 'verified',
+                'pi pi-ban': notif.data?.type === 'alumni_verification' && notif.data?.status !== 'verified',
+                'pi pi-star': notif.data?.type === 'new_review',
+                'pi pi-bell': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review'].includes(notif.data?.type)
+              }"></i>
+            </div>
+            <div class="flex-grow min-w-0 space-y-0.5">
+              <strong class="text-slate-800 block truncate text-[11px]">{{ notif.data?.title || 'Notifikasi' }}</strong>
+              <p class="text-slate-600 leading-relaxed text-[10px]">{{ notif.data?.message }}</p>
+              <span class="text-[9px] text-slate-400 font-medium block">{{ timeAgo(notif.created_at) }}</span>
+            </div>
+            <div v-if="!notif.read_at" class="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"></div>
+          </div>
+        </div>
+        <div class="p-2 border-t border-slate-100 bg-slate-50 text-center">
+          <Button label="Semua Notifikasi" severity="secondary" text size="small" class="w-full text-[10px] font-bold py-1.5"
+            @click="router.push({ name: 'SellerNotifications' }); notifOp.hide();" />
+        </div>
+      </div>
+    </Popover>
 
     <!-- PWA Install Button -->
     <PWAInstallButton />

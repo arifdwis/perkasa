@@ -122,6 +122,11 @@ const routes = [
         component: () => import('../views/store/SellerFinanceView.vue')
       },
       {
+        path: 'notifications',
+        name: 'SellerNotifications',
+        component: () => import('../views/NotificationListView.vue')
+      },
+      {
         path: 'orders/:id',
         name: 'SellerOrderDetail',
         component: () => import('../views/order/OrderDetailView.vue')

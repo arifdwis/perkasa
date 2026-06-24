@@ -34,6 +34,16 @@ const handleNotificationClick = async (notif) => {
   }
   op.value.hide()
   if (notif.data?.action_url) {
+    // If notification points to seller route, switch mode first
+    if (notif.data.action_url.startsWith('/seller/')) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
+      if (isSeller) {
+        authStore.setUserMode('seller')
+        router.push(notif.data.action_url).then(() => { window.location.reload() })
+        return
+      }
+    }
     router.push(notif.data.action_url)
   }
 }
