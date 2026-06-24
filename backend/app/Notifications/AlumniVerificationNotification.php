@@ -56,6 +56,7 @@ class AlumniVerificationNotification extends Notification
             'message' => $msg,
             'status' => $this->status,
             'type' => 'alumni_verification',
+            'category' => 'buyer',
             'action_url' => '/buyer/home',
         ];
     }

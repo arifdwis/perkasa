@@ -8,11 +8,38 @@ use Illuminate\Http\Request;
 class NotificationController extends Controller
 {
     /**
+     * Notification types grouped by scope.
+     */
+    private const SCOPE_TYPES = [
+        'seller' => ['new_order', 'store_verification', 'new_review'],
+        'buyer'  => ['order_status_updated', 'alumni_verification', 'registration'],
+    ];
+
+    /**
+     * Apply scope filter to a notification query.
+     */
+    private function applyScope($query, Request $request): void
+    {
+        $scope = $request->query('scope');
+
+        if ($scope && isset(self::SCOPE_TYPES[$scope])) {
+            $query->where(function ($q) use ($scope) {
+                foreach (self::SCOPE_TYPES[$scope] as $type) {
+                    $q->orWhere('data->type', $type);
+                }
+            });
+        }
+    }
+
+    /**
      * Display a listing of user's notifications.
      */
     public function index(Request $request)
     {
-        return response()->json($request->user()->notifications()->paginate(10));
+        $query = $request->user()->notifications();
+        $this->applyScope($query, $request);
+
+        return response()->json($query->paginate(10));
     }
 
     /**
@@ -20,8 +47,11 @@ class NotificationController extends Controller
      */
     public function unreadCount(Request $request)
     {
+        $query = $request->user()->unreadNotifications();
+        $this->applyScope($query, $request);
+
         return response()->json([
-            'unread_count' => $request->user()->unreadNotifications()->count(),
+            'unread_count' => $query->count(),
         ]);
     }
 
@@ -44,7 +74,9 @@ class NotificationController extends Controller
      */
     public function markAllAsRead(Request $request)
     {
-        $request->user()->unreadNotifications->markAsRead();
+        $query = $request->user()->unreadNotifications();
+        $this->applyScope($query, $request);
+        $query->get()->markAsRead();
 
         return response()->json([
             'message' => 'Semua notifikasi berhasil ditandai telah dibaca.',

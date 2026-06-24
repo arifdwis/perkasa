@@ -24,8 +24,23 @@ const visibleDrawer = ref(false)
 const toggleNotifications = (event) => {
   op.value.toggle(event)
   if (notificationStore.unreadCount > 0 || notificationStore.notifications.length === 0) {
-    notificationStore.fetchNotifications()
+    notificationStore.fetchNotifications(1, 'buyer')
   }
+}
+
+const resolveActionRoute = (url) => {
+  if (!url || typeof url !== 'string') return null
+  const parts = url.split('/').filter(Boolean)
+  if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'orders') {
+    return { name: 'OrderDetail', params: { id: parts[2] } }
+  }
+  if (url === '/buyer/home') return { name: 'BuyerHome' }
+  if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'orders') {
+    return { name: 'SellerOrderDetail', params: { id: parts[2] } }
+  }
+  if (url === '/seller/store') return { name: 'SellerStore' }
+  if (url === '/seller/home') return { name: 'SellerHome' }
+  return { path: url }
 }
 
 const handleNotificationClick = async (notif) => {
@@ -40,11 +55,17 @@ const handleNotificationClick = async (notif) => {
       const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
       if (isSeller) {
         authStore.setUserMode('seller')
-        router.push(notif.data.action_url).then(() => { window.location.reload() })
+        const routeLocation = resolveActionRoute(notif.data.action_url)
+        if (routeLocation) {
+          router.push(routeLocation).then(() => { window.location.reload() })
+        }
         return
       }
     }
-    router.push(notif.data.action_url)
+    const routeLocation = resolveActionRoute(notif.data.action_url)
+    if (routeLocation) {
+      router.push(routeLocation)
+    }
   }
 }
 
@@ -117,14 +138,14 @@ const timeAgo = (dateString) => {
 
 onMounted(() => {
   if (localStorage.getItem('token')) {
-    notificationStore.fetchUnreadCount()
+    notificationStore.fetchUnreadCount('buyer')
     // Poll unread count every 30 seconds
     const pollInterval = setInterval(() => {
       if (!localStorage.getItem('token')) {
         clearInterval(pollInterval)
         return
       }
-      notificationStore.fetchUnreadCount()
+      notificationStore.fetchUnreadCount('buyer')
     }, 30000)
   }
 })

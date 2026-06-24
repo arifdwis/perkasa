@@ -55,6 +55,7 @@ class StoreVerificationNotification extends Notification
             'message' => $msg,
             'status' => $this->status,
             'type' => 'store_verification',
+            'category' => 'seller',
             'action_url' => '/seller/store',
         ];
     }

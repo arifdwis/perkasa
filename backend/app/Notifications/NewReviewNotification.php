@@ -29,7 +29,7 @@ class NewReviewNotification extends Notification
 
     public function toArray($notifiable): array
     {
-        $actionUrl = '/buyer/orders/'.$this->slugOrOrderId;
+        $actionUrl = '/seller/orders/'.$this->slugOrOrderId;
 
         return [
             'title' => 'Ulasan Baru Diterima',
@@ -37,6 +37,7 @@ class NewReviewNotification extends Notification
             'review_id' => $this->review->id,
             'rating' => $this->review->rating,
             'type' => 'new_review',
+            'category' => 'seller',
             'action_url' => $actionUrl,
         ];
     }

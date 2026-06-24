@@ -9,6 +9,7 @@ import RoleModeSwitcher from '../components/RoleModeSwitcher.vue'
 import PWAInstallButton from '../components/PWAInstallButton.vue'
 import Button from 'primevue/button'
 import Popover from 'primevue/popover'
+import Drawer from 'primevue/drawer'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
@@ -17,6 +18,23 @@ const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 
 const notifOp = ref()
+const mobileMenuOpen = ref(false)
+
+const isSeller = computed(() => authStore.user?.roles?.some(r => r.name === 'alumni_penjual') || false)
+const isAdmin = computed(() => {
+  return authStore.permissions.includes('super_admin') ||
+    authStore.permissions.includes('admin_marketplace') ||
+    authStore.permissions.includes('*')
+})
+const userMode = computed(() => authStore.userMode)
+
+const switchMode = (mode) => {
+  authStore.setUserMode(mode)
+  mobileMenuOpen.value = false
+  router.push({ name: 'Home' }).then(() => {
+    window.location.reload()
+  })
+}
 
 const store = computed(() => authStore.user?.profile?.store || null)
 const storeName = computed(() => store.value ? store.value.name : 'Toko Saya')
@@ -49,8 +67,23 @@ const pageTitle = computed(() => {
 const toggleNotifications = (event) => {
   notifOp.value.toggle(event)
   if (notificationStore.unreadCount > 0 || notificationStore.notifications.length === 0) {
-    notificationStore.fetchNotifications()
+    notificationStore.fetchNotifications(1, 'seller')
   }
+}
+
+const resolveActionRoute = (url) => {
+  if (!url || typeof url !== 'string') return null
+  const parts = url.split('/').filter(Boolean)
+  if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'orders') {
+    return { name: 'SellerOrderDetail', params: { id: parts[2] } }
+  }
+  if (url === '/seller/store') return { name: 'SellerStore' }
+  if (url === '/seller/home') return { name: 'SellerHome' }
+  if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'orders') {
+    return { name: 'OrderDetail', params: { id: parts[2] } }
+  }
+  if (url === '/buyer/home') return { name: 'BuyerHome' }
+  return { path: url }
 }
 
 const handleNotificationClick = async (notif) => {
@@ -59,7 +92,10 @@ const handleNotificationClick = async (notif) => {
   }
   notifOp.value.hide()
   if (notif.data?.action_url) {
-    router.push(notif.data.action_url)
+    const routeLocation = resolveActionRoute(notif.data.action_url)
+    if (routeLocation) {
+      router.push(routeLocation)
+    }
   }
 }
 
@@ -78,13 +114,13 @@ const timeAgo = (dateString) => {
 }
 
 onMounted(() => {
-  notificationStore.fetchUnreadCount()
+  notificationStore.fetchUnreadCount('seller')
   const pollInterval = setInterval(() => {
     if (!localStorage.getItem('token')) {
       clearInterval(pollInterval)
       return
     }
-    notificationStore.fetchUnreadCount()
+    notificationStore.fetchUnreadCount('seller')
   }, 30000)
 })
 </script>
@@ -126,16 +162,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Right: Notification, Mode Switcher, Avatar & Logout -->
-        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+        <!-- Right: Desktop -->
+        <div class="hidden sm:flex items-center gap-2 shrink-0">
           <RoleModeSwitcher />
           <!-- Notification Bell -->
           <div class="relative">
             <button
-              class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+              class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
               @click="toggleNotifications"
             >
-              <i class="pi pi-bell text-xs sm:text-sm"></i>
+              <i class="pi pi-bell text-sm"></i>
               <span
                 v-if="notificationStore.unreadCount > 0"
                 class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
@@ -144,15 +180,41 @@ onMounted(() => {
               </span>
             </button>
           </div>
-          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-[10px] sm:text-xs flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-xs flex items-center justify-center">
             {{ authStore.user?.name?.substring(0, 2).toUpperCase() }}
           </div>
           <button
-            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
             @click="logout"
             title="Keluar"
           >
-            <i class="pi pi-sign-out text-xs sm:text-sm"></i>
+            <i class="pi pi-sign-out text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Right: Mobile -->
+        <div class="flex sm:hidden items-center gap-1.5 shrink-0">
+          <!-- Notification Bell -->
+          <div class="relative">
+            <button
+              class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+              @click="toggleNotifications"
+            >
+              <i class="pi pi-bell text-sm"></i>
+              <span
+                v-if="notificationStore.unreadCount > 0"
+                class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
+              >
+                {{ notificationStore.unreadCount }}
+              </span>
+            </button>
+          </div>
+          <button
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
+            @click="mobileMenuOpen = true"
+            title="Menu"
+          >
+            <i class="pi pi-bars text-sm"></i>
           </button>
         </div>
       </div>
@@ -239,6 +301,76 @@ onMounted(() => {
 
     <!-- PWA Install Button -->
     <PWAInstallButton />
+
+    <!-- Mobile Menu Drawer -->
+    <Drawer
+      v-model:visible="mobileMenuOpen"
+      position="right"
+      header="Menu"
+      class="w-72 max-w-[85vw]"
+    >
+      <div class="flex flex-col h-full justify-between text-xs pt-2">
+        <div class="space-y-5">
+          <!-- User Info -->
+          <div class="bg-gradient-to-br from-primary-dark via-primary to-emerald-900 text-white p-4 rounded-2xl shadow-md space-y-3 relative overflow-hidden select-none">
+            <div class="absolute w-24 h-24 bg-white/5 rounded-full blur-2xl -top-8 -right-8 pointer-events-none"></div>
+            <div class="flex items-center gap-3 relative z-10">
+              <div class="w-11 h-11 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-black flex items-center justify-center text-sm shrink-0">
+                {{ authStore.user?.name?.substring(0, 2).toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <span class="font-extrabold text-white text-xs block truncate tracking-tight">{{ authStore.user?.name }}</span>
+                <span class="text-[10px] text-white/70 block truncate">{{ authStore.user?.email }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode Switcher -->
+          <div v-if="isSeller || isAdmin" class="space-y-2">
+            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Pindah Mode</span>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
+                :class="userMode === 'buyer' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
+                @click="switchMode('buyer')"
+              >
+                <Icon icon="solar:shop-2-bold" class="text-sm" />
+                Belanja
+              </button>
+              <button
+                v-if="isSeller"
+                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
+                :class="userMode === 'seller' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
+                @click="switchMode('seller')"
+              >
+                <Icon icon="solar:box-bold" class="text-sm" />
+                Toko
+              </button>
+              <button
+                v-if="isAdmin"
+                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
+                :class="userMode === 'admin' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
+                @click="switchMode('admin')"
+              >
+                <Icon icon="solar:shield-keyhole-bold" class="text-sm" />
+                Admin
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="pt-4 border-t border-slate-100">
+          <button
+            class="w-full h-11 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50/50 hover:text-red-600 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2 bg-red-50/20"
+            @click="logout"
+          >
+            <Icon icon="solar:sign-out-linear" class="text-base" />
+            <span>Keluar / Logout</span>
+          </button>
+        </div>
+      </div>
+    </Drawer>
 
     <!-- Mobile Bottom Navigation -->
     <SellerBottomNav />

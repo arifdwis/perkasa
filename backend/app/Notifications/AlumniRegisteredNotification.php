@@ -25,6 +25,7 @@ class AlumniRegisteredNotification extends Notification
             'title' => 'Registrasi Berhasil',
             'message' => 'Selamat datang di FEB Unmul Marketplace! Akun Anda berhasil terdaftar.',
             'type' => 'registration',
+            'category' => 'buyer',
             'action_url' => '/buyer/home',
         ];
     }

@@ -68,17 +68,17 @@ const quickActions = [
     <main class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-5 w-full space-y-5">
 
       <!-- Welcome Header -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center shrink-0">
-            <Icon icon="solar:shop-2-bold-duotone" class="text-2xl" />
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3 w-full min-w-0">
+          <div class="w-11 h-11 rounded-2xl bg-primary-soft text-primary flex items-center justify-center shrink-0">
+            <Icon icon="solar:shop-2-bold-duotone" class="text-xl" />
           </div>
-          <div class="min-w-0">
-            <h2 class="text-lg sm:text-xl font-black text-slate-800 truncate">{{ authStore.user?.profile?.store?.name || 'Toko Saya' }}</h2>
-            <p class="text-xs text-slate-400 font-medium mt-0.5">Selamat datang kembali, {{ authStore.user?.name }}</p>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-base sm:text-lg font-black text-slate-800 truncate">{{ authStore.user?.profile?.store?.name || 'Toko Saya' }}</h2>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5 truncate">Selamat datang kembali, {{ authStore.user?.name }}</p>
           </div>
         </div>
-        <button class="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-white hover:bg-primary-dark text-xs font-bold transition-colors shadow-sm" @click="router.push({ name: 'StoreProfile', params: { id: authStore.user?.profile?.store?.id } })">
+        <button class="w-full sm:w-auto sm:shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white hover:bg-primary-dark text-xs font-bold transition-colors shadow-sm" @click="router.push({ name: 'StoreProfile', params: { id: authStore.user?.profile?.store?.id } })">
           <i class="pi pi-external-link text-xs"></i> Lihat Toko
         </button>
       </div>
