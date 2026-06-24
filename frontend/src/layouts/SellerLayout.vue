@@ -93,28 +93,31 @@ onMounted(() => {
   <div class="min-h-screen bg-slate-50 flex flex-col">
     <!-- Seller Header / Topbar -->
     <header class="bg-primary text-white shadow-md sticky top-0 z-30 shrink-0">
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
         <!-- Left: Logo & Store Info -->
-        <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div class="bg-white p-1.5 rounded-xl flex items-center justify-center w-10 h-10 shrink-0 shadow-sm cursor-pointer" @click="router.push({ name: 'SellerHome' })">
-            <img src="/logo_unmul.png" alt="Logo Unmul" class="w-7 h-7 object-contain" />
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div class="bg-white p-1.5 rounded-xl flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 shadow-sm cursor-pointer" @click="router.push({ name: 'SellerHome' })">
+            <img src="/logo_unmul.png" alt="Logo Unmul" class="w-6 h-6 sm:w-7 sm:h-7 object-contain" />
           </div>
-          <div class="min-w-0 flex-1">
+          <div class="min-w-0 flex-1 overflow-hidden">
             <div class="flex items-center gap-1.5 text-[10px] text-primary-soft font-bold uppercase tracking-wider">
               <span class="hidden sm:inline">Seller Center</span>
               <Icon icon="solar:alt-arrow-right-linear" class="text-[8px] hidden sm:inline" />
               <span class="text-white truncate">{{ pageTitle }}</span>
             </div>
-            <div class="flex items-center gap-1.5 mt-0.5">
-              <h1 class="text-sm font-black tracking-tight leading-tight truncate flex-shrink min-w-0">
+            <div class="flex items-center gap-1.5 mt-0.5 min-w-0 overflow-hidden">
+              <h1
+                class="text-sm font-black tracking-tight leading-tight truncate shrink min-w-0"
+                :title="storeName"
+              >
                 {{ storeName }}
               </h1>
               <span
-                class="px-1.5 py-0.5 rounded text-[8px] font-black shrink-0"
+                class="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black shrink-0 border"
                 :class="{
-                  'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20': storeStatus === 'active',
-                  'bg-amber-500/15 text-amber-400 border border-amber-500/20': storeStatus === 'pending',
-                  'bg-slate-500/15 text-slate-400 border border-slate-500/20': storeStatus === 'suspended'
+                  'bg-emerald-500 text-white border-emerald-400': storeStatus === 'active',
+                  'bg-amber-500 text-white border-amber-400': storeStatus === 'pending',
+                  'bg-slate-500 text-white border-slate-400': storeStatus === 'suspended'
                 }"
               >
                 {{ storeStatus === 'active' ? 'AKTIF' : storeStatus === 'pending' ? 'PENDING' : 'TUTUP' }}
@@ -124,15 +127,15 @@ onMounted(() => {
         </div>
 
         <!-- Right: Notification, Mode Switcher, Avatar & Logout -->
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-1 sm:gap-2 shrink-0">
           <RoleModeSwitcher />
           <!-- Notification Bell -->
           <div class="relative">
             <button
-              class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+              class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
               @click="toggleNotifications"
             >
-              <i class="pi pi-bell text-sm"></i>
+              <i class="pi pi-bell text-xs sm:text-sm"></i>
               <span
                 v-if="notificationStore.unreadCount > 0"
                 class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
@@ -141,15 +144,15 @@ onMounted(() => {
               </span>
             </button>
           </div>
-          <div class="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-xs flex items-center justify-center">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-[10px] sm:text-xs flex items-center justify-center">
             {{ authStore.user?.name?.substring(0, 2).toUpperCase() }}
           </div>
           <button
-            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
+            class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
             @click="logout"
             title="Keluar"
           >
-            <i class="pi pi-sign-out text-sm"></i>
+            <i class="pi pi-sign-out text-xs sm:text-sm"></i>
           </button>
         </div>
       </div>
