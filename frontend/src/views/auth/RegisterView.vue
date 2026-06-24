@@ -105,7 +105,7 @@ const handleRegister = async () => {
     }
 
     setTimeout(() => {
-      router.push({ name: 'Login' })
+      window.location.href = '/login'
     }, 2500)
   } catch (err) {
     if (err.response?.data?.errors) {

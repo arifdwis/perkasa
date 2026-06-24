@@ -91,7 +91,7 @@ const fetchProfile = async () => {
     await fetchStats()
   } catch (err) {
     authStore.clearAuth()
-    router.push({ name: 'Login' })
+    window.location.href = '/login'
   }
 }
 

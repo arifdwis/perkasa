@@ -81,7 +81,7 @@ const handleLogout = async () => {
   } finally {
     authStore.clearAuth()
     visibleDrawer.value = false
-    router.push({ name: 'Login' })
+    window.location.href = '/login'
   }
 }
 

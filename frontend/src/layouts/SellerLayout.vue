@@ -47,7 +47,7 @@ const logout = async () => {
     // ignore
   }
   authStore.clearAuth()
-  router.push({ name: 'Login' })
+  window.location.href = '/login'
 }
 
 const pageTitle = computed(() => {

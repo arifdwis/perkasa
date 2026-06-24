@@ -37,7 +37,7 @@ const handleLogin = async () => {
     authStore.setPermissions(data.permissions)
     authStore.setUser(data.user)
     
-    router.push({ name: 'Home' })
+    window.location.href = '/'
   } catch (err) {
     console.error('Login error:', err)
     error.value = err.response?.data?.message || 'Gagal masuk. Silakan cek koneksi Anda.'

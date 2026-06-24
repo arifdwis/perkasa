@@ -21,7 +21,7 @@ const showMenuItem = (permission) => {
 
 const handleLogout = async () => {
   authStore.clearAuth()
-  router.push({ name: 'Login' })
+  window.location.href = '/login'
 }
 </script>
 
