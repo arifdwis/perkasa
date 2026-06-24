@@ -8,8 +8,10 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
+import LoadingRedirect from '../../components/LoadingRedirect.vue'
 
 const router = useRouter()
+const redirecting = ref(false)
 
 const form = ref({
   nim: '',
@@ -104,9 +106,10 @@ const handleRegister = async () => {
       confirmPassword: ''
     }
 
+    redirecting.value = true
     setTimeout(() => {
       window.location.href = '/login'
-    }, 2500)
+    }, 1500)
   } catch (err) {
     if (err.response?.data?.errors) {
       const firstErrorKey = Object.keys(err.response.data.errors)[0]
@@ -122,6 +125,7 @@ const handleRegister = async () => {
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans">
+    <LoadingRedirect :visible="redirecting" message="Pendaftaran berhasil, mengalihkan..." />
 
     <!-- Left Brand Panel (desktop only) -->
     <aside class="hidden lg:flex lg:w-[44%] xl:w-[40%] bg-gradient-to-br from-primary-dark via-primary to-[#00463A] relative overflow-hidden flex-col justify-between p-10 xl:p-14 text-white">

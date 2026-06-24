@@ -8,6 +8,7 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Message from 'primevue/message'
+import LoadingRedirect from '../../components/LoadingRedirect.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -16,6 +17,7 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const isLoading = ref(false)
+const redirecting = ref(false)
 
 const handleLogin = async () => {
   error.value = ''
@@ -37,7 +39,8 @@ const handleLogin = async () => {
     authStore.setPermissions(data.permissions)
     authStore.setUser(data.user)
     
-    window.location.href = '/'
+    redirecting.value = true
+    setTimeout(() => { window.location.href = '/' }, 500)
   } catch (err) {
     console.error('Login error:', err)
     error.value = err.response?.data?.message || 'Gagal masuk. Silakan cek koneksi Anda.'
@@ -49,6 +52,7 @@ const handleLogin = async () => {
 
 <template>
   <div class="min-h-screen bg-white flex flex-col justify-between font-sans">
+    <LoadingRedirect :visible="redirecting" message="Masuk ke akun Anda..." />
     <!-- Top Header Bar (Tokopedia Style) -->
     <header class="hidden md:flex w-full max-w-7xl mx-auto px-6 py-4 items-center justify-between border-b border-slate-50 select-none">
       <router-link :to="{ name: 'Home' }" class="flex items-center gap-3">

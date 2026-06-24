@@ -7,6 +7,7 @@ import { useNotificationStore } from '../stores/notification'
 import SellerBottomNav from '../components/SellerBottomNav.vue'
 import RoleModeSwitcher from '../components/RoleModeSwitcher.vue'
 import PWAInstallButton from '../components/PWAInstallButton.vue'
+import LoadingRedirect from '../components/LoadingRedirect.vue'
 import Button from 'primevue/button'
 import Popover from 'primevue/popover'
 import Drawer from 'primevue/drawer'
@@ -18,6 +19,7 @@ const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 
 const notifOp = ref()
+const redirecting = ref(false)
 const mobileMenuOpen = ref(false)
 
 const isSeller = computed(() => authStore.user?.roles?.some(r => r.name === 'alumni_penjual') || false)
@@ -47,7 +49,8 @@ const logout = async () => {
     // ignore
   }
   authStore.clearAuth()
-  window.location.href = '/login'
+  redirecting.value = true
+  setTimeout(() => { window.location.href = '/login' }, 500)
 }
 
 const pageTitle = computed(() => {
@@ -130,6 +133,7 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col">
+    <LoadingRedirect :visible="redirecting" message="Keluar dari akun..." />
     <!-- Seller Header / Topbar -->
     <header class="bg-primary text-white shadow-md sticky top-0 z-30 shrink-0">
       <div class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">

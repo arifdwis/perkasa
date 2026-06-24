@@ -10,6 +10,7 @@ import Drawer from 'primevue/drawer'
 import axios from 'axios'
 import VerifiedBadge from './VerifiedBadge.vue'
 import RoleModeSwitcher from './RoleModeSwitcher.vue'
+import LoadingRedirect from './LoadingRedirect.vue'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
@@ -20,6 +21,7 @@ const notificationStore = useNotificationStore()
 
 const op = ref()
 const visibleDrawer = ref(false)
+const redirecting = ref(false)
 
 const toggleNotifications = (event) => {
   op.value.toggle(event)
@@ -81,7 +83,8 @@ const handleLogout = async () => {
   } finally {
     authStore.clearAuth()
     visibleDrawer.value = false
-    window.location.href = '/login'
+    redirecting.value = true
+    setTimeout(() => { window.location.href = '/login' }, 500)
   }
 }
 
@@ -152,6 +155,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <LoadingRedirect :visible="redirecting" message="Keluar dari akun..." />
   <header class="bg-primary text-white shadow-md sticky top-0 z-40 shrink-0">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       

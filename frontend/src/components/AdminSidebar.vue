@@ -1,12 +1,14 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import LoadingRedirect from './LoadingRedirect.vue'
 import { Icon } from '@iconify/vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const redirecting = ref(false)
 
 const isSuperAdmin = computed(() =>
   authStore.permissions.includes('super_admin') || authStore.permissions.includes('*')
@@ -21,11 +23,13 @@ const showMenuItem = (permission) => {
 
 const handleLogout = async () => {
   authStore.clearAuth()
-  window.location.href = '/login'
+  redirecting.value = true
+  setTimeout(() => { window.location.href = '/login' }, 500)
 }
 </script>
 
 <template>
+  <LoadingRedirect :visible="redirecting" message="Keluar dari admin..." />
   <aside class="hidden lg:flex flex-col w-64 bg-white text-slate-600 h-screen border-r border-slate-200 shrink-0 sticky top-0">
     <div class="h-16 flex items-center gap-3 px-6 border-b border-slate-200 bg-white">
       <img src="/logo_unmul.png" alt="Logo Unmul" class="w-8 h-8 object-contain" />
