@@ -46,26 +46,32 @@ const pageTitle = computed(() => {
     <!-- Seller Header / Topbar -->
     <header class="bg-primary text-white shadow-md sticky top-0 z-30 shrink-0">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <!-- Left: Logo & Breadcrumb -->
-        <div class="flex items-center gap-3 min-w-0">
+        <!-- Left: Logo & Store Info -->
+        <div class="flex items-center gap-3 min-w-0 flex-1">
           <div class="bg-white p-1.5 rounded-xl flex items-center justify-center w-10 h-10 shrink-0 shadow-sm cursor-pointer" @click="router.push({ name: 'SellerHome' })">
             <img src="/logo_unmul.png" alt="Logo Unmul" class="w-7 h-7 object-contain" />
           </div>
-          <div class="min-w-0">
+          <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5 text-[10px] text-primary-soft font-bold uppercase tracking-wider">
-              <span>Seller Center</span>
-              <Icon icon="solar:alt-arrow-right-linear" class="text-[8px]" />
+              <span class="hidden sm:inline">Seller Center</span>
+              <Icon icon="solar:alt-arrow-right-linear" class="text-[8px] hidden sm:inline" />
               <span class="text-white truncate">{{ pageTitle }}</span>
             </div>
-            <h1 class="text-sm font-black tracking-tight leading-tight truncate max-w-[120px] sm:max-w-[200px] flex items-center gap-1.5">
-              {{ storeName }}
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <h1 class="text-sm font-black tracking-tight leading-tight truncate flex-shrink min-w-0">
+                {{ storeName }}
+              </h1>
               <span
                 class="px-1.5 py-0.5 rounded text-[8px] font-black shrink-0"
-                :class="storeStatus === 'active' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'"
+                :class="{
+                  'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20': storeStatus === 'active',
+                  'bg-amber-500/15 text-amber-400 border border-amber-500/20': storeStatus === 'pending',
+                  'bg-slate-500/15 text-slate-400 border border-slate-500/20': storeStatus === 'suspended'
+                }"
               >
-                {{ storeStatus.toUpperCase() }}
+                {{ storeStatus === 'active' ? 'AKTIF' : storeStatus === 'pending' ? 'PENDING' : 'TUTUP' }}
               </span>
-            </h1>
+            </div>
           </div>
         </div>
 
