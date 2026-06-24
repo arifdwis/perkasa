@@ -74,15 +74,17 @@ const toggleNotifications = (event) => {
 const resolveActionRoute = (url) => {
   if (!url || typeof url !== 'string') return null
   const parts = url.split('/').filter(Boolean)
+  // Seller order detail
   if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'orders') {
-    return { name: 'SellerOrderDetail', params: { id: parts[2] } }
+    return { path: `/seller/orders/${parts[2]}` }
   }
-  if (url === '/seller/store') return { name: 'SellerStore' }
-  if (url === '/seller/home') return { name: 'SellerHome' }
+  if (url === '/seller/store') return { path: '/seller/store' }
+  if (url === '/seller/home') return { path: '/seller/home' }
+  // Buyer order detail
   if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'orders') {
-    return { name: 'OrderDetail', params: { id: parts[2] } }
+    return { path: `/buyer/orders/${parts[2]}` }
   }
-  if (url === '/buyer/home') return { name: 'BuyerHome' }
+  if (url === '/buyer/home') return { path: '/buyer/home' }
   return { path: url }
 }
 
@@ -94,7 +96,8 @@ const handleNotificationClick = async (notif) => {
   if (notif.data?.action_url) {
     const routeLocation = resolveActionRoute(notif.data.action_url)
     if (routeLocation) {
-      router.push(routeLocation)
+      // Path-based navigation avoids carrying over current route params (e.g. pathMatch)
+      router.push(routeLocation.path)
     }
   }
 }

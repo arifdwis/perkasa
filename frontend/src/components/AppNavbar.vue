@@ -32,14 +32,14 @@ const resolveActionRoute = (url) => {
   if (!url || typeof url !== 'string') return null
   const parts = url.split('/').filter(Boolean)
   if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'orders') {
-    return { name: 'OrderDetail', params: { id: parts[2] } }
+    return { path: `/buyer/orders/${parts[2]}` }
   }
-  if (url === '/buyer/home') return { name: 'BuyerHome' }
+  if (url === '/buyer/home') return { path: '/buyer/home' }
   if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'orders') {
-    return { name: 'SellerOrderDetail', params: { id: parts[2] } }
+    return { path: `/seller/orders/${parts[2]}` }
   }
-  if (url === '/seller/store') return { name: 'SellerStore' }
-  if (url === '/seller/home') return { name: 'SellerHome' }
+  if (url === '/seller/store') return { path: '/seller/store' }
+  if (url === '/seller/home') return { path: '/seller/home' }
   return { path: url }
 }
 
@@ -57,14 +57,14 @@ const handleNotificationClick = async (notif) => {
         authStore.setUserMode('seller')
         const routeLocation = resolveActionRoute(notif.data.action_url)
         if (routeLocation) {
-          router.push(routeLocation).then(() => { window.location.reload() })
+          router.push(routeLocation.path).then(() => { window.location.reload() })
         }
         return
       }
     }
     const routeLocation = resolveActionRoute(notif.data.action_url)
     if (routeLocation) {
-      router.push(routeLocation)
+      router.push(routeLocation.path)
     }
   }
 }
