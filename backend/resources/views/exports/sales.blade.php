@@ -14,6 +14,9 @@
 </head>
 <body>
     <div class="title">LAPORAN REKAP PENJUALAN TOKO</div>
+    @if(isset($store_name) && $store_name)
+    <div class="subtitle">Toko: {{ $store_name }}</div>
+    @endif
     <div class="subtitle">Dicetak pada: {{ now()->format('d-m-Y H:i:s') }}</div>
 @endif
 
@@ -23,6 +26,11 @@
         <tr>
             <th colspan="9" style="font-size: 14px; font-weight: bold; text-align: center;">LAPORAN REKAP PENJUALAN TOKO</th>
         </tr>
+        @if(isset($store_name) && $store_name)
+        <tr>
+            <th colspan="9" style="font-size: 11px; text-align: center;">Toko: {{ $store_name }}</th>
+        </tr>
+        @endif
         <tr>
             <th colspan="9" style="font-size: 10px; text-align: center; font-style: italic;">Dicetak pada: {{ now()->format('d-m-Y H:i:s') }}</th>
         </tr>

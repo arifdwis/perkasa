@@ -7,9 +7,13 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Exports\OrderExport;
+use App\Exports\SalesExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 
 class SellerOrderController extends Controller
 {
@@ -111,7 +115,18 @@ class SellerOrderController extends Controller
             return response()->json(['message' => 'Anda tidak memiliki toko.'], 403);
         }
 
-        $allOrders = Order::where('store_id', $store->id)->get();
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $orderQuery = Order::where('store_id', $store->id);
+        if ($dateFrom) {
+            $orderQuery->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $orderQuery->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $allOrders = $orderQuery->get();
         $completedOrders = $allOrders->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran']);
 
         $totalOmzet = (int) $completedOrders->sum('total');
@@ -120,9 +135,14 @@ class SellerOrderController extends Controller
         $totalTransaksi = $allOrders->count();
         $totalSelesai = $allOrders->where('status', 'selesai')->count();
         $totalDibatalkan = $allOrders->where('status', 'dibatalkan')->count();
+        $pesananAktif = $allOrders->whereIn('status', ['menunggu_konfirmasi', 'diproses', 'dalam_pengantaran'])->count();
         $rata2Order = $totalTransaksi > 0 ? round($totalOmzet / $totalTransaksi) : 0;
 
-        // Monthly trend (last 12 months)
+        // Total products sold (qty) across completed orders
+        $totalProdukTerjual = (int) OrderItem::whereIn('order_id', $completedOrders->pluck('id'))
+            ->sum('quantity');
+
+        // Monthly trend (last 12 months) - always full 12 months regardless of filter
         $months = [];
         for ($i = 11; $i >= 0; $i--) {
             $months[] = now()->subMonths($i)->format('Y-m');
@@ -131,8 +151,10 @@ class SellerOrderController extends Controller
         foreach ($months as $month) {
             $y = substr($month, 0, 4);
             $m = substr($month, 5, 2);
-            $monthOrders = $allOrders->where('created_at', '>=', "{$y}-{$m}-01")
-                ->where('created_at', '<', now()->setDate((int) $y, (int) $m, 1)->addMonth()->toDateString());
+            $monthOrders = Order::where('store_id', $store->id)
+                ->where('created_at', '>=', "{$y}-{$m}-01")
+                ->where('created_at', '<', now()->setDate((int) $y, (int) $m, 1)->addMonth()->toDateString())
+                ->get();
             $monthCompleted = $monthOrders->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran']);
             $monthlyTrend[] = [
                 'bulan' => $month,
@@ -169,11 +191,114 @@ class SellerOrderController extends Controller
             'total_transaksi' => $totalTransaksi,
             'total_selesai' => $totalSelesai,
             'total_dibatalkan' => $totalDibatalkan,
+            'pesanan_aktif' => $pesananAktif,
+            'total_produk_terjual' => $totalProdukTerjual,
             'rata2_order' => $rata2Order,
             'monthly_trend' => $monthlyTrend,
             'top_products' => $topProducts,
             'recent_completed' => $recentCompleted,
         ]);
+    }
+
+    /**
+     * Export the seller's own sales report (Excel/CSV/PDF).
+     */
+    public function exportSales(Request $request)
+    {
+        $user = $request->user();
+        $store = $user->profile?->store;
+
+        if (! $store) {
+            return response()->json(['message' => 'Anda tidak memiliki toko.'], 403);
+        }
+
+        $format = $request->query('format', 'excel');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $query = Order::with(['user.profile', 'store.alumniProfile', 'items'])
+            ->where('store_id', $store->id)
+            ->whereIn('status', ['selesai', 'diproses', 'dalam_pengantaran']);
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $sales = $query->orderBy('created_at', 'desc')->get();
+        $fileName = 'laporan_penjualan_' . $store->name . '_' . now()->format('YmdHis');
+        $storeName = $store->name;
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('exports.sales', [
+                'sales' => $sales,
+                'is_pdf' => true,
+                'store_name' => $storeName,
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download($fileName . '.pdf');
+        }
+
+        $export = new SalesExport(['store_id' => $store->id, 'date_from' => $dateFrom, 'date_to' => $dateTo]);
+
+        if ($format === 'csv') {
+            return Excel::download($export, $fileName . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        }
+
+        return Excel::download($export, $fileName . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+    }
+
+    /**
+     * Export the seller's own orders report (Excel/CSV/PDF).
+     */
+    public function exportOrders(Request $request)
+    {
+        $user = $request->user();
+        $store = $user->profile?->store;
+
+        if (! $store) {
+            return response()->json(['message' => 'Anda tidak memiliki toko.'], 403);
+        }
+
+        $format = $request->query('format', 'excel');
+        $status = $request->query('status');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        $query = Order::with(['user.profile', 'store.alumniProfile', 'items'])
+            ->where('store_id', $store->id);
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $orders = $query->orderBy('created_at', 'desc')->get();
+        $fileName = 'laporan_pesanan_' . $store->name . '_' . now()->format('YmdHis');
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('exports.orders', [
+                'orders' => $orders,
+                'is_pdf' => true,
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download($fileName . '.pdf');
+        }
+
+        $export = new OrderExport(['store_id' => $store->id, 'status' => $status, 'date_from' => $dateFrom, 'date_to' => $dateTo]);
+
+        if ($format === 'csv') {
+            return Excel::download($export, $fileName . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        }
+
+        return Excel::download($export, $fileName . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
     }
 
     /**

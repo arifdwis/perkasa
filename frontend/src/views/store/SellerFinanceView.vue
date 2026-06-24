@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
@@ -10,7 +10,6 @@ import { Bar } from 'vue-chartjs'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js'
 import LoadingState from '../../components/LoadingState.vue'
 import EmptyState from '../../components/EmptyState.vue'
-import StatusTag from '../../components/StatusTag.vue'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
@@ -19,17 +18,33 @@ const toast = useToast()
 
 const finance = ref(null)
 const loading = ref(true)
+const exporting = ref(false)
+
+const filters = reactive({
+  date_from: '',
+  date_to: ''
+})
 
 const fetchFinance = async () => {
   loading.value = true
   try {
-    const res = await axios.get('/seller/orders/finance')
+    const params = {}
+    if (filters.date_from) params.date_from = filters.date_from
+    if (filters.date_to) params.date_to = filters.date_to
+    const res = await axios.get('/seller/orders/finance', { params })
     finance.value = res.data
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data pendapatan.', life: 3000 })
   } finally {
     loading.value = false
   }
+}
+
+const applyFilter = () => fetchFinance()
+const resetFilter = () => {
+  filters.date_from = ''
+  filters.date_to = ''
+  fetchFinance()
 }
 
 onMounted(() => fetchFinance())
@@ -39,6 +54,13 @@ const formatPrice = (v) => parseFloat(v || 0).toLocaleString('id-ID')
 const formatDate = (d) => {
   if (!d) return '-'
   return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+const formatRangeLabel = () => {
+  if (!filters.date_from && !filters.date_to) return 'Semua Periode'
+  const from = filters.date_from ? new Date(filters.date_from).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Awal'
+  const to = filters.date_to ? new Date(filters.date_to).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Sekarang'
+  return `${from} - ${to}`
 }
 
 // Chart data
@@ -121,6 +143,55 @@ const completionRate = computed(() => {
   if (total === 0) return 0
   return Math.round((finance.value.total_selesai / total) * 100)
 })
+
+const cancelRate = computed(() => {
+  if (!finance.value) return 0
+  const total = finance.value.total_transaksi
+  if (total === 0) return 0
+  return Math.round((finance.value.total_dibatalkan / total) * 100)
+})
+
+// Export handlers
+const handleExport = async (type, format) => {
+  exporting.value = true
+  const labelMap = { excel: 'Excel (.xlsx)', csv: 'CSV (.csv)', pdf: 'PDF' }
+  toast.add({ severity: 'info', summary: 'Mempersiapkan Unduhan', detail: `Sedang memproses laporan ${type === 'sales' ? 'penjualan' : 'pesanan'} format ${labelMap[format]}...`, life: 2000 })
+
+  const endpoint = type === 'sales'
+    ? '/seller/orders/export/sales'
+    : '/seller/orders/export/orders'
+
+  try {
+    const params = { format }
+    if (filters.date_from) params.date_from = filters.date_from
+    if (filters.date_to) params.date_to = filters.date_to
+
+    const response = await axios.get(endpoint, { params, responseType: 'blob' })
+    const blob = new Blob([response.data], { type: response.headers['content-type'] })
+    let finalFileName = `laporan_${type === 'sales' ? 'penjualan' : 'pesanan'}_${new Date().toISOString().slice(0, 10)}`
+    const disposition = response.headers['content-disposition']
+    if (disposition && disposition.indexOf('attachment') !== -1) {
+      const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+      const matches = filenameRegex.exec(disposition)
+      if (matches != null && matches[1]) finalFileName = matches[1].replace(/['"]/g, '')
+    } else {
+      if (format === 'excel') finalFileName += '.xlsx'
+      else if (format === 'csv') finalFileName += '.csv'
+      else finalFileName += '.pdf'
+    }
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(blob)
+    link.download = finalFileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.add({ severity: 'success', summary: 'Unduhan Berhasil', detail: `Laporan berhasil disimpan.`, life: 3000 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Ekspor Gagal', detail: 'Terjadi kesalahan saat memproses ekspor laporan.', life: 4000 })
+  } finally {
+    exporting.value = false
+  }
+}
 </script>
 
 <template>
@@ -139,6 +210,78 @@ const completionRate = computed(() => {
           <p class="text-xs text-slate-400 font-medium mt-0.5">Ringkasan keuangan toko Anda</p>
         </div>
         <Button icon="pi pi-refresh" severity="secondary" text rounded size="small" class="!w-9 !h-9" @click="fetchFinance" :loading="loading" />
+      </div>
+
+      <!-- Filter & Export Toolbar -->
+      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
+        <div class="flex flex-wrap items-end gap-3">
+          <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tanggal Awal</label>
+            <input
+              type="date"
+              v-model="filters.date_from"
+              class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tanggal Akhir</label>
+            <input
+              type="date"
+              v-model="filters.date_to"
+              class="w-full px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
+            />
+          </div>
+          <div class="flex gap-2">
+            <Button label="Terapkan" icon="pi pi-filter" size="small" class="text-xs font-bold" @click="applyFilter" :loading="loading" />
+            <Button label="Reset" icon="pi pi-times" severity="secondary" size="small" class="text-xs font-bold" @click="resetFilter" />
+          </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="border-t border-slate-100 pt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <Icon icon="solar:download-minimalistic-bold-duotone" class="text-primary text-base" />
+            <h3 class="text-xs font-black text-slate-800">Ekspor Laporan</h3>
+            <span class="text-[10px] text-slate-400 font-medium">- {{ formatRangeLabel() }}</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Sales Export -->
+            <div class="border border-emerald-100 rounded-xl p-3 bg-emerald-50/30">
+              <div class="flex items-center gap-2 mb-2.5">
+                <div class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <Icon icon="solar:dollar-minimalistic-bold" class="text-emerald-700 text-sm" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-black text-slate-800">Laporan Penjualan</p>
+                  <p class="text-[10px] text-slate-400">Pesanan selesai/diproses</p>
+                </div>
+              </div>
+              <div class="flex gap-1.5">
+                <Button label="Excel" icon="pi pi-file-excel" size="small" severity="success" class="text-[10px] font-bold flex-1" @click="handleExport('sales', 'excel')" :loading="exporting" />
+                <Button label="CSV" icon="pi pi-file" size="small" severity="secondary" class="text-[10px] font-bold flex-1" @click="handleExport('sales', 'csv')" :loading="exporting" />
+                <Button label="PDF" icon="pi pi-file-pdf" size="small" severity="danger" class="text-[10px] font-bold flex-1" @click="handleExport('sales', 'pdf')" :loading="exporting" />
+              </div>
+            </div>
+
+            <!-- Orders Export -->
+            <div class="border border-sky-100 rounded-xl p-3 bg-sky-50/30">
+              <div class="flex items-center gap-2 mb-2.5">
+                <div class="w-7 h-7 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <Icon icon="solar:bill-list-bold" class="text-sky-700 text-sm" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-black text-slate-800">Laporan Pesanan</p>
+                  <p class="text-[10px] text-slate-400">Semua pesanan (semua status)</p>
+                </div>
+              </div>
+              <div class="flex gap-1.5">
+                <Button label="Excel" icon="pi pi-file-excel" size="small" severity="success" class="text-[10px] font-bold flex-1" @click="handleExport('orders', 'excel')" :loading="exporting" />
+                <Button label="CSV" icon="pi pi-file" size="small" severity="secondary" class="text-[10px] font-bold flex-1" @click="handleExport('orders', 'csv')" :loading="exporting" />
+                <Button label="PDF" icon="pi pi-file-pdf" size="small" severity="danger" class="text-[10px] font-bold flex-1" @click="handleExport('orders', 'pdf')" :loading="exporting" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Loading -->
@@ -174,16 +317,16 @@ const completionRate = computed(() => {
             <p class="text-[10px] text-slate-400 font-medium mt-1">Sebelum ongkir</p>
           </div>
 
-          <!-- Total Ongkir -->
+          <!-- Produk Terjual (replaces Total Ongkir) -->
           <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
             <div class="flex items-center gap-2 mb-2">
-              <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                <Icon icon="solar:truck-bold" class="text-blue-600 text-base" />
+              <div class="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                <Icon icon="solar:bag-check-bold" class="text-purple-600 text-base" />
               </div>
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ongkir</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Produk Terjual</span>
             </div>
-            <p class="text-sm font-black text-slate-800">Rp{{ formatPrice(finance.total_ongkir) }}</p>
-            <p class="text-[10px] text-slate-400 font-medium mt-1">Biaya antar COD</p>
+            <p class="text-sm font-black text-slate-800">{{ formatPrice(finance.total_produk_terjual) }} unit</p>
+            <p class="text-[10px] text-slate-400 font-medium mt-1">Dari pesanan selesai</p>
           </div>
 
           <!-- Rata-rata -->
@@ -205,14 +348,22 @@ const completionRate = computed(() => {
             <Icon icon="solar:chart-square-linear" class="text-primary text-base" />
             Status Pesanan
           </h3>
-          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div class="text-center p-3 bg-slate-50 rounded-xl border border-slate-100">
               <p class="text-lg font-black text-slate-800">{{ finance.total_transaksi }}</p>
               <p class="text-[10px] font-bold text-slate-400 mt-0.5">Total</p>
             </div>
+            <div class="text-center p-3 bg-sky-50 rounded-xl border border-sky-100">
+              <p class="text-lg font-black text-sky-700">{{ finance.pesanan_aktif }}</p>
+              <p class="text-[10px] font-bold text-sky-500 mt-0.5">Aktif</p>
+            </div>
+            <div class="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+              <p class="text-lg font-black text-emerald-700">{{ finance.total_selesai }}</p>
+              <p class="text-[10px] font-bold text-emerald-500 mt-0.5">Selesai ({{ completionRate }}%)</p>
+            </div>
             <div class="text-center p-3 bg-amber-50 rounded-xl border border-amber-100">
               <p class="text-lg font-black text-amber-700">{{ finance.total_dibatalkan }}</p>
-              <p class="text-[10px] font-bold text-amber-500 mt-0.5">Dibatalkan</p>
+              <p class="text-[10px] font-bold text-amber-500 mt-0.5">Batal ({{ cancelRate }}%)</p>
             </div>
           </div>
         </div>
