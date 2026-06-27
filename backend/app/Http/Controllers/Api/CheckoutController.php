@@ -198,7 +198,7 @@ class CheckoutController extends Controller
 
             // Trigger notifications to sellers
             foreach ($ordersCreated as $order) {
-                $seller = $order->store->alumniProfile?->user ?? $order->store->alumni_profile?->user;
+                $seller = $order->store->alumniProfile?->user;
                 if ($seller) {
                     $seller->notify(new NewOrderNotification($order));
                 }

@@ -100,7 +100,7 @@ class ReviewController extends Controller
 
         $store = Store::find($storeId);
         if ($store) {
-            $seller = $store->alumniProfile?->user ?? $store->alumni_profile?->user;
+            $seller = $store->alumniProfile?->user;
             if ($seller) {
                 $itemName = $orderItem->name;
                 $slugOrOrderId = $order->id;

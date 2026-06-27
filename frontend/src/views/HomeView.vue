@@ -165,7 +165,7 @@ const getStatusLabel = (status) => {
             <label class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Kata Kunci</label>
             <div class="relative flex items-center w-full">
               <i class="pi pi-search absolute left-3.5 text-slate-400" />
-              <InputText v-model="searchKeyword" placeholder="Cari produk, jasa, atau toko..." class="w-full !pl-10" />
+              <InputText v-model="searchKeyword" placeholder="Cari produk atau toko..." class="w-full !pl-10" />
             </div>
           </div>
 
@@ -254,8 +254,8 @@ const getStatusLabel = (status) => {
             <template #content>
               <div class="flex items-center justify-between">
                 <div>
-                  <span class="block text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Produk & Jasa</span>
-                  <strong class="text-2xl font-black text-slate-800">{{ adminStats.total_produk + adminStats.total_jasa }}</strong>
+                  <span class="block text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Total Produk</span>
+                  <strong class="text-2xl font-black text-slate-800">{{ adminStats.total_produk }}</strong>
                 </div>
                 <div class="p-3 bg-blue-500/10 rounded-xl"><i class="pi pi-box text-blue-500 text-2xl"></i></div>
               </div>
@@ -291,10 +291,10 @@ const getStatusLabel = (status) => {
             <template #content>
               <div class="flex items-center justify-between">
                 <div>
-                  <span class="block text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Layanan Jasa</span>
-                  <strong class="text-2xl font-black text-slate-800">{{ sellerStats.total_jasa }}</strong>
+                  <span class="block text-xs text-slate-500 font-semibold mb-1 uppercase tracking-wider">Rating Toko</span>
+                  <strong class="text-2xl font-black text-slate-800">{{ sellerStats?.rating_toko ? parseFloat(sellerStats.rating_toko).toFixed(1) : '0.0' }}</strong>
                 </div>
-                <div class="p-3 bg-blue-500/10 rounded-xl"><i class="pi pi-wrench text-blue-500 text-2xl"></i></div>
+                <div class="p-3 bg-amber-500/10 rounded-xl"><i class="pi pi-star text-amber-500 text-2xl"></i></div>
               </div>
             </template>
           </Card>

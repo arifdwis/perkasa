@@ -92,7 +92,7 @@ class OrderController extends Controller
             });
 
             // Notify seller of cancellation
-            $seller = $order->store->alumniProfile?->user ?? $order->store->alumni_profile?->user;
+            $seller = $order->store->alumniProfile?->user;
             if ($seller) {
                 $seller->notify(new OrderStatusUpdatedNotification($order, 'menunggu_konfirmasi', 'dibatalkan'));
             }

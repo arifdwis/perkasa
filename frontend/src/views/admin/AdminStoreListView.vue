@@ -103,7 +103,7 @@ const fetchStoreItems = async (storeId) => {
   } finally { loadingItems.value = false }
 }
 
-// Product/Service action confirm
+// Product action confirm
 const itemConfirmVisible = ref(false)
 const itemConfirmAction = ref('')
 const itemConfirmType = ref('')
@@ -192,7 +192,7 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
     <!-- Pagination -->
     <AdminPaginator :total="totalRecords" :rows="15" :first="(currentPage-1)*15" @page="e => fetchStores(e.page)" />
 
-    <!-- Detail Slide-Over with Product/Service Moderation -->
+    <!-- Detail Slide-Over with Product Moderation -->
     <AdminSlideOver :visible="detailVisible" @update:visible="detailVisible = $event"
                     icon="solar:shop-bold-duotone" title="Detail Toko & Moderasi"
                     subtitle="Profil toko dan produk" width="560px">
@@ -248,7 +248,7 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
                     @click="detailVisible = false; openModeration(selectedStore, 'close')" />
           </div>
 
-          <!-- Product/Service tabs -->
+          <!-- Product tabs -->
           <div class="border-t border-slate-100 pt-4">
             <div class="flex gap-1 p-1 bg-slate-50 rounded-xl w-fit mb-4">
               <button class="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all"
@@ -285,8 +285,6 @@ const totalPages = () => Math.ceil(totalRecords.value / 15)
                 </div>
                 <div v-if="!storeProducts.length" class="py-4 text-center text-slate-400 text-xs">Toko belum memiliki produk</div>
               </div>
-
-              <!-- Services tab -->
             </template>
           </div>
         </div>

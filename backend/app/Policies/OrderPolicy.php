@@ -36,7 +36,7 @@ class OrderPolicy
     public function cancel(User $user, Order $order): bool
     {
         // If order is already completed or cancelled, nobody can cancel it
-        if (in_slice($order->status, ['selesai', 'dibatalkan'])) {
+        if (in_array($order->status, ['selesai', 'dibatalkan'], true)) {
             return false;
         }
 
@@ -47,13 +47,5 @@ class OrderPolicy
 
         // If user is the seller, they can cancel before completion
         return $order->store->alumniProfile->user_id === $user->id;
-    }
-}
-
-// Simple helper function if in_slice doesn't exist
-if (! function_exists('in_slice')) {
-    function in_slice($needle, array $haystack): bool
-    {
-        return in_array($needle, $haystack, true);
     }
 }

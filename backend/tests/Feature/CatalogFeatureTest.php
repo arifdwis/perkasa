@@ -4,8 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\Service;
-use App\Models\ServiceCategory;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,8 +19,6 @@ class CatalogFeatureTest extends TestCase
 
     protected $productCategory;
 
-    protected $serviceCategory;
-
     protected $store;
 
     protected $otherStore;
@@ -37,12 +33,6 @@ class CatalogFeatureTest extends TestCase
         $this->productCategory = ProductCategory::create([
             'name' => 'Fashion',
             'slug' => 'fashion',
-            'is_active' => true,
-        ]);
-
-        $this->serviceCategory = ServiceCategory::create([
-            'name' => 'Programmer',
-            'slug' => 'programmer',
             'is_active' => true,
         ]);
 
@@ -110,17 +100,6 @@ class CatalogFeatureTest extends TestCase
             'status' => 'active',
         ]);
 
-        // Create Services
-        Service::create([
-            'store_id' => $this->otherStore->id,
-            'service_category_id' => $this->serviceCategory->id,
-            'name' => 'Pembuatan Website SPA',
-            'slug' => 'pembuatan-website-spa',
-            'description' => 'Jasa bikin website cepat',
-            'price_from' => 3000000,
-            'lokasi_layanan' => 'Online',
-            'status' => 'active',
-        ]);
     }
 
     /**
@@ -141,22 +120,6 @@ class CatalogFeatureTest extends TestCase
         $responseProdiWrong = $this->getJson('/api/catalog?type=product&program_studi=S1 Akuntansi');
         $responseProdiWrong->assertStatus(200);
         $responseProdiWrong->assertJsonCount(0, 'data');
-    }
-
-    /**
-     * Test public catalog services filtering.
-     */
-    public function test_catalog_services_filtering()
-    {
-        // 1. Filter by program_studi (Owner: S1 Akuntansi)
-        $response = $this->getJson('/api/catalog?type=service&program_studi=S1 Akuntansi');
-        $response->assertStatus(200);
-        $response->assertJsonCount(1, 'data');
-
-        // 2. Filter by search
-        $responseSearch = $this->getJson('/api/catalog?type=service&search=Website');
-        $responseSearch->assertStatus(200);
-        $responseSearch->assertJsonCount(1, 'data');
     }
 
     /**

@@ -6,8 +6,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Review;
-use App\Models\Service;
-use App\Models\ServiceCategory;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,8 +24,6 @@ class ReviewFeatureTest extends TestCase
     protected $otherSeller;
 
     protected $product;
-
-    protected $service;
 
     protected $order;
 
@@ -142,25 +138,6 @@ class ReviewFeatureTest extends TestCase
             'description' => 'Baju kaos FEB keren',
             'price' => 50000,
             'stock' => 10,
-            'status' => 'active',
-        ]);
-
-        // Service Category
-        $servCat = ServiceCategory::create([
-            'name' => 'Jasa Desain',
-            'slug' => 'jasa-desain',
-            'is_active' => true,
-        ]);
-
-        // Service
-        $this->service = Service::create([
-            'store_id' => $store->id,
-            'service_category_id' => $servCat->id,
-            'name' => 'Desain Logo',
-            'slug' => 'desain-logo',
-            'description' => 'Desain logo professional',
-            'price_from' => 100000,
-            'lokasi_layanan' => 'Samarinda',
             'status' => 'active',
         ]);
 
@@ -379,64 +356,6 @@ class ReviewFeatureTest extends TestCase
     }
 
     /**
-     * Test verified alumni can review service directly.
-     */
-    public function test_verified_alumni_can_review_service()
-    {
-        $token = $this->buyer->createToken('auth_token')->plainTextToken;
-
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->postJson('/api/reviews', [
-            'reviewable_type' => 'service',
-            'reviewable_id' => $this->service->id,
-            'rating' => 5,
-            'comment' => 'Pelayanan jasa sangat baik!',
-        ]);
-
-        $response->assertStatus(201);
-        $this->assertDatabaseHas('reviews', [
-            'reviewable_type' => Service::class,
-            'reviewable_id' => $this->service->id,
-            'rating' => 5,
-            'comment' => 'Pelayanan jasa sangat baik!',
-        ]);
-    }
-
-    /**
-     * Test verified alumni cannot review service twice.
-     */
-    public function test_verified_alumni_cannot_review_service_twice()
-    {
-        $token = $this->buyer->createToken('auth_token')->plainTextToken;
-
-        // First review
-        $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->postJson('/api/reviews', [
-            'reviewable_type' => 'service',
-            'reviewable_id' => $this->service->id,
-            'rating' => 5,
-            'comment' => 'Pelayanan jasa sangat baik!',
-        ]);
-
-        // Second review
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->postJson('/api/reviews', [
-            'reviewable_type' => 'service',
-            'reviewable_id' => $this->service->id,
-            'rating' => 4,
-            'comment' => 'Ulasan kedua.',
-        ]);
-
-        $response->assertStatus(400);
-        $response->assertJsonFragment([
-            'message' => 'Anda sudah memberikan ulasan untuk jasa ini.',
-        ]);
-    }
-
-    /**
      * Test average rating logic on models.
      */
     public function test_average_rating_and_count_calculation()
@@ -460,30 +379,15 @@ class ReviewFeatureTest extends TestCase
             'comment' => 'Sangat bagus!',
         ]);
 
-        // 2. Service ratings
-        Review::create([
-            'user_id' => $this->buyer->id,
-            'store_id' => $this->service->store_id,
-            'reviewable_type' => Service::class,
-            'reviewable_id' => $this->service->id,
-            'rating' => 3,
-            'comment' => 'Biasa saja.',
-        ]);
-
         $productFresh = $this->product->fresh();
-        $serviceFresh = $this->service->fresh();
         $storeFresh = $this->product->store->fresh();
 
         // Product average: (4+5)/2 = 4.5. Total = 2.
         $this->assertEquals(4.5, $productFresh->average_rating);
         $this->assertEquals(2, $productFresh->reviews_count);
 
-        // Service average: 3. Total = 1.
-        $this->assertEquals(3.0, $serviceFresh->average_rating);
-        $this->assertEquals(1, $serviceFresh->reviews_count);
-
-        // Store average: (4+5+3)/3 = 4.0. Total = 3.
-        $this->assertEquals(4.0, $storeFresh->average_rating);
-        $this->assertEquals(3, $storeFresh->reviews_count);
+        // Store average: (4+5)/2 = 4.5. Total = 2.
+        $this->assertEquals(4.5, $storeFresh->average_rating);
+        $this->assertEquals(2, $storeFresh->reviews_count);
     }
 }

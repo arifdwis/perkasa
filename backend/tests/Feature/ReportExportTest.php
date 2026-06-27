@@ -5,8 +5,6 @@ namespace Tests\Feature;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductCategory;
-use App\Models\Service;
-use App\Models\ServiceCategory;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -87,13 +85,8 @@ class ReportExportTest extends TestCase
             'slug' => 'makanan',
             'is_active' => true,
         ]);
-        $sCategory = ServiceCategory::create([
-            'name' => 'IT',
-            'slug' => 'it',
-            'is_active' => true,
-        ]);
 
-        // Create mock product & service
+        // Create mock product
         Product::create([
             'store_id' => $this->store->id,
             'product_category_id' => $pCategory->id,
@@ -102,17 +95,6 @@ class ReportExportTest extends TestCase
             'description' => 'Nasi goreng lezat khas alumni',
             'price' => 15000,
             'stock' => 10,
-            'status' => 'active',
-        ]);
-
-        Service::create([
-            'store_id' => $this->store->id,
-            'service_category_id' => $sCategory->id,
-            'name' => 'Pembuatan Web',
-            'slug' => 'pembuatan-web',
-            'description' => 'Jasa website profesional alumni',
-            'price_from' => 100000,
-            'lokasi_layanan' => 'Online',
             'status' => 'active',
         ]);
 
@@ -205,19 +187,6 @@ class ReportExportTest extends TestCase
         $response = $this->withHeaders([
             'Authorization' => "Bearer $token",
         ])->get('/api/admin/reports/products/export?format=excel');
-        $response->assertStatus(200);
-    }
-
-    /**
-     * Test admin can export services report.
-     */
-    public function test_admin_can_export_services()
-    {
-        $token = $this->adminUser->createToken('auth_token')->plainTextToken;
-
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->get('/api/admin/reports/services/export?format=excel');
         $response->assertStatus(200);
     }
 

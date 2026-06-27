@@ -53,7 +53,7 @@ class Review extends Model
     }
 
     /**
-     * Get the parent reviewable model (Product or Service).
+     * Get the parent reviewable model (Product).
      */
     public function reviewable(): MorphTo
     {
