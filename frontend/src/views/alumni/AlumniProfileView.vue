@@ -12,6 +12,7 @@ import Dialog from 'primevue/dialog'
 import AppNavbar from '../../components/AppNavbar.vue'
 import LoadingState from '../../components/LoadingState.vue'
 import { Icon } from '@iconify/vue'
+import { usePushNotifications } from '../../composables/usePushNotifications'
 
 const router = useRouter()
 const toast = useToast()
@@ -21,6 +22,26 @@ const user = ref(null)
 const loading = ref(true)
 const saving = ref(false)
 const uploadingPhoto = ref(false)
+
+const { isSubscribed: pushSubscribed, isDenied: pushDenied, lastError: pushError, subscribe, unsubscribe, checkExisting } = usePushNotifications()
+const pushLoading = ref(false)
+
+const subscribePush = async () => {
+  pushLoading.value = true
+  const ok = await subscribe()
+  pushLoading.value = false
+  if (!ok && pushError.value) {
+    toast.add({ severity: 'error', summary: 'Gagal Subscribe', detail: pushError.value, life: 5000 })
+  }
+  if (ok) {
+    toast.add({ severity: 'success', summary: 'Notifikasi Aktif', detail: 'Anda akan menerima notifikasi di desktop.', life: 3000 })
+  }
+}
+const unsubscribePush = async () => {
+  pushLoading.value = true
+  await unsubscribe()
+  pushLoading.value = false
+}
 
 // Edit mode
 const editMode = ref(false)
@@ -346,7 +367,7 @@ const goToStore = () => {
   }
 }
 
-onMounted(() => { fetchProfile() })
+onMounted(() => { fetchProfile(); checkExisting() })
 onUnmounted(() => { destroyMap() })
 </script>
 
@@ -614,6 +635,26 @@ onUnmounted(() => { destroyMap() })
           <div class="flex items-center justify-between text-sm">
             <span class="text-slate-500 font-medium">Bergabung</span>
             <span class="font-bold text-slate-700 text-xs">{{ new Date(user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+          </div>
+          <div class="flex items-center justify-between text-sm pt-3 border-t border-slate-100">
+            <div>
+              <span class="text-slate-500 font-medium">Notifikasi Browser</span>
+              <p class="text-[10px] text-slate-400 mt-0.5">Dapatkan notifikasi real-time meski tab tidak aktif</p>
+            </div>
+            <div v-if="!pushDenied" class="flex items-center gap-2">
+              <span v-if="pushSubscribed" class="text-emerald-600 font-bold text-[10px]">Aktif</span>
+              <span v-else class="text-slate-400 font-bold text-[10px]">Nonaktif</span>
+              <Button
+                :icon="pushSubscribed ? 'pi pi-bell-slash' : 'pi pi-bell'"
+                :severity="pushSubscribed ? 'danger' : 'primary'"
+                size="small"
+                outlined
+                class="!py-1 !px-2.5 text-[10px] font-bold !rounded-lg"
+                :loading="pushLoading"
+                @click="pushSubscribed ? unsubscribePush() : subscribePush()"
+              />
+            </div>
+            <span v-else class="text-red-400 font-bold text-[10px]">Ditolak browser</span>
           </div>
         </div>
       </div>

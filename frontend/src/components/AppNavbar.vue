@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
 import { useNotificationStore } from '../stores/notification'
+import { useChatStore } from '../stores/chat'
 import Button from 'primevue/button'
 import Popover from 'primevue/popover'
 import Drawer from 'primevue/drawer'
@@ -18,6 +19,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 const cartStore = useCartStore()
 const notificationStore = useNotificationStore()
+const chatStore = useChatStore()
 
 const op = ref()
 const visibleDrawer = ref(false)
@@ -142,13 +144,14 @@ const timeAgo = (dateString) => {
 onMounted(() => {
   if (localStorage.getItem('token')) {
     notificationStore.fetchUnreadCount('buyer')
-    // Poll unread count every 30 seconds
+    chatStore.fetchUnreadCount()
     const pollInterval = setInterval(() => {
       if (!localStorage.getItem('token')) {
         clearInterval(pollInterval)
         return
       }
       notificationStore.fetchUnreadCount('buyer')
+      chatStore.fetchUnreadCount()
     }, 30000)
   }
 })
@@ -211,6 +214,17 @@ onMounted(() => {
             outlined 
             class="!text-white !border-white/20 hover:!bg-white/10 text-xs py-1.5 px-3"
             @click="router.push({ name: 'Cart' })"
+          />
+
+          <Button 
+            v-if="route.name !== 'BuyerChatList'"
+            icon="pi pi-comments"
+            :label="chatStore.unreadCount > 0 ? `Chat (${chatStore.unreadCount})` : 'Chat'"
+            severity="secondary" 
+            size="small" 
+            outlined 
+            class="!text-white !border-white/20 hover:!bg-white/10 text-xs py-1.5 px-3"
+            @click="router.push({ name: 'BuyerChatList' })"
           />
 
           <!-- Notification Bell Button -->
@@ -515,6 +529,17 @@ onMounted(() => {
                     <Icon icon="solar:cart-large-minimalistic-linear" />
                   </div>
                   <span class="menu-label text-slate-700">Keranjang Belanja</span>
+                </div>
+                <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
+              </div>
+
+              <div class="menu-item" @click="router.push({ name: 'BuyerChatList' }); visibleDrawer = false;">
+                <div class="flex items-center gap-3">
+                  <div class="menu-icon-wrapper text-emerald-600 bg-emerald-50">
+                    <Icon icon="solar:chat-round-linear" />
+                  </div>
+                  <span class="menu-label text-slate-700">Pesan Chat</span>
+                  <span v-if="chatStore.unreadCount > 0" class="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ chatStore.unreadCount }}</span>
                 </div>
                 <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
               </div>

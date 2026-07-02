@@ -24,10 +24,16 @@ const resolveActionRoute = (url) => {
   if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'orders') {
     return { path: `/seller/orders/${parts[2]}` }
   }
+  if (parts.length >= 3 && parts[0] === 'seller' && parts[1] === 'chat') {
+    return { path: `/seller/chat/${parts[2]}` }
+  }
   if (url === '/seller/store') return { path: '/seller/store' }
   if (url === '/seller/home') return { path: '/seller/home' }
   if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'orders') {
     return { path: `/buyer/orders/${parts[2]}` }
+  }
+  if (parts.length >= 3 && parts[0] === 'buyer' && parts[1] === 'chat') {
+    return { path: `/buyer/chat/${parts[2]}` }
   }
   if (url === '/buyer/home') return { path: '/buyer/home' }
   return { path: url }
@@ -154,7 +160,8 @@ onMounted(() => {
                 'bg-emerald-50 text-emerald-500': notif.data?.type === 'alumni_verification' && notif.data?.status === 'verified',
                 'bg-red-50 text-red-500': notif.data?.type === 'alumni_verification' && notif.data?.status !== 'verified',
                 'bg-amber-50 text-amber-500': notif.data?.type === 'new_review',
-                'bg-slate-100 text-slate-500': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review'].includes(notif.data?.type)
+                'bg-green-50 text-green-500': notif.data?.type === 'new_message',
+                'bg-slate-100 text-slate-500': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review', 'new_message'].includes(notif.data?.type)
               }"
             >
               <i :class="{
@@ -163,7 +170,8 @@ onMounted(() => {
                 'pi pi-verified': notif.data?.type === 'alumni_verification' && notif.data?.status === 'verified',
                 'pi pi-ban': notif.data?.type === 'alumni_verification' && notif.data?.status !== 'verified',
                 'pi pi-star': notif.data?.type === 'new_review',
-                'pi pi-bell': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review'].includes(notif.data?.type)
+                'pi pi-comments': notif.data?.type === 'new_message',
+                'pi pi-bell': !['new_order', 'order_status_updated', 'alumni_verification', 'new_review', 'new_message'].includes(notif.data?.type)
               }"></i>
             </div>
 

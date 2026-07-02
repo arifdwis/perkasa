@@ -9,6 +9,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Checkbox from 'primevue/checkbox'
+import DatePicker from 'primevue/datepicker'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import { Icon } from '@iconify/vue'
@@ -35,6 +36,11 @@ const form = ref({
   stock: 0,
   status: 'active',
   is_featured: false,
+  product_type: 'regular',
+  pre_order_deadline: null,
+  pre_order_estimated_ship: null,
+  pre_order_min_qty: 1,
+  pre_order_max_qty: 10,
 })
 
 const primaryImage = ref(null)
@@ -58,7 +64,7 @@ const fetchCategories = async () => {
 }
 
 const resetForm = () => {
-  form.value = { name: '', product_category_id: '', description: '', price: 0, stock: 0, status: 'active', is_featured: false }
+  form.value = { name: '', product_category_id: '', description: '', price: 0, stock: 0, status: 'active', is_featured: false, product_type: 'regular', pre_order_deadline: null, pre_order_estimated_ship: null, pre_order_min_qty: 1, pre_order_max_qty: 10 }
   primaryImage.value = null
   galleryImages.value = []
   localPrimaryFile.value = null
@@ -80,6 +86,11 @@ const fetchProduct = async () => {
       stock: parseInt(p.stock),
       status: p.status === 'out_of_stock' ? 'active' : p.status,
       is_featured: p.is_featured,
+      product_type: p.product_type || 'regular',
+      pre_order_deadline: p.pre_order_deadline || null,
+      pre_order_estimated_ship: p.pre_order_estimated_ship || null,
+      pre_order_min_qty: p.pre_order_min_qty || 1,
+      pre_order_max_qty: p.pre_order_max_qty || 10,
     }
     primaryImage.value = p.images?.find(img => img.is_primary) || null
     galleryImages.value = p.images?.filter(img => !img.is_primary) || []
@@ -220,11 +231,25 @@ const handleSave = async () => {
 
   saving.value = true
   try {
+    const payload = { ...form.value }
+    if (payload.pre_order_deadline instanceof Date) {
+      payload.pre_order_deadline = payload.pre_order_deadline.toISOString()
+    }
+    if (payload.pre_order_estimated_ship instanceof Date) {
+      payload.pre_order_estimated_ship = payload.pre_order_estimated_ship.toISOString().split('T')[0]
+    }
+    if (payload.product_type !== 'pre_order') {
+      delete payload.pre_order_deadline
+      delete payload.pre_order_estimated_ship
+      delete payload.pre_order_min_qty
+      delete payload.pre_order_max_qty
+    }
+
     if (isEdit.value) {
-      await axios.put(`/seller/products/${props.productId}`, form.value)
+      await axios.put(`/seller/products/${props.productId}`, payload)
       toast.add({ severity: 'success', summary: 'Sukses', detail: 'Produk diperbarui.', life: 3000 })
     } else {
-      const res = await axios.post('/seller/products', form.value)
+      const res = await axios.post('/seller/products', payload)
       const newId = res.data.product.id
       if (localPrimaryFile.value) {
         const fd = new FormData()
@@ -302,6 +327,37 @@ const handleSave = async () => {
             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Deskripsi</label>
             <Textarea v-model="form.description" rows="3" placeholder="Detail produk..." class="w-full text-sm" />
           </div>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tipe Produk</label>
+            <Select v-model="form.product_type" :options="[{ label: 'Regular (Stok Fisik)', value: 'regular' }, { label: 'Pre-Order (Sistem PO)', value: 'pre_order' }]" optionLabel="label" optionValue="value" class="w-full text-sm" />
+          </div>
+
+          <div v-if="form.product_type === 'pre_order'" class="sm:col-span-2 space-y-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
+            <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="pi pi-clock"></i> Konfigurasi Pre-Order
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Batas Waktu PO *</label>
+                <DatePicker v-model="form.pre_order_deadline" showTime hourFormat="24" placeholder="Pilih deadline" class="w-full text-sm" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Estimasi Kirim *</label>
+                <DatePicker v-model="form.pre_order_estimated_ship" placeholder="Estimasi pengiriman" class="w-full text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Min Qty/Buyer</label>
+                <InputNumber v-model="form.pre_order_min_qty" :min="1" class="w-full text-sm" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Max Qty/Buyer</label>
+                <InputNumber v-model="form.pre_order_max_qty" :min="1" class="w-full text-sm" />
+              </div>
+            </div>
+          </div>
+
           <div class="sm:col-span-2 flex items-center gap-2">
             <Checkbox id="isFeatured" v-model="form.is_featured" :binary="true" />
             <label for="isFeatured" class="text-xs font-semibold text-slate-700 cursor-pointer flex items-center gap-1.5">
@@ -324,12 +380,10 @@ const handleSave = async () => {
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase">Foto Utama *</span>
             
-            <input type="file" ref="primaryFileRef" accept="image/*" class="hidden" @change="onPrimaryFileChange($event)" />
-
             <div v-if="isEdit && primaryImage" class="relative group w-32 aspect-square rounded-xl border border-slate-200 overflow-hidden bg-slate-100">
               <img :src="primaryImage.image_path" class="w-full h-full object-cover" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
-                <Button label="Ubah" icon="pi pi-camera" size="small" class="!py-1 !px-2 text-[10px]" @click="primaryFileRef?.click()" />
+                <Button label="Ubah" icon="pi pi-camera" size="small" class="!py-1 !px-2 text-[10px]" @click="triggerPrimaryFile" />
               </div>
             </div>
 
@@ -340,7 +394,7 @@ const handleSave = async () => {
               </button>
             </div>
 
-            <div v-else class="border-2 border-dashed border-slate-200 rounded-xl w-32 aspect-square flex flex-col items-center justify-center bg-slate-50 text-center p-2 cursor-pointer hover:border-primary/40 transition-colors" @click="primaryFileRef?.click()">
+            <div v-else class="border-2 border-dashed border-slate-200 rounded-xl w-32 aspect-square flex flex-col items-center justify-center bg-slate-50 text-center p-2 cursor-pointer hover:border-primary/40 transition-colors" @click="triggerPrimaryFile">
               <i class="pi pi-image text-xl text-slate-300 mb-1"></i>
               <span class="text-[10px] font-bold text-slate-500">Pilih Foto</span>
             </div>
@@ -350,8 +404,7 @@ const handleSave = async () => {
           <div class="space-y-2">
             <div class="flex items-center justify-between">
               <span class="text-[10px] font-bold text-slate-500 uppercase">Galeri (Maks 5)</span>
-              <input type="file" ref="galleryFileRef" accept="image/*" multiple class="hidden" @change="onGalleryFileChange($event)" />
-              <Button label="Tambah" icon="pi pi-plus" size="small" outlined class="!py-1 !px-2 text-[10px]" :disabled="isEdit ? galleryImages.length >= 5 : localGalleryFiles.length >= 5" @click="galleryFileRef?.click()" />
+              <Button label="Tambah" icon="pi pi-plus" size="small" outlined class="!py-1 !px-2 text-[10px]" :disabled="isEdit ? galleryImages.length >= 5 : localGalleryFiles.length >= 5" @click="triggerGalleryFile" />
             </div>
 
             <div v-if="isEdit && galleryImages.length" class="flex gap-2 flex-wrap">

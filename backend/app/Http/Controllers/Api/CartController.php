@@ -102,8 +102,10 @@ class CartController extends Controller
             return response()->json(['message' => 'Anda tidak dapat membeli produk dari toko Anda sendiri.'], 400);
         }
 
-        // Check stock availability
-        if ($product->stock <= 0 || $product->status === 'out_of_stock') {
+        $isPreOrder = $product->product_type === 'pre_order';
+
+        // Check stock availability (regular only)
+        if (! $isPreOrder && ($product->stock <= 0 || $product->status === 'out_of_stock')) {
             return response()->json(['message' => 'Produk out of stock tidak dapat masuk keranjang.'], 400);
         }
 
@@ -117,10 +119,17 @@ class CartController extends Controller
         $currentQuantity = $cartItem ? $cartItem->quantity : 0;
         $newQuantity = $currentQuantity + $request->quantity;
 
-        // Ensure total quantity does not exceed available stock
-        if ($newQuantity > $product->stock) {
+        // Ensure total quantity does not exceed available stock (regular only)
+        if (! $isPreOrder && $newQuantity > $product->stock) {
             return response()->json([
                 'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit.",
+            ], 400);
+        }
+
+        // Pre-order: check max quantity per buyer
+        if ($isPreOrder && $product->pre_order_max_qty && $newQuantity > $product->pre_order_max_qty) {
+            return response()->json([
+                'message' => "Maksimal pemesanan pre-order adalah {$product->pre_order_max_qty} unit per pembeli.",
             ], 400);
         }
 

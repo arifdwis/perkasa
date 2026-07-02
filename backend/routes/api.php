@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SellerOrderController;
+use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\StoreController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +40,18 @@ Route::get('/reviews', [ReviewController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+
+    // Push Notifications
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe']);
+
+    // Chat
+    Route::get('/chat/conversations', [ChatController::class, 'index']);
+    Route::get('/chat/unread-count', [ChatController::class, 'unreadCount']);
+    Route::get('/chat/conversations/{id}', [ChatController::class, 'show']);
+    Route::post('/chat/conversations', [ChatController::class, 'store']);
+    Route::post('/chat/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+    Route::post('/chat/conversations/{id}/read', [ChatController::class, 'markRead']);
 
     // Alumni Profile (any authenticated user with profile)
     Route::get('/me/profile', [AlumniProfileController::class, 'show']);

@@ -22,12 +22,21 @@ class Product extends Model
         'stock',
         'status',
         'is_featured',
+        'product_type',
+        'pre_order_deadline',
+        'pre_order_estimated_ship',
+        'pre_order_min_qty',
+        'pre_order_max_qty',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
         'stock' => 'integer',
         'is_featured' => 'boolean',
+        'pre_order_deadline' => 'datetime',
+        'pre_order_estimated_ship' => 'date',
+        'pre_order_min_qty' => 'integer',
+        'pre_order_max_qty' => 'integer',
     ];
 
     protected $appends = [

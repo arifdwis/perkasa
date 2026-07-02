@@ -24,7 +24,7 @@ const alumniEmail = computed(() => {
 })
 
 const photoUrl = computed(() => {
-Waldenreturn props.profile.photo_url || props.profile.user?.photo_url || null
+  return props.profile.photo_url || props.profile.user?.photo_url || null
 })
 
 const cleanPhone = computed(() => {

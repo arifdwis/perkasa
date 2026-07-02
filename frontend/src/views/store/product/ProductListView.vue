@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
+import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { Icon } from '@iconify/vue'
@@ -180,7 +181,10 @@ onMounted(() => fetchProducts())
               </div>
             </div>
             <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2.5 shrink-0 ml-2">
-              <StatusTag :status="p.status" />
+              <div class="flex items-center gap-1">
+                <Tag v-if="p.product_type === 'pre_order'" value="PRE-ORDER" severity="warn" class="text-[9px] font-black !py-0 !px-1.5" />
+                <StatusTag :status="p.status" />
+              </div>
               <div class="flex gap-1">
                 <Button icon="pi pi-pencil" size="small" severity="secondary" outlined class="!p-1.5 !w-7 !h-7" @click="openEdit(p.id)" />
                 <Button icon="pi pi-trash" size="small" severity="danger" outlined class="!p-1.5 !w-7 !h-7" @click="deleteProduct(p)" />

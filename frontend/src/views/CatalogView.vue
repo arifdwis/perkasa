@@ -650,6 +650,10 @@ watch(selectedSort, () => {
                           class="absolute top-2.5 left-2.5 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
                       PROMO
                     </span>
+                    <span v-if="item.product_type === 'pre_order'"
+                          class="absolute bottom-2.5 left-2.5 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                      <i class="pi pi-clock text-[9px]"></i> PRE-ORDER
+                    </span>
                   </div>
 
                   <div

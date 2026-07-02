@@ -316,7 +316,10 @@ onMounted(() => {
                         <div class="space-y-1.5">
                           <div class="flex justify-between items-center">
                             <span class="text-xs font-bold text-primary bg-primary-soft px-1.5 py-0.5 rounded">{{ item.category?.name }}</span>
-                            <Tag v-if="item.is_featured" value="PROMO" severity="warn" class="text-xs font-black" />
+                            <div class="flex items-center gap-1">
+                              <Tag v-if="item.product_type === 'pre_order'" value="PO" severity="warn" class="text-[9px] font-black !py-0 !px-1.5" />
+                              <Tag v-if="item.is_featured" value="PROMO" severity="warn" class="text-xs font-black" />
+                            </div>
                           </div>
                           
                           <h4 class="text-xs font-bold text-slate-850 line-clamp-2 leading-snug group-hover:text-primary transition-colors">{{ item.name }}</h4>

@@ -62,6 +62,11 @@ const handleAddToCart = (event) => {
         {{ product.category?.name || 'Produk' }}
       </span>
 
+      <!-- Pre-Order Badge -->
+      <span v-if="product.product_type === 'pre_order'" class="absolute bottom-3 left-3 text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white py-1 px-2.5 rounded-lg shadow-sm flex items-center gap-1">
+        <i class="pi pi-clock text-[10px]"></i> Pre-Order
+      </span>
+
       <!-- Favorite Button -->
       <button
         @click="handleFavoriteClick"
@@ -75,16 +80,6 @@ const handleAddToCart = (event) => {
       <div v-if="product.stock === 0 || product.status === 'out_of_stock'" class="absolute inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center">
         <span class="text-white text-xs font-black uppercase tracking-widest bg-red-600 px-3 py-1 rounded-full shadow-md">Stok Habis</span>
       </div>
-
-      <!-- Add to Cart Button -->
-      <button
-        v-if="product.stock > 0 && product.status !== 'out_of_stock'"
-        @click="handleAddToCart"
-        class="absolute bottom-3 right-3 w-9 h-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary-dark hover:scale-110 active:scale-95 transition-all z-10"
-        title="Tambah ke Keranjang"
-      >
-        <i class="pi pi-plus text-sm"></i>
-      </button>
     </div>
 
     <!-- Product Text Area -->
@@ -102,6 +97,9 @@ const handleAddToCart = (event) => {
         <h4 class="text-slate-800 font-extrabold text-sm line-clamp-2 leading-snug group-hover:text-primary transition-colors">
           {{ product.name }}
         </h4>
+        <span class="text-[10px] text-slate-400 font-semibold" v-if="product.stock > 0">
+          Stok: {{ product.stock }} pcs
+        </span>
       </div>
 
       <div class="space-y-2 pt-2 border-t border-slate-50">
@@ -112,14 +110,19 @@ const handleAddToCart = (event) => {
         </div>
         <div v-else class="text-xs text-slate-400 italic">Belum ada ulasan</div>
 
-        <!-- Pricing & Stock -->
+        <!-- Pricing -->
         <div class="flex items-center justify-between gap-2 pt-0.5">
           <strong class="text-primary font-black text-base">
             Rp {{ formattedPrice }}
           </strong>
-          <span class="text-xs text-slate-400 font-semibold" v-if="product.stock > 0">
-            Stok: {{ product.stock }} pcs
-          </span>
+          <button
+            v-if="product.stock > 0 && product.status !== 'out_of_stock'"
+            @click="handleAddToCart"
+            class="w-8 h-8 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0 ml-auto"
+            title="Tambah ke Keranjang"
+          >
+            <i class="pi pi-plus text-xs font-bold"></i>
+          </button>
         </div>
       </div>
     </div>

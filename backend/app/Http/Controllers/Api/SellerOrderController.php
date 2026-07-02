@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Services\WebPushService;
 use App\Exports\OrderExport;
 use App\Exports\SalesExport;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -387,6 +388,14 @@ class SellerOrderController extends Controller
             $buyer = $order->user;
             if ($buyer) {
                 $buyer->notify(new OrderStatusUpdatedNotification($order, $currentStatus, $newStatus));
+                $statusLabels = ['diproses' => 'Diproses', 'dalam_pengantaran' => 'Dalam Pengantaran', 'selesai' => 'Selesai', 'dibatalkan' => 'Dibatalkan'];
+                app(WebPushService::class)->sendToUser(
+                    $buyer->id,
+                    'Status Pesanan #' . $order->order_number,
+                    'Status berubah: ' . ($statusLabels[$newStatus] ?? $newStatus),
+                    '/logo_unmul.png',
+                    '/buyer/orders/' . $order->id
+                );
             }
 
             return response()->json([

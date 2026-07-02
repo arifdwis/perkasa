@@ -9,15 +9,21 @@ import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Rating from 'primevue/rating'
 import { useCartStore } from '../../stores/cart'
+import { useChatStore } from '../../stores/chat'
+import { useAuthStore } from '../../stores/auth'
 
 import AppNavbar from '../../components/AppNavbar.vue'
 import LoadingState from '../../components/LoadingState.vue'
 import EmptyState from '../../components/EmptyState.vue'
+import ProductCard from '../../components/ProductCard.vue'
+import SectionHeader from '../../components/buyer/SectionHeader.vue'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const cartStore = useCartStore()
+const chatStore = useChatStore()
+const authStore = useAuthStore()
 
 const quantity = ref(1)
 
@@ -30,6 +36,10 @@ const reviewsLoading = ref(false)
 const reviewsPage = ref(1)
 const reviewsTotal = ref(0)
 const reviewsLastPage = ref(1)
+
+const sameStoreProducts = ref([])
+const recommendedProducts = ref([])
+const recommendationsLoading = ref(false)
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
@@ -65,6 +75,7 @@ const fetchProductDetail = async () => {
     const response = await axios.get(`/products/${slug}`)
     product.value = response.data.product
     await fetchReviews()
+    await fetchRecommendations()
     await checkAuthAndFavorites()
   } catch (err) {
     console.error(err)
@@ -200,6 +211,28 @@ const store = computed(() => product.value?.store || null)
 const alumni = computed(() => store.value?.alumni_profile || null)
 const user = computed(() => alumni.value?.user || null)
 
+const isOwnProduct = computed(() => {
+  if (!authStore.user?.id || !store.value?.alumni_profile?.user_id) return false
+  return authStore.user.id === store.value.alumni_profile.user_id
+})
+
+const fetchRecommendations = async () => {
+  if (!product.value?.store_id || !product.value?.id) return
+  recommendationsLoading.value = true
+  try {
+    const [sameRes, recRes] = await Promise.all([
+      axios.get('/products', { params: { store_id: product.value.store_id, exclude: product.value.id, per_page: 4 } }),
+      axios.get('/products', { params: { exclude_store: product.value.store_id, product_category_id: product.value.product_category_id, per_page: 4 } })
+    ])
+    sameStoreProducts.value = sameRes.data.data || []
+    recommendedProducts.value = recRes.data.data || []
+  } catch (err) {
+    console.error('Failed to fetch recommendations', err)
+  } finally {
+    recommendationsLoading.value = false
+  }
+}
+
 // Images listing (primary goes first)
 const allImages = computed(() => {
   if (!product.value?.images) return []
@@ -246,6 +279,29 @@ const whatsappUrl = computed(() => {
   const text = `Halo Kak, saya alumni FEB Unmul. Tertarik dengan produk "${product.value.name}" yang dijual di toko "${store.value.name}". Apakah produk ini masih tersedia?`
   return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
 })
+
+const startingChat = ref(false)
+const startChat = async () => {
+  if (!isLoggedIn.value) {
+    toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
+    return
+  }
+  if (!isVerified.value) {
+    toast.add({ severity: 'warn', summary: 'Belum Terverifikasi', detail: 'Hanya akun alumni terverifikasi yang dapat menggunakan fitur chat.', life: 3500 })
+    return
+  }
+  if (!store.value?.id) return
+
+  startingChat.value = true
+  try {
+    const result = await chatStore.startConversation(store.value.id, product.value.id)
+    router.push({ name: 'ChatDetail', params: { id: result.conversation_id } })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal memulai percakapan.', life: 3000 })
+  } finally {
+    startingChat.value = false
+  }
+}
 </script>
 
 <template>
@@ -307,9 +363,19 @@ const whatsappUrl = computed(() => {
               <img :src="img.image_path" alt="Product Thumbnail" class="w-full h-full object-cover" />
             </div>
           </div>
+
+          <!-- Product Description (below images) -->
+          <Card class="shadow-sm border border-slate-100 rounded-3xl overflow-hidden">
+            <template #title>
+              <span class="text-sm font-bold text-slate-800">Deskripsi Produk</span>
+            </template>
+            <template #content>
+              <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
+            </template>
+          </Card>
         </div>
 
-        <!-- Right: Specs, Description, Reviews, Seller Card (Takes 7 columns) -->
+        <!-- Right: Specs, Reviews, Seller Card (Takes 7 columns) -->
         <div class="lg:col-span-7 space-y-6">
           
           <!-- Product Name & Price Card -->
@@ -325,7 +391,25 @@ const whatsappUrl = computed(() => {
                   
                   <div class="flex items-center gap-1.5">
                     <Tag v-if="product.is_featured" value="UNGGULAN" severity="warn" class="font-black text-xs px-2 py-0.5" />
+                    <Tag v-if="product.product_type === 'pre_order'" value="PRE-ORDER" severity="warn" class="font-black text-xs px-2 py-0.5" />
                     <Tag :value="getStatusLabel(product.status)" :severity="getStatusSeverity(product.status)" class="text-xs px-2 py-0.5" />
+                  </div>
+                </div>
+
+                <div v-if="product.product_type === 'pre_order'" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2">
+                  <div class="flex items-center gap-1.5 text-amber-700">
+                    <i class="pi pi-clock text-sm"></i>
+                    <span class="text-[10px] font-black uppercase tracking-wider">Sistem Pre-Order</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2 text-[10px]">
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-slate-400 font-bold">Batas Waktu PO</span>
+                      <span class="text-slate-700 font-extrabold">{{ product.pre_order_deadline ? new Date(product.pre_order_deadline).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' }}</span>
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                      <span class="text-slate-400 font-bold">Estimasi Pengiriman</span>
+                      <span class="text-slate-700 font-extrabold">{{ product.pre_order_estimated_ship ? new Date(product.pre_order_estimated_ship).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-' }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -367,8 +451,8 @@ const whatsappUrl = computed(() => {
                   </div>
                 </div>
 
-                <!-- Desktop Action Panel: Quantity Selector & Add to Cart -->
-                <div class="hidden lg:flex flex-col gap-3 pt-2" v-if="product.status === 'active' && product.stock > 0">
+                <!-- Desktop Action Panel: Quantity Selector & Add to Cart (hidden for store owner) -->
+                <div class="hidden lg:flex flex-col gap-3 pt-2" v-if="product.status === 'active' && product.stock > 0 && !isOwnProduct">
                   <template v-if="getCartItem(product.id)">
                     <div class="flex gap-3 w-full">
                       <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 shadow-xs shrink-0 select-none flex-grow justify-between">
@@ -453,8 +537,8 @@ const whatsappUrl = computed(() => {
                   </template>
                 </div>
 
-                <!-- Desktop CTA: WhatsApp Inquiry & Favorite -->
-                <div class="hidden lg:flex pt-1 gap-3">
+                <!-- Desktop CTA: WhatsApp Inquiry & Chat & Favorite (hidden for store owner) -->
+                <div class="hidden lg:flex pt-1 gap-3" v-if="!isOwnProduct">
                   <a :href="whatsappUrl" target="_blank" class="no-underline flex-grow">
                     <Button 
                       label="Tanya via WhatsApp" 
@@ -463,6 +547,15 @@ const whatsappUrl = computed(() => {
                       :disabled="product.status === 'inactive' || product.stock === 0"
                     />
                   </a>
+                  <Button 
+                    label="Chat Penjual" 
+                    icon="pi pi-comments" 
+                    outlined
+                    severity="primary"
+                    :loading="startingChat"
+                    class="text-sm font-black h-12 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-1.5 flex-grow-shrink"
+                    @click="startChat"
+                  />
                   <Button 
                     :icon="isFavorited ? 'pi pi-star-fill' : 'pi pi-star'" 
                     :severity="isFavorited ? 'warn' : 'secondary'"
@@ -473,8 +566,8 @@ const whatsappUrl = computed(() => {
                   />
                 </div>
 
-                <!-- Mobile CTA Buttons (Only shown if NOT showing the sticky bottom footer) -->
-                <div class="lg:hidden flex flex-col gap-2.5 pt-2" v-if="!(product.status === 'active' && product.stock > 0)">
+                <!-- Mobile CTA Buttons (hidden for store owner) -->
+                <div class="lg:hidden flex flex-col gap-2.5 pt-2" v-if="!(product.status === 'active' && product.stock > 0) && !isOwnProduct">
                   <div v-if="product.status === 'active' && product.stock > 0" class="flex flex-col gap-2.5">
                     <template v-if="getCartItem(product.id)">
                       <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 shadow-xs w-full justify-between">
@@ -533,16 +626,6 @@ const whatsappUrl = computed(() => {
                 </div>
 
               </div>
-            </template>
-          </Card>
-
-          <!-- Product Description -->
-          <Card class="shadow-sm border border-slate-100 rounded-3xl overflow-hidden">
-            <template #title>
-              <span class="text-sm font-bold text-slate-800">Deskripsi Produk</span>
-            </template>
-            <template #content>
-              <p class="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{{ product.description }}</p>
             </template>
           </Card>
 
@@ -681,6 +764,32 @@ const whatsappUrl = computed(() => {
             </template>
           </Card>
 
+          <!-- Recommendations: Same Store -->
+          <section v-if="sameStoreProducts.length > 0" class="space-y-4">
+            <SectionHeader icon="solar:shop-bold-duotone" title="Produk Lain dari Toko Ini" />
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <ProductCard
+                v-for="p in sameStoreProducts"
+                :key="p.id"
+                :product="p"
+                :isFavorite="false"
+              />
+            </div>
+          </section>
+
+          <!-- Recommendations: Other Stores -->
+          <section v-if="recommendedProducts.length > 0" class="space-y-4">
+            <SectionHeader icon="solar:stars-bold-duotone" title="Rekomendasi Produk" />
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <ProductCard
+                v-for="p in recommendedProducts"
+                :key="p.id"
+                :product="p"
+                :isFavorite="false"
+              />
+            </div>
+          </section>
+
         </div>
 
       </div>
@@ -699,7 +808,7 @@ const whatsappUrl = computed(() => {
 
     <!-- Mobile Sticky Footer Action Bar -->
     <div 
-      v-if="product && product.status === 'active' && product.stock > 0" 
+      v-if="product && product.status === 'active' && product.stock > 0 && !isOwnProduct" 
       class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-lg flex items-center justify-between gap-4 select-none pb-[calc(16px+env(safe-area-inset-bottom,0px))]"
     >
       <div class="min-w-0">
@@ -720,6 +829,16 @@ const whatsappUrl = computed(() => {
             class="bg-[#25D366] hover:bg-[#20ba56] border-none text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-xs" 
           />
         </a>
+
+        <!-- Chat -->
+        <Button 
+          icon="pi pi-comments" 
+          severity="primary"
+          outlined
+          :loading="startingChat"
+          class="w-10 h-10 rounded-xl flex items-center justify-center shadow-xs shrink-0"
+          @click="startChat"
+        />
 
         <!-- Cart Status / Editor -->
         <template v-if="getCartItem(product.id)">

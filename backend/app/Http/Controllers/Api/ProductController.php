@@ -37,6 +37,19 @@ class ProductController extends Controller
             $query->where('store_id', $request->store_id);
         }
 
+        // Exclude specific product
+        if ($request->has('exclude') && $request->exclude) {
+            $query->where('id', '!=', $request->exclude);
+        }
+
+        // Exclude products from specific store
+        if ($request->has('exclude_store') && $request->exclude_store) {
+            $query->where('store_id', '!=', $request->exclude_store);
+        }
+
+        // Per page
+        $perPage = min((int) $request->get('per_page', 12), 50);
+
         // Search by keyword
         if ($request->has('search') && $request->search) {
             $keyword = $request->search;
@@ -66,7 +79,7 @@ class ProductController extends Controller
                 break;
         }
 
-        $products = $query->paginate(15);
+        $products = $query->paginate($perPage);
 
         return response()->json($products);
     }
@@ -159,8 +172,9 @@ class ProductController extends Controller
         $data = $request->validated();
         $data['store_id'] = $store->id;
 
-        // Auto force status out_of_stock if stock is 0
-        if ($data['stock'] == 0) {
+        // Auto force status out_of_stock if stock is 0 (regular only)
+        $isPreOrder = ($data['product_type'] ?? 'regular') === 'pre_order';
+        if ($data['stock'] == 0 && ! $isPreOrder) {
             $data['status'] = 'out_of_stock';
         }
 
@@ -209,8 +223,9 @@ class ProductController extends Controller
 
         $data = $request->validated();
 
-        // Auto force status out_of_stock if stock is 0
-        if ($data['stock'] == 0) {
+        // Auto force status out_of_stock if stock is 0 (regular only)
+        $isPreOrder = ($data['product_type'] ?? $product->product_type) === 'pre_order';
+        if ($data['stock'] == 0 && ! $isPreOrder) {
             $data['status'] = 'out_of_stock';
         }
 

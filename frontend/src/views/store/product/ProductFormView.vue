@@ -11,6 +11,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Select from 'primevue/select'
 import Checkbox from 'primevue/checkbox'
+import DatePicker from 'primevue/datepicker'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 
@@ -32,8 +33,18 @@ const form = ref({
   price: 0,
   stock: 0,
   status: 'active',
-  is_featured: false
+  is_featured: false,
+  product_type: 'regular',
+  pre_order_deadline: null,
+  pre_order_estimated_ship: null,
+  pre_order_min_qty: 1,
+  pre_order_max_qty: 10
 })
+
+const productTypeOptions = ref([
+  { label: 'Regular (Stok Fisik)', value: 'regular' },
+  { label: 'Pre-Order (Sistem PO)', value: 'pre_order' }
+])
 
 const primaryImage = ref(null)
 const galleryImages = ref([])
@@ -68,7 +79,12 @@ const fetchProduct = async () => {
       price: parseFloat(p.price),
       stock: parseInt(p.stock),
       status: p.status === 'out_of_stock' ? 'active' : p.status,
-      is_featured: p.is_featured
+      is_featured: p.is_featured,
+      product_type: p.product_type || 'regular',
+      pre_order_deadline: p.pre_order_deadline || null,
+      pre_order_estimated_ship: p.pre_order_estimated_ship || null,
+      pre_order_min_qty: p.pre_order_min_qty || 1,
+      pre_order_max_qty: p.pre_order_max_qty || 10,
     }
     primaryImage.value = p.images?.find(img => img.is_primary) || null
     galleryImages.value = p.images?.filter(img => !img.is_primary) || []
@@ -198,6 +214,12 @@ const handleSave = async () => {
     toast.add({ severity: 'warn', summary: 'Input Wajib', detail: 'Semua kolom bertanda * wajib diisi.', life: 3000 })
     return
   }
+  if (form.value.product_type === 'pre_order') {
+    if (!form.value.pre_order_deadline || !form.value.pre_order_estimated_ship) {
+      toast.add({ severity: 'warn', summary: 'Pre-Order', detail: 'Batas waktu PO dan estimasi kirim wajib diisi.', life: 3000 })
+      return
+    }
+  }
   if (!isEdit.value && !localPrimaryFile.value) {
     toast.add({ severity: 'warn', summary: 'Foto Utama Wajib', detail: 'Silakan pilih foto utama untuk produk baru.', life: 3000 })
     return
@@ -205,12 +227,26 @@ const handleSave = async () => {
 
   saving.value = true
   try {
+    const payload = { ...form.value }
+    if (payload.pre_order_deadline instanceof Date) {
+      payload.pre_order_deadline = payload.pre_order_deadline.toISOString()
+    }
+    if (payload.pre_order_estimated_ship instanceof Date) {
+      payload.pre_order_estimated_ship = payload.pre_order_estimated_ship.toISOString().split('T')[0]
+    }
+    if (payload.product_type !== 'pre_order') {
+      delete payload.pre_order_deadline
+      delete payload.pre_order_estimated_ship
+      delete payload.pre_order_min_qty
+      delete payload.pre_order_max_qty
+    }
+
     if (isEdit.value) {
-      await axios.put(`/seller/products/${productId.value}`, form.value)
+      await axios.put(`/seller/products/${productId.value}`, payload)
       toast.add({ severity: 'success', summary: 'Sukses', detail: 'Produk berhasil diperbarui.', life: 3000 })
       router.push({ name: 'SellerProducts' })
     } else {
-      const response = await axios.post('/seller/products', form.value)
+      const response = await axios.post('/seller/products', payload)
       const newId = response.data.product.id
       if (localPrimaryFile.value) {
         const fd = new FormData()
@@ -300,6 +336,37 @@ const handleSave = async () => {
                   <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Deskripsi Lengkap *</label>
                   <Textarea v-model="form.description" rows="5" placeholder="Tuliskan detail spesifikasi..." class="w-full text-sm" />
                 </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Tipe Produk</label>
+                  <Select v-model="form.product_type" :options="productTypeOptions" optionLabel="label" optionValue="value" class="w-full text-sm" />
+                </div>
+
+                <div v-if="form.product_type === 'pre_order'" class="space-y-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-200">
+                  <p class="text-[10px] font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="pi pi-clock"></i> Konfigurasi Pre-Order
+                  </p>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Batas Waktu PO *</label>
+                      <DatePicker v-model="form.pre_order_deadline" showTime hourFormat="24" placeholder="Pilih deadline" class="w-full text-sm" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Estimasi Kirim *</label>
+                      <DatePicker v-model="form.pre_order_estimated_ship" placeholder="Estimasi pengiriman" class="w-full text-sm" />
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Min Qty/Buyer</label>
+                      <InputNumber v-model="form.pre_order_min_qty" :min="1" class="w-full text-sm" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Max Qty/Buyer</label>
+                      <InputNumber v-model="form.pre_order_max_qty" :min="1" class="w-full text-sm" />
+                    </div>
+                  </div>
+                </div>
+
                 <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
                   <Checkbox id="isFeatured" v-model="form.is_featured" :binary="true" />
                   <label for="isFeatured" class="text-sm font-semibold text-slate-700 cursor-pointer">Jadikan Produk Unggulan</label>

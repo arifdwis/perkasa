@@ -76,6 +76,16 @@ const routes = [
         path: 'profile',
         name: 'AlumniProfile',
         component: () => import('../views/alumni/AlumniProfileView.vue')
+      },
+      {
+        path: 'chat',
+        name: 'BuyerChatList',
+        component: () => import('../views/chat/ChatListView.vue')
+      },
+      {
+        path: 'chat/:id',
+        name: 'ChatDetail',
+        component: () => import('../views/chat/ChatDetailView.vue')
       }
     ]
   },
@@ -130,6 +140,16 @@ const routes = [
         path: 'orders/:id',
         name: 'SellerOrderDetail',
         component: () => import('../views/order/OrderDetailView.vue')
+      },
+      {
+        path: 'chat',
+        name: 'SellerChatList',
+        component: () => import('../views/chat/ChatListView.vue')
+      },
+      {
+        path: 'chat/:id',
+        name: 'SellerChatDetail',
+        component: () => import('../views/chat/ChatDetailView.vue')
       }
     ]
   },

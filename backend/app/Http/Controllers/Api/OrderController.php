@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Notifications\OrderStatusUpdatedNotification;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -95,6 +96,13 @@ class OrderController extends Controller
             $seller = $order->store->alumniProfile?->user;
             if ($seller) {
                 $seller->notify(new OrderStatusUpdatedNotification($order, 'menunggu_konfirmasi', 'dibatalkan'));
+                app(WebPushService::class)->sendToUser(
+                    $seller->id,
+                    'Pesanan Dibatalkan #' . $order->order_number,
+                    'Pembeli membatalkan pesanan.',
+                    '/logo_unmul.png',
+                    '/seller/orders/' . $order->id
+                );
             }
 
             return response()->json([
