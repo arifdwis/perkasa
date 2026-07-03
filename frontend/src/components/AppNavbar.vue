@@ -478,19 +478,8 @@ onMounted(() => {
                 </div>
                 <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
               </div>
-              
-              <!-- Mode Switcher -->
-              <div class="menu-item switch-item mt-4 bg-sky-50/50 hover:bg-sky-50" @click="handleSwitchMode('buyer')">
-                <div class="flex items-center gap-3">
-                  <div class="menu-icon-wrapper text-sky-600 bg-sky-100/50">
-                    <Icon icon="solar:translation-bold-duotone" class="text-lg" />
-                  </div>
-                  <span class="menu-label text-sky-850 font-extrabold">Beralih ke Mode Belanja</span>
-                </div>
-                <Icon icon="solar:alt-arrow-right-bold" class="text-sky-500 text-sm" />
-              </div>
             </template>
-            
+
             <!-- BUYER MODE LINKS -->
             <template v-else-if="userMode === 'buyer'">
               <div class="menu-item" @click="router.push({ name: 'AlumniProfile' }); visibleDrawer = false;">
@@ -564,15 +553,14 @@ onMounted(() => {
                 <Icon icon="solar:alt-arrow-right-linear" class="text-slate-400 text-sm" />
               </div>
               
-              <!-- Mode Switcher or Buka Toko -->
-              <div v-if="isSeller" class="menu-item switch-item mt-4 bg-sky-50/50 hover:bg-sky-50" @click="handleSwitchMode('seller')">
+              <div v-if="isSeller" class="menu-item switch-item mt-4 bg-emerald-50/50 hover:bg-emerald-50" @click="handleSwitchMode('seller')">
                 <div class="flex items-center gap-3">
-                  <div class="menu-icon-wrapper text-sky-600 bg-sky-100/50">
-                    <Icon icon="solar:translation-bold-duotone" class="text-lg" />
+                  <div class="menu-icon-wrapper text-emerald-600 bg-emerald-100/50">
+                    <Icon icon="solar:shop-bold-duotone" class="text-lg" />
                   </div>
-                  <span class="menu-label text-sky-850 font-extrabold">Beralih ke Mode Toko</span>
+                  <span class="menu-label text-emerald-850 font-extrabold">Mode Penjual</span>
                 </div>
-                <Icon icon="solar:alt-arrow-right-bold" class="text-sky-500 text-sm" />
+                <Icon icon="solar:alt-arrow-right-bold" class="text-emerald-500 text-sm" />
               </div>
               <div v-else class="menu-item switch-item mt-4 bg-emerald-50/50 hover:bg-emerald-50" 
                 :class="authStore.user?.profile?.status_verifikasi !== 'verified' ? 'opacity-50 pointer-events-none' : ''"

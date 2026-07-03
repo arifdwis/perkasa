@@ -7,7 +7,6 @@ const deferredPrompt = ref(null)
 const isInstalling = ref(false)
 
 let promptHandler = null
-let installedHandler = null
 
 const platform = computed(() => {
   const ua = navigator.userAgent || ''
@@ -21,22 +20,54 @@ const isStandalone = computed(() => {
          window.navigator.standalone === true
 })
 
+const isMobile = computed(() => platform.value === 'ios' || platform.value === 'android')
+
+const subtitle = computed(() => {
+  if (platform.value === 'ios') return 'Tekan Share → Tambah ke Layar Utama'
+  if (platform.value === 'android') return 'Akses cepat & notifikasi real-time'
+  return 'Akses cepat dari desktop'
+})
+
+const steps = computed(() => {
+  if (platform.value === 'ios') return [
+    { icon: 'solar:share-bold', text: 'Tekan <b>Share</b> di Safari' },
+    { icon: 'solar:add-circle-bold', text: 'Pilih <b>Tambah ke Layar Utama</b>' },
+    { icon: 'solar:check-circle-bold', text: 'Tekan <b>Tambah</b>' }
+  ]
+  if (platform.value === 'android') return [
+    { icon: 'solar:menu-dots-bold', text: 'Buka menu <b>⋮</b> di Chrome' },
+    { icon: 'solar:add-circle-bold', text: 'Pilih <b>Instal Aplikasi</b>' },
+    { icon: 'solar:check-circle-bold', text: 'Tekan <b>Instal</b>' }
+  ]
+  return [
+    { icon: 'solar:add-circle-bold', text: 'Klik <b>⊕ Install</b> di address bar' },
+    { icon: 'solar:menu-dots-bold', text: 'Atau menu <b>⋮</b> → <b>Pasang Aplikasi</b>' },
+    { icon: 'solar:check-circle-bold', text: 'Konfirmasi <b>Pasang</b>' }
+  ]
+})
+
+const btnLabel = computed(() => {
+  if (platform.value === 'ios') return 'Buka di Safari'
+  if (platform.value === 'android' && deferredPrompt.value) return 'Instal'
+  if (platform.value === 'android') return 'Cara Instal'
+  return 'Cara Instal'
+})
+
 const handleBeforeInstallPrompt = (e) => {
   e.preventDefault()
   deferredPrompt.value = e
 }
 
-const handleAppInstalled = () => {
-  showPopup.value = false
-  deferredPrompt.value = null
-  localStorage.setItem('pwa_installed', 'true')
+const handleAction = () => {
+  if (platform.value === 'android' && deferredPrompt.value) {
+    installApp()
+  } else {
+    dismiss()
+  }
 }
 
 const installApp = async () => {
-  if (!deferredPrompt.value) {
-    showPopup.value = false
-    return
-  }
+  if (!deferredPrompt.value) return
   isInstalling.value = true
   try {
     await deferredPrompt.value.prompt()
@@ -45,150 +76,117 @@ const installApp = async () => {
       showPopup.value = false
       localStorage.setItem('pwa_installed', 'true')
     }
-  } catch (err) {
-    console.error('PWA install error:', err)
-  } finally {
-    isInstalling.value = false
-    deferredPrompt.value = null
-  }
+  } catch (err) {}
+  isInstalling.value = false
+  deferredPrompt.value = null
 }
 
-const dismiss = (permanent = false) => {
+const dismiss = () => {
   showPopup.value = false
-  if (permanent) {
-    localStorage.setItem('pwa_install_dismissed', 'true')
-  }
+  localStorage.setItem('pwa_install_dismissed', 'true')
 }
 
 onMounted(() => {
   if (localStorage.getItem('pwa_installed') === 'true') return
   if (localStorage.getItem('pwa_install_dismissed') === 'true') return
   if (isStandalone.value) return
-  if (sessionStorage.getItem('pwa_install_shown') === 'true') return
-
   promptHandler = handleBeforeInstallPrompt
-  installedHandler = handleAppInstalled
   window.addEventListener('beforeinstallprompt', promptHandler)
-  window.addEventListener('appinstalled', installedHandler)
-
-  setTimeout(() => {
-    if (!showPopup.value) {
-      showPopup.value = true
-      sessionStorage.setItem('pwa_install_shown', 'true')
-    }
-  }, 2500)
+  window.addEventListener('appinstalled', () => { showPopup.value = false })
+  setTimeout(() => { if (!showPopup.value) showPopup.value = true }, 3000)
 })
 
 onUnmounted(() => {
   if (promptHandler) window.removeEventListener('beforeinstallprompt', promptHandler)
-  if (installedHandler) window.removeEventListener('appinstalled', installedHandler)
 })
 </script>
 
 <template>
-  <Transition name="fade">
+  <!-- MOBILE: Floating bar -->
+  <Transition v-if="isMobile" name="bar">
     <div v-if="showPopup"
-         class="fixed inset-0 z-[99997] flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-sm">
-      <div class="w-full max-w-[340px] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col gap-5 p-5">
-
-        <!-- Header -->
-        <div class="flex flex-col items-center text-center gap-3">
-          <div class="w-14 h-14 rounded-2xl bg-primary-soft flex items-center justify-center shrink-0 p-2">
-            <img src="/logo_unmul.png" alt="Logo Unmul" class="w-full h-full object-contain" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <h3 class="text-base font-black text-slate-800">Instal Aplikasi</h3>
-            <p class="text-[11px] text-slate-500">Akses lebih cepat dari layar utama</p>
-          </div>
+         class="fixed left-3 right-3 bottom-20 z-[99997] sm:hidden">
+      <div class="bg-primary rounded-2xl shadow-xl p-3.5 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-white p-1.5 shrink-0">
+          <img src="/logo_unmul.png" alt="Logo" class="w-full h-full object-contain" />
         </div>
 
-        <!-- Body: iOS instructions -->
-        <div v-if="platform === 'ios'" class="flex flex-col gap-3">
-          <p class="text-xs font-bold text-slate-800">Cara instal di iPhone/iPad:</p>
-          <ol class="flex flex-col gap-2.5">
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Tekan tombol <strong class="text-slate-800">Share</strong>
-                <Icon icon="solar:share-bold" class="inline text-primary text-sm align-middle" /> di Safari</span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Tambah</strong></span>
-            </li>
-          </ol>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-xs font-extrabold text-white leading-tight truncate">Marketplace FEB Unmul</h3>
+          <p class="text-[10px] text-white/60 font-medium truncate mt-0.5">{{ subtitle }}</p>
         </div>
 
-        <!-- Body: Android with native prompt -->
-        <div v-else-if="platform === 'android' && deferredPrompt" class="flex flex-col gap-3">
-          <p class="text-xs text-slate-600 leading-relaxed">Tambahkan aplikasi ke perangkat Anda untuk akses instan.</p>
-          <button class="w-full py-3 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button class="px-3 py-1.5 bg-white text-primary rounded-lg text-[10px] font-extrabold hover:bg-white/90 transition-colors whitespace-nowrap"
                   :disabled="isInstalling"
-                  @click="installApp">
-            <Icon v-if="isInstalling" icon="solar:spinner-bold" class="text-base animate-spin" />
-            <Icon v-else icon="solar:download-bold" class="text-base" />
-            <span>{{ isInstalling ? 'Menginstal...' : 'Instal Sekarang' }}</span>
+                  @click="handleAction">
+            {{ isInstalling ? '...' : btnLabel }}
+          </button>
+          <button class="w-6 h-6 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                  @click="dismiss">
+            <Icon icon="solar:close-circle-linear" class="text-white/70 text-sm" />
           </button>
         </div>
+      </div>
+    </div>
+  </Transition>
 
-        <!-- Body: Android/Desktop without prompt -->
-        <div v-else class="flex flex-col gap-3">
-          <p class="text-xs font-bold text-slate-800">
-            {{ platform === 'android' ? 'Cara instal di Android:' : 'Cara instal di Desktop:' }}
-          </p>
-          <ol class="flex flex-col gap-2.5">
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Buka menu browser
-                <Icon icon="solar:menu-dots-bold" class="inline text-slate-500 text-sm align-middle" /></span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Pilih <strong class="text-slate-800">Tambah ke Layar Utama</strong></span>
-            </li>
-            <li class="flex items-start gap-2.5">
-              <span class="w-5 h-5 rounded-full bg-primary-soft text-primary text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-              <span class="text-xs text-slate-600 leading-relaxed">Tekan <strong class="text-slate-800">Instal</strong></span>
-            </li>
-          </ol>
+  <!-- DESKTOP: Modal with steps -->
+  <Transition v-else name="sheet">
+    <div v-if="showPopup" class="fixed inset-0 z-[99997] hidden sm:flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/40" @click="dismiss" />
+
+      <div class="relative w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden">
+        <div class="bg-primary px-5 pt-5 pb-6 relative">
+          <button class="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                  @click="dismiss">
+            <Icon icon="solar:close-circle-linear" class="text-white/80 text-base" />
+          </button>
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-white p-1.5 shadow-md shrink-0">
+              <img src="/logo_unmul.png" alt="Logo" class="w-full h-full object-contain" />
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-extrabold text-white leading-tight">Marketplace FEB Unmul</h3>
+              <p class="text-[10px] text-white/60 font-medium mt-0.5">Pasang untuk akses cepat & notif</p>
+            </div>
+          </div>
         </div>
 
-        <!-- Footer -->
-        <button class="text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition-colors"
-                @click="dismiss(true)">
-          Jangan tampilkan lagi
-        </button>
+        <div class="p-4 space-y-2">
+          <div v-for="(step, i) in steps" :key="i"
+               class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+            <Icon :icon="step.icon" class="text-primary text-base shrink-0" />
+            <p class="text-[11px] text-slate-600 leading-snug" v-html="step.text" />
+          </div>
+        </div>
+
+        <div class="px-4 pb-4 flex gap-2">
+          <button class="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold transition-colors"
+                  @click="dismiss">
+            Mengerti
+          </button>
+          <button class="px-3 py-2.5 text-xs font-semibold text-slate-300 hover:text-slate-500 transition-colors"
+                  @click="dismiss">
+            Nanti
+          </button>
+        </div>
       </div>
     </div>
   </Transition>
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.fade-enter-active > div,
-.fade-leave-active > div {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fade-enter-from > div {
-  transform: translateY(100%);
-}
-.fade-leave-to > div {
-  transform: translateY(100%);
-}
-@media (min-width: 640px) {
-  .fade-enter-from > div,
-  .fade-leave-to > div {
-    transform: scale(0.95);
-  }
-}
+.bar-enter-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.bar-leave-active { transition: all 0.25s ease-in; }
+.bar-enter-from { opacity: 0; transform: translateY(16px); }
+.bar-leave-to { opacity: 0; transform: translateY(8px); }
+
+.sheet-enter-active { transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+.sheet-leave-active { transition: all 0.25s ease-in; }
+.sheet-enter-active > div:first-child { transition: opacity 0.35s ease; }
+.sheet-leave-active > div:first-child { transition: opacity 0.25s ease; }
+.sheet-enter-from > div:first-child, .sheet-leave-to > div:first-child { opacity: 0; }
+.sheet-enter-from > div:nth-child(2) { transform: scale(0.9); opacity: 0; }
+.sheet-leave-to > div:nth-child(2) { transform: scale(0.95); opacity: 0; }
 </style>

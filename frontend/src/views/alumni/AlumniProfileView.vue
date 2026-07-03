@@ -654,7 +654,14 @@ onUnmounted(() => { destroyMap() })
                 @click="pushSubscribed ? unsubscribePush() : subscribePush()"
               />
             </div>
-            <span v-else class="text-red-400 font-bold text-[10px]">Ditolak browser</span>
+            <div v-else class="flex flex-col items-end gap-1.5">
+              <span class="text-amber-600 font-bold text-[10px] flex items-center gap-1">
+                <i class="pi pi-exclamation-triangle text-xs"></i> Izin ditolak
+              </span>
+              <p class="text-[9px] text-slate-400 text-right leading-relaxed max-w-[180px]">
+                Buka pengaturan browser → izinkan notifikasi untuk situs ini, lalu refresh halaman.
+              </p>
+            </div>
           </div>
         </div>
       </div>

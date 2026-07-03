@@ -44,4 +44,7 @@ export default defineConfig({
       }
     })
   ],
+  preview: {
+    allowedHosts: ['.loca.lt', 'localhost']
+  }
 })

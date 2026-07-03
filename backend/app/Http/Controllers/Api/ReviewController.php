@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Store;
 use App\Notifications\NewReviewNotification;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -105,6 +106,14 @@ class ReviewController extends Controller
                 $itemName = $orderItem->name;
                 $slugOrOrderId = $order->id;
                 $seller->notify(new NewReviewNotification($review, $itemName, $slugOrOrderId));
+                $ratingStars = str_repeat('★', $review->rating) . str_repeat('☆', 5 - $review->rating);
+                app(WebPushService::class)->sendToUser(
+                    $seller->id,
+                    'Ulasan Baru: ' . $ratingStars,
+                    $review->user->name . ' mengulas "' . $itemName . '" - ' . ($review->comment ? mb_strimwidth($review->comment, 0, 80, '...') : 'Tanpa komentar'),
+                    '/logo_unmul.png',
+                    '/seller/orders/' . $order->id
+                );
             }
         }
 
