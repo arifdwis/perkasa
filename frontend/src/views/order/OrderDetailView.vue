@@ -11,6 +11,7 @@ import Textarea from 'primevue/textarea'
 import Dialog from 'primevue/dialog'
 import Rating from 'primevue/rating'
 import { useToast } from 'primevue/usetoast'
+import { useCartStore } from '../../stores/cart'
 
 import AppNavbar from '../../components/AppNavbar.vue'
 import EmptyState from '../../components/EmptyState.vue'
@@ -22,11 +23,13 @@ import { Icon } from '@iconify/vue'
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
+const cartStore = useCartStore()
 
 const orderId = route.params.id
 const order = ref(null)
 const loading = ref(true)
 const actionLoading = ref(false)
+const reordering = ref(false)
 const currentUser = ref(null)
 
 const selectedNewStatus = ref('')
@@ -88,8 +91,24 @@ const handleBuyerCancel = async () => {
     toast.add({ severity: 'success', summary: 'Dibatalkan', detail: 'Pesanan berhasil dibatalkan.', life: 3000 })
     fetchOrderDetail()
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Gagal', detail: e.response?.data?.message || 'Gagal membatalkan.', life: 3000 })
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal membatalkan pesanan.', life: 3000 })
   } finally { actionLoading.value = false }
+}
+
+const handleReorder = async () => {
+  if (!order.value?.items?.length) return
+  reordering.value = true
+  try {
+    for (const item of order.value.items) {
+      if (item.product_id) {
+        await cartStore.addToCart(item.product_id, item.quantity)
+      }
+    }
+    toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk ditambahkan ke keranjang.', life: 3000 })
+    router.push({ name: 'Cart' })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal menambah ke keranjang.', life: 3000 })
+  } finally { reordering.value = false }
 }
 
 const handleSellerUpdateStatus = async () => {
@@ -110,22 +129,62 @@ const selectedOrderItem = ref(null)
 const reviewRating = ref(5)
 const reviewComment = ref('')
 const submitReviewLoading = ref(false)
+const reviewPhotos = ref([])
+const reviewPhotoPreviews = ref([])
+const reviewFileInput = ref(null)
 
 const openReviewDialog = (item) => {
-  selectedOrderItem.value = item; reviewRating.value = 5; reviewComment.value = ''; showReviewDialog.value = true
+  selectedOrderItem.value = item; reviewRating.value = 5; reviewComment.value = ''
+  clearReviewPhotos(); showReviewDialog.value = true
+}
+
+const selectReviewPhotos = () => {
+  reviewFileInput.value?.click()
+}
+
+const onReviewPhotosSelected = (e) => {
+  const files = Array.from(e.target.files || [])
+  const remaining = 5 - reviewPhotos.value.length
+  const toAdd = files.slice(0, remaining)
+  reviewPhotos.value.push(...toAdd)
+  toAdd.forEach(f => reviewPhotoPreviews.value.push(URL.createObjectURL(f)))
+  e.target.value = ''
+}
+
+const removeReviewPhoto = (index) => {
+  URL.revokeObjectURL(reviewPhotoPreviews.value[index])
+  reviewPhotos.value.splice(index, 1)
+  reviewPhotoPreviews.value.splice(index, 1)
+}
+
+const clearReviewPhotos = () => {
+  reviewPhotoPreviews.value.forEach(url => URL.revokeObjectURL(url))
+  reviewPhotos.value = []
+  reviewPhotoPreviews.value = []
 }
 
 const handleSubmitReview = async () => {
   if (!selectedOrderItem.value) return
   submitReviewLoading.value = true
   try {
-    await axios.post('/reviews', {
-      order_item_id: selectedOrderItem.value.id,
-      reviewable_type: 'product',
-      reviewable_id: selectedOrderItem.value.product_id,
-      rating: reviewRating.value,
-      comment: reviewComment.value || undefined
-    })
+    if (reviewPhotos.value.length > 0) {
+      const formData = new FormData()
+      formData.append('order_item_id', selectedOrderItem.value.id)
+      formData.append('reviewable_type', 'product')
+      formData.append('reviewable_id', selectedOrderItem.value.product_id)
+      formData.append('rating', reviewRating.value)
+      if (reviewComment.value.trim()) formData.append('comment', reviewComment.value.trim())
+      reviewPhotos.value.forEach(f => formData.append('photos[]', f))
+      await axios.post('/reviews', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+    } else {
+      await axios.post('/reviews', {
+        order_item_id: selectedOrderItem.value.id,
+        reviewable_type: 'product',
+        reviewable_id: selectedOrderItem.value.product_id,
+        rating: reviewRating.value,
+        comment: reviewComment.value || undefined
+      })
+    }
     toast.add({ severity: 'success', summary: 'Ulasan Terkirim', life: 3000 })
     showReviewDialog.value = false; fetchOrderDetail()
   } catch (e) {
@@ -304,11 +363,14 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
             <div class="space-y-3">
               <div v-for="item in order.items" :key="item.id" class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <div class="w-12 h-12 rounded-lg bg-white border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                  <img v-if="item.product?.primaryImage?.image_path" :src="item.product.primaryImage.image_path" class="w-full h-full object-cover" />
+                  <img v-if="item.product?.primary_image_url || item.product?.primaryImage?.image_path" :src="item.product.primary_image_url || item.product.primaryImage.image_path" class="w-full h-full object-cover" />
                   <Icon v-else icon="solar:gallery-bold-duotone" class="text-slate-300 text-lg" />
                 </div>
                 <div class="flex-1 min-w-0">
-                  <p class="text-xs font-bold text-slate-800 truncate">{{ item.name }}</p>
+                  <p class="text-xs font-bold text-slate-800 truncate">
+                    {{ item.name }}
+                    <span v-if="item.variant_name" class="text-[10px] text-slate-400 font-normal">· {{ item.variant_name }}</span>
+                  </p>
                   <p class="text-xs text-slate-400">{{ fmtPrice(item.price) }} x {{ item.quantity }}</p>
                 </div>
                 <p class="text-xs font-bold text-slate-800 shrink-0">Rp{{ fmtPrice(item.price * item.quantity) }}</p>
@@ -328,7 +390,9 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
             <div v-if="order.status === 'selesai'" class="mt-4 pt-3 border-t border-slate-100 space-y-3">
               <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ulasan</p>
               <div v-for="item in order.items" :key="'review-'+item.id" class="bg-slate-50 rounded-xl p-3 border border-slate-100 space-y-2">
-                  <p class="text-xs font-bold text-slate-700">{{ item.name }}</p>
+                  <p class="text-xs font-bold text-slate-700">{{ item.name }}
+                    <span v-if="item.variant_name" class="text-[10px] text-slate-400 font-normal">· {{ item.variant_name }}</span>
+                  </p>
                 <div v-if="item.review" class="space-y-1">
                   <Rating :modelValue="item.review.rating" readonly :stars="5" :cancel="false" class="text-amber-500 text-xs" />
                   <p class="text-xs text-slate-600 italic">"{{ item.review.comment || 'Tidak ada komentar.' }}"</p>
@@ -386,7 +450,11 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
             <Button label="Batalkan Pesanan" icon="pi pi-ban" severity="danger" class="w-full text-xs" :loading="actionLoading" @click="handleBuyerCancel" />
           </div>
 
-
+          <div v-if="isBuyer && order.status === 'selesai'" class="bg-primary/5 rounded-2xl border border-primary/10 p-4 sm:p-5">
+            <p class="text-xs font-bold text-primary mb-2">Beli Lagi Produk Ini</p>
+            <p class="text-[10px] text-slate-500 mb-3">{{ order.items?.length || 0 }} produk dari pesanan ini</p>
+            <Button label="Beli Lagi" icon="pi pi-refresh" severity="primary" class="w-full text-xs" :loading="reordering" @click="handleReorder" />
+          </div>
 
           <!-- Store info -->
           <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 sm:p-5">
@@ -410,12 +478,32 @@ onMounted(() => { checkAuth(); fetchOrderDetail() })
 
     <!-- Review Dialog -->
     <Dialog v-model:visible="showReviewDialog" modal header="Beri Ulasan" :style="{ width: '95%', maxWidth: '420px' }">
+      <input ref="reviewFileInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple class="hidden" @change="onReviewPhotosSelected" />
       <div class="space-y-4 pt-2 text-xs">
         <div class="text-center">
-          <p class="font-bold text-slate-700 mb-2">{{ selectedOrderItem?.name }}</p>
+          <p class="font-bold text-slate-700 mb-2">{{ selectedOrderItem?.name }}
+            <span v-if="selectedOrderItem?.variant_name" class="inline-flex items-center gap-0.5 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md ml-1 font-normal">
+              {{ selectedOrderItem.variant_name }}
+            </span>
+          </p>
           <Rating v-model="reviewRating" :stars="5" :cancel="false" class="text-amber-500 text-2xl" />
         </div>
         <Textarea v-model="reviewComment" placeholder="Tulis ulasan Anda..." rows="3" class="w-full text-xs" />
+        <div v-if="reviewPhotoPreviews.length > 0" class="flex gap-2 flex-wrap">
+          <div v-for="(preview, idx) in reviewPhotoPreviews" :key="idx" class="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shrink-0">
+            <img :src="preview" alt="Preview" class="w-full h-full object-cover" />
+            <button class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px]" @click="removeReviewPhoto(idx)">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+        </div>
+        <button
+          v-if="reviewPhotos.length < 5"
+          class="w-full text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-xl py-2.5 hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1.5"
+          @click="selectReviewPhotos"
+        >
+          <i class="pi pi-camera"></i> Tambah Foto ({{ reviewPhotos.length }}/5)
+        </button>
         <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
           <Button label="Batal" severity="secondary" outlined size="small" @click="showReviewDialog = false" />
           <Button label="Kirim" size="small" :loading="submitReviewLoading" @click="handleSubmitReview" />

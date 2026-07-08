@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
+import Dialog from 'primevue/dialog'
 import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import Rating from 'primevue/rating'
@@ -30,6 +31,21 @@ const quantity = ref(1)
 const product = ref(null)
 const loading = ref(true)
 const activeImageIndex = ref(0)
+
+let autoSlideTimer = null
+const startAutoSlide = () => {
+  stopAutoSlide()
+  autoSlideTimer = setInterval(() => {
+    if (allImages.value.length > 1 && !imageViewerVisible.value) {
+      activeImageIndex.value = (activeImageIndex.value + 1) % allImages.value.length
+    }
+  }, 4000)
+}
+const stopAutoSlide = () => {
+  if (autoSlideTimer) { clearInterval(autoSlideTimer); autoSlideTimer = null }
+}
+onMounted(startAutoSlide)
+onUnmounted(stopAutoSlide)
 
 const reviews = ref([])
 const reviewsLoading = ref(false)
@@ -74,6 +90,7 @@ const fetchProductDetail = async () => {
     const slug = route.params.slug
     const response = await axios.get(`/products/${slug}`)
     product.value = response.data.product
+    selectedVariant.value = product.value?.variants?.find(v => v.stock > 0) || product.value?.variants?.[0] || null
     await fetchReviews()
     await fetchRecommendations()
     await checkAuthAndFavorites()
@@ -146,7 +163,8 @@ const addToCart = async () => {
     return
   }
 
-  const res = await cartStore.addToCart(product.value.id, quantity.value)
+  const variantId = selectedVariant.value?.id || product.value?.variants?.[0]?.id || null
+  const res = await cartStore.addToCart(product.value.id, quantity.value, variantId)
   if (res.success) {
     toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
   } else {
@@ -164,22 +182,29 @@ const buyNow = () => {
     return
   }
   
-  const cartItem = getCartItem(product.value.id)
-  const qty = cartItem ? cartItem.quantity : quantity.value
+  const qty = cartItem.value ? cartItem.value.quantity : quantity.value
+  const variantId = selectedVariant.value?.id || product.value?.variants?.[0]?.id || null
 
   router.push({
     name: 'Checkout',
     query: {
       product_id: product.value.id,
-      quantity: qty
+      quantity: qty,
+      ...(variantId ? { product_variant_id: variantId } : {}),
     }
   })
 }
 
-const getCartItem = (productId) => {
+const cartItem = computed(() => getCartItem(product.value?.id, selectedVariant.value?.id || product.value?.variants?.[0]?.id))
+
+const getCartItem = (productId, variantId = null) => {
   if (!cartStore.groupedItems) return null
   for (const storeGroup of cartStore.groupedItems) {
-    const found = storeGroup.items?.find(item => item.product_id === productId || item.product?.id === productId)
+    const found = storeGroup.items?.find(item => {
+      if (item.product_id !== productId && item.product?.id !== productId) return false
+      if (variantId) return (item.product_variant_id || item.product_variant?.id) === variantId
+      return !item.product_variant_id && !item.product_variant?.id
+    })
     if (found) return found
   }
   return null
@@ -205,6 +230,18 @@ const increaseCartQty = async (cartItem, maxStock) => {
 onMounted(async () => {
   await fetchProductDetail()
   cartStore.fetchCart()
+})
+
+watch(() => route.params.slug, async (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    loading.value = true
+    activeImageIndex.value = 0
+    selectedVariant.value = null
+    stopAutoSlide()
+    await fetchProductDetail()
+    startAutoSlide()
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
 })
 
 const store = computed(() => product.value?.store || null)
@@ -233,12 +270,129 @@ const fetchRecommendations = async () => {
   }
 }
 
-// Images listing (primary goes first)
+// Images listing (primary goes first, then variant images)
 const allImages = computed(() => {
-  if (!product.value?.images) return []
-  const list = [...product.value.images]
-  return list.sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+  const result = []
+  if (product.value?.images) {
+    const sorted = [...product.value.images].sort((a, b) => (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0))
+    result.push(...sorted)
+  }
+  if (product.value?.variants) {
+    product.value.variants.forEach(v => {
+      if (v.images) {
+        v.images.forEach(img => {
+          result.push({ ...img, variant_name: v.name, variant_id: v.id })
+        })
+      }
+    })
+  }
+  return result
 })
+
+const selectedVariant = ref(null)
+
+const selectVariant = (variant) => {
+  selectedVariant.value = variant
+  const firstVariantImg = allImages.value.find(img => img.variant_id === variant.id)
+  if (firstVariantImg) {
+    activeImageIndex.value = allImages.value.indexOf(firstVariantImg)
+  }
+}
+
+const displayPrice = computed(() => {
+  if (selectedVariant.value?.price) return parseFloat(selectedVariant.value.price)
+  return parseFloat(product.value?.current_price || product.value?.price || 0)
+})
+
+const displayPriceOriginal = computed(() => {
+  if (product.value?.is_flash_sale_active) return parseFloat(product.value?.price || 0)
+  return null
+})
+
+const displayStock = computed(() => {
+  if (selectedVariant.value) return parseInt(selectedVariant.value.stock) || 0
+  if (product.value?.variants?.length > 0) return parseInt(product.value.total_stock) || 0
+  return parseInt(product.value?.stock) || 0
+})
+
+const imageViewerVisible = ref(false)
+const imageViewerIndex = ref(0)
+
+const reviewImageViewerVisible = ref(false)
+const reviewImageViewerSrc = ref('')
+
+const openImageViewer = (index = 0) => {
+  imageViewerIndex.value = index
+  imageViewerVisible.value = true
+}
+
+const openReviewImageViewer = (src) => {
+  reviewImageViewerSrc.value = src
+  reviewImageViewerVisible.value = true
+}
+
+const prevImage = () => {
+  if (imageViewerIndex.value > 0) {
+    imageViewerIndex.value--
+  } else {
+    imageViewerIndex.value = allImages.value.length - 1
+  }
+}
+
+const nextImage = () => {
+  if (imageViewerIndex.value < allImages.value.length - 1) {
+    imageViewerIndex.value++
+  } else {
+    imageViewerIndex.value = 0
+  }
+}
+
+const handleKeydown = (e) => {
+  if (!imageViewerVisible.value) return
+  if (e.key === 'ArrowLeft') prevImage()
+  if (e.key === 'ArrowRight') nextImage()
+}
+
+onMounted(() => window.addEventListener('keydown', handleKeydown))
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+
+const countdown = ref('')
+let countdownTimer = null
+
+const updateCountdown = () => {
+  if (!product.value?.flash_sale_end) {
+    countdown.value = ''
+    return
+  }
+  const now = Date.now()
+  const end = new Date(product.value.flash_sale_end).getTime()
+  const diff = end - now
+  if (diff <= 0) {
+    countdown.value = 'Berakhir'
+    if (countdownTimer) clearInterval(countdownTimer)
+    return
+  }
+  const days = Math.floor(diff / 86400000)
+  const hours = Math.floor((diff % 86400000) / 3600000)
+  const mins = Math.floor((diff % 3600000) / 60000)
+  const secs = Math.floor((diff % 60000) / 1000)
+  countdown.value = `${String(days).padStart(2, '0')}:${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+const startCountdown = () => {
+  updateCountdown()
+  countdownTimer = setInterval(updateCountdown, 1000)
+}
+
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+onMounted(startCountdown)
+onUnmounted(stopCountdown)
 
 const getStatusLabel = (status) => {
   switch (status) {
@@ -281,6 +435,18 @@ const whatsappUrl = computed(() => {
 })
 
 const startingChat = ref(false)
+
+const shareProduct = async () => {
+  const url = window.location.href
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: product.value?.name, url })
+    } catch {}
+  } else {
+    await navigator.clipboard.writeText(url)
+    toast.add({ severity: 'success', summary: 'Link Disalin', detail: 'Tautan produk disalin ke clipboard.', life: 2000 })
+  }
+}
 const startChat = async () => {
   if (!isLoggedIn.value) {
     toast.add({ severity: 'info', summary: 'Login Diperlukan', detail: 'Silakan masuk ke akun Anda terlebih dahulu.', life: 3000 })
@@ -337,14 +503,18 @@ const startChat = async () => {
         <!-- Left: Image Gallery (Takes 5 columns, sticky on desktop) -->
         <div class="lg:col-span-5 space-y-4 lg:sticky lg:top-20 h-fit">
           <!-- Main Selected Image -->
-          <div class="aspect-square rounded-3xl bg-white border border-slate-100 overflow-hidden shadow-xs flex items-center justify-center relative group">
+          <div class="aspect-square rounded-3xl bg-white border border-slate-100 overflow-hidden shadow-xs flex items-center justify-center relative group cursor-pointer" @click="openImageViewer(activeImageIndex)">
             <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300 pointer-events-none"></div>
-            <img 
-              v-if="allImages.length > 0" 
-              :src="allImages[activeImageIndex]?.image_path" 
-              alt="Main Product Photo" 
-              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-            />
+            <template v-if="allImages.length > 0">
+              <Transition name="carousel-slide" mode="out-in">
+                <img
+                  :key="allImages[activeImageIndex]?.id"
+                  :src="allImages[activeImageIndex]?.image_url || allImages[activeImageIndex]?.image_path"
+                  alt="Main Product Photo"
+                  class="w-full h-full object-cover"
+                />
+              </Transition>
+            </template>
             <div v-else class="text-slate-300 flex flex-col items-center">
               <i class="pi pi-image text-6xl"></i>
               <span class="text-xs font-semibold text-slate-400 mt-2">Tidak ada foto produk</span>
@@ -358,9 +528,9 @@ const startChat = async () => {
               :key="img.id" 
               class="w-16 h-16 rounded-2xl border-2 cursor-pointer overflow-hidden flex-shrink-0 transition-all duration-200"
               :class="activeImageIndex === idx ? 'border-primary shadow-sm scale-95' : 'border-slate-200 hover:border-slate-300'"
-              @click="activeImageIndex = idx"
+              @click="activeImageIndex = idx; openImageViewer(idx)"
             >
-              <img :src="img.image_path" alt="Product Thumbnail" class="w-full h-full object-cover" />
+              <img :src="img.image_url || img.image_path" alt="Product Thumbnail" class="w-full h-full object-cover" />
             </div>
           </div>
 
@@ -385,15 +555,38 @@ const startChat = async () => {
                 
                 <!-- Status & Category Tags -->
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-black text-primary-dark tracking-wider bg-primary-soft px-3 py-1 rounded-xl">
-                    {{ product.category?.name }}
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-black text-primary-dark tracking-wider bg-primary-soft px-3 py-1 rounded-xl">
+                      {{ product.category?.name }}
+                    </span>
+                  </div>
                   
                   <div class="flex items-center gap-1.5">
+                    <Button
+                      v-if="!isOwnProduct"
+                      icon="pi pi-comments"
+                      label="Chat"
+                      size="small"
+                      outlined
+                      severity="secondary"
+                      :loading="startingChat"
+                      class="text-[10px] font-bold !py-1 !px-2 !rounded-lg"
+                      @click="startChat"
+                    />
                     <Tag v-if="product.is_featured" value="UNGGULAN" severity="warn" class="font-black text-xs px-2 py-0.5" />
+                    <Tag v-if="product.is_flash_sale_active" value="FLASH SALE" severity="danger" class="font-black text-xs px-2 py-0.5" />
                     <Tag v-if="product.product_type === 'pre_order'" value="PRE-ORDER" severity="warn" class="font-black text-xs px-2 py-0.5" />
                     <Tag :value="getStatusLabel(product.status)" :severity="getStatusSeverity(product.status)" class="text-xs px-2 py-0.5" />
                   </div>
+                </div>
+
+                <!-- Flash Sale Countdown -->
+                <div v-if="product.is_flash_sale_active && countdown && countdown !== 'Berakhir'" class="bg-red-50 border border-red-200 rounded-2xl p-3.5 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <i class="pi pi-bolt text-red-500 text-lg"></i>
+                    <span class="text-[10px] font-black text-red-600 uppercase tracking-wider">Flash Sale Berakhir Dalam</span>
+                  </div>
+                  <span class="text-sm font-black text-red-600 tracking-wider font-mono">{{ countdown }}</span>
                 </div>
 
                 <div v-if="product.product_type === 'pre_order'" class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2">
@@ -416,6 +609,28 @@ const startChat = async () => {
                 <!-- Title & Key Info -->
                 <div class="space-y-2.5">
                   <h2 class="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-snug">{{ product.name }}</h2>
+
+                  <!-- Variant Selector -->
+                  <div v-if="product.variants?.length > 0" class="flex flex-wrap gap-2">
+                    <button
+                      v-for="v in product.variants"
+                      :key="v.id"
+                      class="text-xs font-bold px-2 py-1.5 rounded-xl border transition-colors flex items-center gap-2"
+                      :class="selectedVariant?.id === v.id ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40'"
+                      @click="selectVariant(v)"
+                    >
+                      <img
+                        v-if="v.images?.length > 0"
+                        :src="v.images[0].image_url || v.images[0].image_path"
+                        class="w-8 h-8 rounded-lg object-cover border"
+                        :class="selectedVariant?.id === v.id ? 'border-white/30' : 'border-slate-200'"
+                      />
+                      <div class="text-left leading-tight">
+                        <span class="block">{{ v.name }}</span>
+                        <span class="opacity-70">Rp{{ parseFloat(v.price).toLocaleString('id-ID') }}</span>
+                      </div>
+                    </button>
+                  </div>
                   
                   <div class="flex items-center gap-2.5 flex-wrap text-xs">
                     <!-- Rating pill -->
@@ -435,7 +650,7 @@ const startChat = async () => {
                     <span class="text-slate-300">|</span>
                     <div class="flex items-center gap-1 text-slate-500 font-bold bg-slate-100 px-2.5 py-1 rounded-xl">
                       <span>Stok Tersedia:</span>
-                      <span class="text-slate-800">{{ product.stock }} pcs</span>
+                      <span class="text-slate-800">{{ displayStock }} pcs</span>
                     </div>
                   </div>
                 </div>
@@ -443,17 +658,20 @@ const startChat = async () => {
                 <!-- Price Block -->
                 <div class="py-4 border-t border-b border-slate-100 flex items-center justify-between -mx-1 px-1 my-1">
                   <span class="text-xs text-slate-400 font-bold uppercase tracking-wider">Harga Terbaik</span>
-                  <div class="flex items-baseline gap-1">
+                  <div class="flex items-baseline gap-2">
                     <span class="text-sm font-bold text-primary">Rp</span>
                     <strong class="text-3xl font-black text-primary tracking-tight">
-                      {{ parseFloat(product.price || 0).toLocaleString('id-ID') }}
+                      {{ displayPrice.toLocaleString('id-ID') }}
                     </strong>
+                    <span v-if="displayPriceOriginal" class="text-sm text-slate-400 line-through font-semibold">
+                      Rp{{ displayPriceOriginal.toLocaleString('id-ID') }}
+                    </span>
                   </div>
                 </div>
 
                 <!-- Desktop Action Panel: Quantity Selector & Add to Cart (hidden for store owner) -->
-                <div class="hidden lg:flex flex-col gap-3 pt-2" v-if="product.status === 'active' && product.stock > 0 && !isOwnProduct">
-                  <template v-if="getCartItem(product.id)">
+                <div class="hidden lg:flex flex-col gap-3 pt-2" v-if="product.status === 'active' && displayStock > 0 && !isOwnProduct">
+                  <template v-if="cartItem">
                     <div class="flex gap-3 w-full">
                       <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 shadow-xs shrink-0 select-none flex-grow justify-between">
                         <span class="text-xs font-bold text-slate-600 pl-2 flex items-center gap-1.5">
@@ -468,9 +686,9 @@ const startChat = async () => {
                             rounded
                             size="small"
                             class="w-8 h-8 animate-active"
-                            @click="decreaseCartQty(getCartItem(product.id))" 
+                            @click="decreaseCartQty(cartItem)" 
                           />
-                          <span class="w-8 text-center text-sm font-black text-slate-800">{{ getCartItem(product.id).quantity }}</span>
+                          <span class="w-8 text-center text-sm font-black text-slate-800">{{ cartItem.quantity }}</span>
                           <Button 
                             icon="pi pi-plus" 
                             severity="secondary" 
@@ -478,8 +696,8 @@ const startChat = async () => {
                             rounded
                             size="small"
                             class="w-8 h-8 animate-active"
-                            :disabled="getCartItem(product.id).quantity >= product.stock"
-                            @click="increaseCartQty(getCartItem(product.id), product.stock)" 
+                            :disabled="cartItem.quantity >= displayStock"
+              @click="increaseCartQty(cartItem, displayStock)" 
                           />
                         </div>
                       </div>
@@ -513,7 +731,7 @@ const startChat = async () => {
                           rounded
                           size="small"
                           class="w-8 h-8"
-                          :disabled="quantity >= product.stock"
+                          :disabled="quantity >= displayStock"
                           @click="quantity++" 
                         />
                       </div>
@@ -544,17 +762,16 @@ const startChat = async () => {
                       label="Tanya via WhatsApp" 
                       icon="pi pi-whatsapp" 
                       class="w-full text-sm font-black bg-[#25D366] hover:bg-[#20ba56] border-none text-white h-12 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-1.5"
-                      :disabled="product.status === 'inactive' || product.stock === 0"
+                      :disabled="product.status === 'inactive' || displayStock === 0"
                     />
                   </a>
                   <Button 
-                    label="Chat Penjual" 
-                    icon="pi pi-comments" 
+                    label="Bagikan" 
+                    icon="pi pi-share-alt" 
                     outlined
-                    severity="primary"
-                    :loading="startingChat"
+                    severity="secondary"
                     class="text-sm font-black h-12 rounded-2xl shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-1.5 flex-grow-shrink"
-                    @click="startChat"
+                    @click="shareProduct"
                   />
                   <Button 
                     :icon="isFavorited ? 'pi pi-star-fill' : 'pi pi-star'" 
@@ -567,15 +784,16 @@ const startChat = async () => {
                 </div>
 
                 <!-- Mobile CTA Buttons (hidden for store owner) -->
-                <div class="lg:hidden flex flex-col gap-2.5 pt-2" v-if="!(product.status === 'active' && product.stock > 0) && !isOwnProduct">
-                  <div v-if="product.status === 'active' && product.stock > 0" class="flex flex-col gap-2.5">
-                    <template v-if="getCartItem(product.id)">
+                <div class="lg:hidden flex flex-col gap-2.5 pt-2" v-if="!(product.status === 'active' && displayStock > 0) && !isOwnProduct">
+                  <div v-if="product.status === 'active' && displayStock > 0" class="flex flex-col gap-2.5">
+                    <template v-if="cartItem">
                       <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100 shadow-xs w-full justify-between">
                         <span class="text-xs font-bold text-slate-500 pl-1">Di Keranjang</span>
                         <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-100">
-                          <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" @click="decreaseCartQty(getCartItem(product.id))" />
-                          <span class="w-6 text-center text-xs font-black text-slate-800">{{ getCartItem(product.id).quantity }}</span>
-                          <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="getCartItem(product.id).quantity >= product.stock" @click="increaseCartQty(getCartItem(product.id), product.stock)" />
+                          <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" @click="decreaseCartQty(cartItem)" />
+                          <span class="w-6 text-center text-xs font-black text-slate-800">{{ cartItem.quantity }}</span>
+                          <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7"                              :disabled="cartItem.quantity >= displayStock"
+                             @click="increaseCartQty(cartItem, displayStock)" />
                         </div>
                       </div>
                       <Button 
@@ -612,7 +830,7 @@ const startChat = async () => {
                         label="Tanya via WhatsApp" 
                         icon="pi pi-whatsapp" 
                         class="w-full text-xs font-black bg-[#25D366] hover:bg-[#20ba56] border-none text-white h-11 rounded-xl flex items-center justify-center gap-1.5"
-                        :disabled="product.status === 'inactive' || product.stock === 0"
+                        :disabled="product.status === 'inactive' || displayStock === 0"
                       />
                     </a>
                     <Button 
@@ -689,7 +907,7 @@ const startChat = async () => {
                 <span class="text-sm font-bold text-slate-800">Ulasan & Penilaian ({{ product.reviews_count }})</span>
                 <div v-if="product.average_rating > 0" class="flex items-center gap-1 text-xs">
                   <span class="font-bold text-slate-700">Rata-rata:</span>
-                  <Rating :modelValue="product.average_rating" readonly :stars="5" :cancel="false" class="text-amber-500 text-xs gap-0.5" />
+                  <Rating :modelValue="product.average_rating" readonly :stars="5" :cancel="false" class="text-xs gap-0.5 rating-amber" />
                   <span class="font-black text-slate-800">{{ product.average_rating }}/5</span>
                 </div>
               </div>
@@ -717,14 +935,29 @@ const startChat = async () => {
                       </div>
                     </div>
                     <div class="flex flex-col items-end gap-1">
-                      <Rating :modelValue="review.rating" readonly :stars="5" :cancel="false" class="text-amber-500 text-xs gap-0.5" />
+                      <Rating :modelValue="review.rating" readonly :stars="5" :cancel="false" class="text-xs gap-0.5 rating-amber" />
                       <span class="text-xs text-slate-400 font-medium">{{ formatDate(review.created_at) }}</span>
                     </div>
                   </div>
                   
-                  <p class="text-slate-700 font-medium leading-relaxed pl-1">
+                  <p class="text-slate-700 font-medium leading-relaxed pl-1 mb-3">
+                    <span v-if="review.order_item?.variant_name" class="inline-flex items-center gap-0.5 text-[10px] bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-md mr-1.5 align-middle">
+                      <i class="pi pi-tag text-[9px]"></i> {{ review.order_item.variant_name }}
+                    </span>
                     {{ review.comment || 'Tanpa komentar.' }}
                   </p>
+
+                  <!-- Review Photos -->
+                  <div v-if="review.photos?.length > 0" class="flex gap-2 flex-wrap pl-1">
+                    <img
+                      v-for="photo in review.photos"
+                      :key="photo.id"
+                      :src="photo.image_url"
+                      alt="Foto Ulasan"
+                      class="w-16 h-16 rounded-xl object-cover border border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
+                      @click="openReviewImageViewer(photo.image_url)"
+                    />
+                  </div>
 
                   <!-- Seller Reply -->
                   <div v-if="review.reply" class="bg-primary-soft/40 p-3.5 rounded-2xl border border-primary/10 ml-4 space-y-1 text-slate-600">
@@ -808,16 +1041,19 @@ const startChat = async () => {
 
     <!-- Mobile Sticky Footer Action Bar -->
     <div 
-      v-if="product && product.status === 'active' && product.stock > 0 && !isOwnProduct" 
+      v-if="product && product.status === 'active' && displayStock > 0 && !isOwnProduct" 
       class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-lg flex items-center justify-between gap-4 select-none pb-[calc(16px+env(safe-area-inset-bottom,0px))]"
     >
       <div class="min-w-0">
         <span class="text-xs text-slate-400 font-bold uppercase tracking-wider block">Harga</span>
-        <span class="flex items-baseline gap-1">
+        <span class="flex items-baseline gap-2">
           <span class="text-xs font-bold text-primary">Rp</span>
           <strong class="text-xl font-black text-primary tracking-tight">
-            {{ parseFloat(product.price || 0).toLocaleString('id-ID') }}
+            {{ displayPrice.toLocaleString('id-ID') }}
           </strong>
+          <span v-if="displayPriceOriginal" class="text-[10px] text-slate-400 line-through font-semibold">
+            Rp{{ displayPriceOriginal.toLocaleString('id-ID') }}
+          </span>
         </span>
       </div>
       
@@ -841,7 +1077,7 @@ const startChat = async () => {
         />
 
         <!-- Cart Status / Editor -->
-        <template v-if="getCartItem(product.id)">
+        <template v-if="cartItem">
           <div class="flex items-center bg-slate-50 p-1 rounded-xl border border-slate-100 shrink-0">
             <Button 
               icon="pi pi-minus" 
@@ -850,9 +1086,9 @@ const startChat = async () => {
               rounded 
               size="small" 
               class="w-7.5 h-7.5" 
-              @click="decreaseCartQty(getCartItem(product.id))" 
+              @click="decreaseCartQty(cartItem)" 
             />
-            <span class="w-5 text-center text-xs font-black text-slate-800">{{ getCartItem(product.id).quantity }}</span>
+            <span class="w-5 text-center text-xs font-black text-slate-800">{{ cartItem.quantity }}</span>
             <Button 
               icon="pi pi-plus" 
               severity="secondary" 
@@ -860,8 +1096,8 @@ const startChat = async () => {
               rounded 
               size="small" 
               class="w-7.5 h-7.5" 
-              :disabled="getCartItem(product.id).quantity >= product.stock"
-              @click="increaseCartQty(getCartItem(product.id), product.stock)" 
+              :disabled="cartItem.quantity >= displayStock"
+              @click="increaseCartQty(cartItem, product.stock)" 
             />
           </div>
           <Button 
@@ -891,5 +1127,77 @@ const startChat = async () => {
       </div>
     </div>
 
+    <!-- Image Viewer Dialog -->
+    <Dialog
+      v-model:visible="imageViewerVisible"
+      modal
+      :header="`Foto ${imageViewerIndex + 1} / ${allImages.length}`"
+      class="w-full max-w-2xl mx-4"
+      :draggable="false"
+      dismissableMask
+    >
+      <div class="relative flex items-center justify-center">
+        <img
+          v-if="allImages.length > 0"
+          :src="allImages[imageViewerIndex]?.image_url || allImages[imageViewerIndex]?.image_path"
+          alt="Product Photo"
+          class="max-w-full max-h-[70vh] object-contain rounded-xl"
+        />
+        <button
+          v-if="allImages.length > 1"
+          class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+          @click="prevImage"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+        <button
+          v-if="allImages.length > 1"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+          @click="nextImage"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+      </div>
+    </Dialog>
+
+    <!-- Review Image Viewer Dialog -->
+    <Dialog
+      v-model:visible="reviewImageViewerVisible"
+      modal
+      header="Foto Ulasan"
+      class="w-full max-w-lg mx-4"
+      :draggable="false"
+      dismissableMask
+    >
+      <div class="flex justify-center items-center">
+        <img :src="reviewImageViewerSrc" alt="Foto Ulasan" class="max-w-full max-h-[70vh] rounded-xl object-contain" />
+      </div>
+    </Dialog>
+
   </div>
 </template>
+
+<style scoped>
+.carousel-slide-enter-active,
+.carousel-slide-leave-active {
+  transition: all 0.35s ease;
+}
+.carousel-slide-enter-from {
+  opacity: 0;
+  transform: scale(1.03);
+}
+.carousel-slide-leave-to {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.rating-amber :deep(.p-rating-option-active) {
+  color: #f59e0b !important;
+}
+.rating-amber :deep(.p-rating-icon) {
+  color: #f59e0b !important;
+}
+.rating-amber :deep(svg) {
+  fill: #f59e0b !important;
+}
+</style>

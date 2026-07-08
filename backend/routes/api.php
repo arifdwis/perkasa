@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\SellerOrderController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\StoreController;
+use App\Http\Controllers\Api\VoucherController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
@@ -69,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/stores/my-store/reopen', [StoreController::class, 'reopenMyStore']);
 
         // Seller Products
+        Route::apiResource('seller/vouchers', VoucherController::class)->only(['index', 'store', 'destroy']);
+        Route::post('/seller/vouchers/{id}/toggle', [VoucherController::class, 'update']);
         Route::get('/seller/products', [ProductController::class, 'sellerProducts']);
         Route::post('/seller/products', [ProductController::class, 'store']);
         Route::get('/seller/products/{id}', [ProductController::class, 'sellerShow']);
@@ -77,6 +80,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/seller/products/{id}/image', [ProductController::class, 'uploadImage']);
         Route::post('/seller/products/{id}/gallery', [ProductController::class, 'uploadGallery']);
         Route::delete('/seller/products/{productId}/images/{imageId}', [ProductController::class, 'deleteImage']);
+        Route::post('/seller/products/{productId}/variants/{variantId}/image', [ProductController::class, 'uploadVariantImage']);
+        Route::delete('/seller/products/{productId}/variants/{variantId}/images/{imageId}', [ProductController::class, 'deleteVariantImage']);
 
         // Favorites
         Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
@@ -91,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Checkout
         Route::post('/checkout', [CheckoutController::class, 'checkout']);
+        Route::post('/checkout/validate-voucher', [CheckoutController::class, 'validateVoucher']);
 
         // Buyer Orders
         Route::get('/orders', [OrderController::class, 'index']);
@@ -101,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/seller/orders', [SellerOrderController::class, 'index']);
         Route::get('/seller/orders/stats', [SellerOrderController::class, 'stats']);
         Route::get('/seller/orders/finance', [SellerOrderController::class, 'finance']);
+        Route::get('/seller/orders/daily-report', [SellerOrderController::class, 'dailyReport']);
         Route::get('/seller/orders/export/sales', [SellerOrderController::class, 'exportSales']);
         Route::get('/seller/orders/export/orders', [SellerOrderController::class, 'exportOrders']);
         Route::get('/seller/orders/{id}', [SellerOrderController::class, 'show']);

@@ -63,9 +63,13 @@ const routes = [
         component: () => import('../views/store/StoreProfileView.vue')
       },
       {
-        path: 'products/:slug',
+        path: 'products/:storeSlug/:slug',
         name: 'ProductDetail',
         component: () => import('../views/product/ProductDetailView.vue')
+      },
+      {
+        path: 'products/:slug',
+        redirect: to => ({ name: 'ProductDetail', params: { storeSlug: 'store', slug: to.params.slug } }),
       },
       {
         path: 'notifications',
@@ -125,6 +129,16 @@ const routes = [
         path: 'orders',
         name: 'SellerOrders',
         component: () => import('../views/store/order/SellerOrdersView.vue')
+      },
+      {
+        path: 'daily-report',
+        name: 'DailyReport',
+        component: () => import('../views/store/DailyReportView.vue')
+      },
+      {
+        path: 'vouchers',
+        name: 'SellerVouchers',
+        component: () => import('../views/store/VoucherView.vue')
       },
       {
         path: 'finance',

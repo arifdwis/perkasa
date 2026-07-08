@@ -8,7 +8,7 @@ import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import Toast from 'primevue/toast'
 import Card from 'primevue/card'
-import Dialog from 'primevue/dialog'
+import Drawer from 'primevue/drawer'
 import InputText from 'primevue/inputtext'
 import Tag from 'primevue/tag'
 import { Icon } from '@iconify/vue'
@@ -38,6 +38,7 @@ const loading = ref(true)
 // Quantity picker dialog state
 const showQtyDialog = ref(false)
 const selectedProduct = ref(null)
+const selectedVariant = ref(null)
 const qtyToBuy = ref(1)
 const addingToCart = ref(false)
 
@@ -62,6 +63,7 @@ const openQtyDialog = (product) => {
   }
 
   selectedProduct.value = product
+  selectedVariant.value = product.variants?.find(v => v.stock > 0) || product.variants?.[0] || null
   qtyToBuy.value = 1
   showQtyDialog.value = true
 }
@@ -73,7 +75,8 @@ const formatPrice = (val) => {
 const confirmAddToCart = async () => {
   if (!selectedProduct.value) return
   addingToCart.value = true
-  const res = await cartStore.addToCart(selectedProduct.value.id, qtyToBuy.value)
+  const variantId = selectedVariant.value?.id || selectedProduct.value?.variants?.[0]?.id || null
+  const res = await cartStore.addToCart(selectedProduct.value.id, qtyToBuy.value, variantId)
   addingToCart.value = false
   if (res.success) {
     toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
@@ -93,6 +96,29 @@ const confirmDirectCheckout = () => {
       quantity: qtyToBuy.value
     }
   })
+}
+
+const favoritedIds = ref(new Set())
+
+const fetchFavorites = async () => {
+  if (!isVerified.value) return
+  try {
+    const res = await axios.get('/favorites')
+    const ids = new Set()
+    res.data.products?.forEach(p => ids.add(p.id))
+    favoritedIds.value = ids
+  } catch (err) {}
+}
+
+const handleToggleFavorite = async (product) => {
+  if (!isVerified.value) return
+  try {
+    const res = await axios.post('/favorites/toggle', { favoritable_id: product.id, favoritable_type: 'product' })
+    const ids = new Set(favoritedIds.value)
+    if (res.data.favorited) ids.add(product.id)
+    else ids.delete(product.id)
+    favoritedIds.value = ids
+  } catch (err) {}
 }
 
 const programStudiList = ref([
@@ -168,17 +194,16 @@ const navigateToCategory = (shortcut) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    // 1. Stats
-    const statsRes = await axios.get('/dashboard/buyer')
+    const [statsRes, productsRes, storesRes] = await Promise.all([
+      axios.get('/dashboard/buyer'),
+      axios.get('/catalog', { params: { type: 'product', sort: 'latest', page: 1 } }),
+      axios.get('/catalog', { params: { type: 'store', sort: 'latest', page: 1 } }),
+    ])
+
     buyerStats.value = statsRes.data.data
-
-    // 2. Featured Products
-    const productsRes = await axios.get('/catalog', { params: { type: 'product', sort: 'latest', page: 1 } })
-    products.value = productsRes.data.data.slice(0, 6)
-
-    // 3. Popular Stores
-    const storesRes = await axios.get('/catalog', { params: { type: 'store', sort: 'latest', page: 1 } })
-    stores.value = storesRes.data.data.slice(0, 4)
+    products.value = (productsRes.data.data || []).slice(0, 6)
+    stores.value = (storesRes.data.data || []).slice(0, 4)
+    await cartStore.fetchCart()
   } catch (err) {
     console.error('Failed to load buyer home data', err)
   } finally {
@@ -190,6 +215,7 @@ onMounted(() => {
   checkAuth()
   fetchData()
   fetchCategoryShortcuts()
+  fetchFavorites()
 })
 </script>
 
@@ -305,9 +331,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Become Seller Card (CTA Gabung Jadi Penjual) -->
-    <BecomeSellerCard />
-
     <!-- Active Orders summary (if any) -->
     <div v-if="buyerStats?.pesanan_aktif > 0" class="bg-primary-soft/40 border border-primary/20 rounded-3xl p-4 flex items-center justify-between gap-4">
       <div class="flex items-center gap-3">
@@ -349,7 +372,7 @@ onMounted(() => {
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <div v-for="product in products" :key="product.id" class="h-full">
-            <ProductCard :product="product" @add-to-cart="openQtyDialog(product)" />
+            <ProductCard :product="product" :isFavorite="favoritedIds.has(product.id)" @add-to-cart="openQtyDialog(product)" @toggleFavorite="handleToggleFavorite(product)" />
           </div>
         </div>
       </section>
@@ -373,24 +396,38 @@ onMounted(() => {
         </div>
       </section>
     </template>
+
+    <BecomeSellerCard />
     </main>
 
-    <!-- Quantity Picker Dialog -->
-    <Dialog
+    <!-- Bottom Sheet Qty Picker -->
+    <Drawer
       v-model:visible="showQtyDialog"
-      modal
-      header="Atur Jumlah Pembelian"
-      class="w-full max-w-sm mx-4"
-      :breakpoints="{ '640px': '90vw' }"
-      :draggable="false"
-      dismissableMask
+      position="bottom"
+      class="!h-auto !w-[90%] !max-w-md !rounded-t-3xl !max-h-[50vh] overflow-y-auto mx-auto"
+      :pt="{ root: '!rounded-t-3xl', content: '!rounded-t-3xl' }"
     >
-      <div v-if="selectedProduct" class="space-y-5 pt-2">
+      <div class="flex justify-center -mt-1 mb-4">
+        <div class="w-10 h-1.5 bg-slate-300 rounded-full"></div>
+      </div>
+      <div v-if="selectedProduct" class="space-y-4 pb-6">
         <div class="flex gap-3 items-center">
           <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
             <img
-              v-if="selectedProduct.primary_image || selectedProduct.primary_image_path"
+              v-if="selectedVariant?.images?.[0]"
+              :src="selectedVariant.images[0].image_url || selectedVariant.images[0].image_path"
+              alt="Cover"
+              class="w-full h-full object-cover"
+            />
+            <img
+              v-else-if="selectedProduct.primary_image || selectedProduct.primary_image_path"
               :src="selectedProduct.primary_image?.image_path || selectedProduct.primary_image_path"
+              alt="Cover"
+              class="w-full h-full object-cover"
+            />
+            <img
+              v-else-if="selectedProduct.variants?.[0]?.images?.[0]"
+              :src="selectedProduct.variants[0].images[0].image_url || selectedProduct.variants[0].images[0].image_path"
               alt="Cover"
               class="w-full h-full object-cover"
             />
@@ -399,19 +436,31 @@ onMounted(() => {
           <div class="min-w-0">
             <h4 class="text-xs font-bold text-slate-800 line-clamp-1 leading-snug">{{ selectedProduct.name }}</h4>
             <span class="block text-xs font-extrabold text-primary mt-1">
-              Rp {{ formatPrice(selectedProduct.price) }}
+              Rp {{ formatPrice(selectedVariant?.price || selectedProduct.current_price || selectedProduct.price) }}
             </span>
-            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ selectedProduct.stock }} pcs</span>
+            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ selectedVariant ? selectedVariant.stock : (selectedProduct.total_stock ?? selectedProduct.stock) }} pcs</span>
           </div>
+        </div>
+
+        <div v-if="selectedProduct.variants?.length > 0" class="flex flex-wrap gap-2">
+          <button
+            v-for="v in selectedProduct.variants"
+            :key="v.id"
+            class="text-[10px] font-bold px-2 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5"
+            :class="selectedVariant?.id === v.id ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40'"
+            @click="selectedVariant = (selectedVariant?.id === v.id ? null : v)"
+          >
+            <img v-if="v.images?.length" :src="v.images[0]?.image_url || v.images[0]?.image_path" class="w-6 h-6 rounded object-cover border" :class="selectedVariant?.id === v.id ? 'border-white/30' : 'border-slate-200'" />
+            <span>{{ v.name }}</span>
+          </button>
         </div>
 
         <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
           <span class="text-xs font-bold text-slate-600">Jumlah</span>
-
           <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-100 flex-shrink-0 shadow-sm">
             <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy <= 1" @click="qtyToBuy--" />
             <span class="w-7 text-center text-xs font-bold text-slate-800">{{ qtyToBuy }}</span>
-            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy >= selectedProduct.stock" @click="qtyToBuy++" />
+            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy >= (selectedProduct.total_stock ?? selectedProduct.stock)" @click="qtyToBuy++" />
           </div>
         </div>
 
@@ -435,6 +484,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </Dialog>
+    </Drawer>
   </div>
 </template>

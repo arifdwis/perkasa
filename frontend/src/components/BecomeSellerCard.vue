@@ -26,7 +26,7 @@ const handleAction = () => {
 
 <template>
   <div v-if="verificationStatus !== 'verified' || !store || store.status === 'pending'" class="w-full">
-    <Card class="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-3xl overflow-hidden relative shadow-xs">
+    <Card class="bg-linear-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-3xl overflow-hidden relative shadow-xs">
       <template #content>
         <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-4">
           <div class="flex gap-4 items-start">

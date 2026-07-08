@@ -38,6 +38,7 @@ class OrderController extends Controller
         $order = Order::with([
             'store.alumniProfile.user',
             'items.product.primaryImage',
+            'items.product.variants.images',
             'items.review',
             'statusLogs.changer',
         ])->findOrFail($id);

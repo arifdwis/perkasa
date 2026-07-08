@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
@@ -7,6 +7,7 @@ import { useCartStore } from '../../stores/cart'
 import { useAuthStore } from '../../stores/auth'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import Drawer from 'primevue/drawer'
 import Textarea from 'primevue/textarea'
 import Toast from 'primevue/toast'
 import LoadingState from '../../components/LoadingState.vue'
@@ -25,8 +26,21 @@ const loading = ref(true)
 const sending = ref(false)
 const chatContainer = ref(null)
 const conversationId = route.params.id
+const imageFile = ref(null)
+const imagePreviewUrl = ref(null)
+const sendingLocation = ref(false)
+const fileInput = ref(null)
+const imageViewerVisible = ref(false)
+const imageViewerSrc = ref('')
 
 const chatProduct = computed(() => conversation.value?.product || null)
+
+const quickReplies = computed(() => {
+  if (isStoreOwner.value) {
+    return ['Barang ready ya kak', 'Silakan diorder', 'Bisa COD kok', 'Ada diskon nih']
+  }
+  return ['Masih tersedia?', 'Bisa COD?', 'Stok berapa kak?', 'Bisa diskon?', 'Dikirim hari ini?']
+})
 
 const isStoreOwner = computed(() => {
   const userId = authStore.user?.id
@@ -48,37 +62,43 @@ const headerName = computed(() => {
   return conversation.value?.store?.name || 'Toko'
 })
 
+const scrollToBottom = () => {
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  }
+}
+
 const fetchMessages = async () => {
   try {
     const res = await axios.get(`/chat/conversations/${conversationId}`)
     conversation.value = res.data.conversation
     messages.value = res.data.messages?.data || []
-    scrollToBottom()
   } catch (err) {
     console.error('Failed to fetch messages', err)
   } finally {
     loading.value = false
+    await nextTick()
+    scrollToBottom()
   }
 }
 
 onMounted(fetchMessages)
-
-const scrollToBottom = () => {
-  nextTick(() => {
-    if (chatContainer.value) {
-      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-    }
-  })
-}
-
-watch(messages, () => scrollToBottom(), { deep: true })
 
 let pollTimer = null
 onMounted(() => {
   pollTimer = setInterval(async () => {
     try {
       const res = await axios.get(`/chat/conversations/${conversationId}`)
-      messages.value = res.data.messages?.data || []
+      const newMessages = res.data.messages?.data || []
+      const currentLastId = messages.value[messages.value.length - 1]?.id
+      const newLastId = newMessages[newMessages.length - 1]?.id
+      if (currentLastId === newLastId) return
+      const wasAtBottom = chatContainer.value
+        && chatContainer.value.scrollTop + chatContainer.value.clientHeight >= chatContainer.value.scrollHeight - 40
+      messages.value = newMessages
+      if (wasAtBottom) {
+        scrollToBottom()
+      }
     } catch (err) {
       // ignore
     }
@@ -91,10 +111,21 @@ onUnmounted(() => {
 
 const sendMessage = async () => {
   const text = newText.value.trim()
-  if (!text) return
+  const hasImage = !!imageFile.value
+  if (!text && !hasImage) return
   sending.value = true
   try {
-    await axios.post(`/chat/conversations/${conversationId}/messages`, { text })
+    if (hasImage) {
+      const formData = new FormData()
+      formData.append('image', imageFile.value)
+      if (text) formData.append('text', text)
+      await axios.post(`/chat/conversations/${conversationId}/messages`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      clearImagePreview()
+    } else {
+      await axios.post(`/chat/conversations/${conversationId}/messages`, { text })
+    }
     newText.value = ''
     await fetchMessages()
   } catch (err) {
@@ -102,6 +133,78 @@ const sendMessage = async () => {
   } finally {
     sending.value = false
   }
+}
+
+const selectImage = () => {
+  fileInput.value?.click()
+}
+
+const onImageSelected = (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) {
+    toast.add({ severity: 'error', summary: 'File terlalu besar', detail: 'Maksimal 5MB', life: 3000 })
+    return
+  }
+  imageFile.value = file
+  imagePreviewUrl.value = URL.createObjectURL(file)
+  e.target.value = ''
+}
+
+const clearImagePreview = () => {
+  if (imagePreviewUrl.value) {
+    URL.revokeObjectURL(imagePreviewUrl.value)
+  }
+  imageFile.value = null
+  imagePreviewUrl.value = null
+}
+
+const sendLocation = async () => {
+  if (!navigator.geolocation) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Geolocation tidak didukung oleh browser Anda.', life: 3000 })
+    return
+  }
+  sendingLocation.value = true
+  try {
+    const getPosition = (opts) => new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, opts)
+    })
+
+    let position
+    try {
+      position = await getPosition({ enableHighAccuracy: false, timeout: 20000, maximumAge: 300000 })
+    } catch {
+      try {
+        position = await getPosition({ enableHighAccuracy: true, timeout: 25000, maximumAge: 300000 })
+      } catch (geoErr) {
+        const geoMsg = {
+          1: 'Izin lokasi ditolak. Buka Pengaturan > Privasi > Layanan Lokasi dan aktifkan untuk Chrome.',
+          2: 'Lokasi tidak tersedia. Pastikan Layanan Lokasi menyala di pengaturan sistem.',
+          3: 'Pengambilan lokasi terlalu lama. Coba lagi.',
+        }[geoErr?.code] || 'Browser tidak bisa mendapatkan lokasi. Coba pastikan Layanan Lokasi sistem menyala.'
+        throw new Error(geoMsg)
+      }
+    }
+
+    const { latitude, longitude } = position.coords
+    await axios.post(`/chat/conversations/${conversationId}/messages`, { latitude, longitude })
+    newText.value = ''
+    await fetchMessages()
+    toast.add({ severity: 'success', summary: 'Lokasi terkirim', life: 2000 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err?.message || err?.response?.data?.message || 'Tidak bisa mengirim lokasi.', life: 4000 })
+  } finally {
+    sendingLocation.value = false
+  }
+}
+
+const openImageViewer = (src) => {
+  imageViewerSrc.value = src
+  imageViewerVisible.value = true
+}
+
+const openLocationMap = (lat, lng) => {
+  window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank')
 }
 
 const handleKeydown = (e) => {
@@ -115,18 +218,21 @@ const showQtyDialog = ref(false)
 const qtyValue = ref(1)
 const addingToCart = ref(false)
 const qtyMode = ref('cart')
+const qtyVariant = ref(null)
 
 const openQtyDialog = (mode = 'cart') => {
   if (!chatProduct.value) return
   qtyMode.value = mode
   qtyValue.value = 1
+  qtyVariant.value = chatProduct.value.variants?.find(v => v.stock > 0) || chatProduct.value.variants?.[0] || null
   showQtyDialog.value = true
 }
 
 const confirmAddToCart = async () => {
   if (!chatProduct.value) return
   addingToCart.value = true
-  const res = await cartStore.addToCart(chatProduct.value.id, qtyValue.value)
+  const variantId = qtyVariant.value?.id || null
+  const res = await cartStore.addToCart(chatProduct.value.id, qtyValue.value, variantId)
   addingToCart.value = false
   if (res.success) {
     toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
@@ -139,10 +245,13 @@ const confirmAddToCart = async () => {
 const confirmDirectCheckout = () => {
   if (!chatProduct.value) return
   showQtyDialog.value = false
-  router.push({
-    name: 'Checkout',
-    query: { product_id: chatProduct.value.id, quantity: qtyValue.value }
-  })
+  const variantId = qtyVariant.value?.id || null
+  const query = {
+    product_id: chatProduct.value.id,
+    quantity: qtyValue.value,
+  }
+  if (variantId) query.product_variant_id = variantId
+  router.push({ name: 'Checkout', query })
 }
 
 const formatPrice = (val) => {
@@ -176,21 +285,27 @@ const isNewDay = (index) => {
   <div class="min-h-screen bg-slate-50 flex flex-col">
     <Toast />
 
-    <!-- Quantity Picker Dialog -->
-    <Dialog
+    <!-- Quantity Picker Bottom Sheet -->
+    <Drawer
       v-model:visible="showQtyDialog"
-      modal
-      header="Atur Jumlah Pembelian"
-      class="w-full max-w-sm mx-4"
-      :breakpoints="{ '640px': '90vw' }"
-      :draggable="false"
-      dismissableMask
+      position="bottom"
+      class="!h-auto !w-[90%] !max-w-md !rounded-t-3xl !max-h-[50vh] overflow-y-auto mx-auto"
+      :pt="{ root: '!rounded-t-3xl', content: '!rounded-t-3xl' }"
     >
-      <div v-if="chatProduct" class="space-y-5 pt-2">
+      <div class="flex justify-center -mt-1 mb-4">
+        <div class="w-10 h-1.5 bg-slate-300 rounded-full"></div>
+      </div>
+      <div v-if="chatProduct" class="space-y-4 pb-6">
         <div class="flex gap-3 items-center">
           <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
             <img
-              v-if="chatProduct.images?.find(i => i.is_primary)"
+              v-if="qtyVariant?.images?.[0]"
+              :src="qtyVariant.images[0].image_url || qtyVariant.images[0].image_path"
+              alt="Cover"
+              class="w-full h-full object-cover"
+            />
+            <img
+              v-else-if="chatProduct.images?.find(i => i.is_primary)"
               :src="chatProduct.images.find(i => i.is_primary).image_path"
               alt="Cover"
               class="w-full h-full object-cover"
@@ -199,9 +314,22 @@ const isNewDay = (index) => {
           </div>
           <div class="min-w-0">
             <h4 class="text-xs font-bold text-slate-800 line-clamp-1 leading-snug">{{ chatProduct.name }}</h4>
-            <span class="block text-xs font-extrabold text-primary mt-1">Rp {{ formatPrice(chatProduct.price) }}</span>
-            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ chatProduct.stock }} pcs</span>
+            <span class="block text-xs font-extrabold text-primary mt-1">Rp {{ formatPrice(qtyVariant?.price || chatProduct.current_price || chatProduct.price) }}</span>
+            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ qtyVariant?.stock || chatProduct.total_stock || chatProduct.stock }} pcs</span>
           </div>
+        </div>
+
+        <div v-if="chatProduct.variants?.length > 0" class="flex flex-wrap gap-2">
+          <button
+            v-for="v in chatProduct.variants"
+            :key="v.id"
+            class="text-[10px] font-bold px-2 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5"
+            :class="qtyVariant?.id === v.id ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40'"
+            @click="qtyVariant = (qtyVariant?.id === v.id ? null : v)"
+          >
+            <img v-if="v.images?.length" :src="v.images[0]?.image_url || v.images[0]?.image_path" class="w-6 h-6 rounded object-cover border" :class="qtyVariant?.id === v.id ? 'border-white/30' : 'border-slate-200'" />
+            <span>{{ v.name }}</span>
+          </button>
         </div>
 
         <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
@@ -209,7 +337,7 @@ const isNewDay = (index) => {
           <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-100 flex-shrink-0 shadow-sm">
             <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyValue <= 1" @click="qtyValue--" />
             <span class="w-7 text-center text-xs font-bold text-slate-800">{{ qtyValue }}</span>
-            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyValue >= chatProduct.stock" @click="qtyValue++" />
+            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyValue >= (qtyVariant?.stock || chatProduct.total_stock || chatProduct.stock)" @click="qtyValue++" />
           </div>
         </div>
 
@@ -235,6 +363,20 @@ const isNewDay = (index) => {
           </div>
         </div>
       </div>
+    </Drawer>
+
+    <!-- Image Viewer Dialog -->
+    <Dialog
+      v-model:visible="imageViewerVisible"
+      modal
+      header="Foto"
+      class="w-full max-w-lg mx-4"
+      :draggable="false"
+      dismissableMask
+    >
+      <div class="flex justify-center items-center">
+        <img :src="imageViewerSrc" alt="Foto" class="max-w-full max-h-[70vh] rounded-xl object-contain" />
+      </div>
     </Dialog>
 
     <LoadingState v-if="loading" message="Memuat percakapan..." />
@@ -259,23 +401,34 @@ const isNewDay = (index) => {
         </div>
       </header>
 
-      <!-- Product Info Bar (buyer only) -->
-      <div v-if="chatProduct && !isStoreOwner" class="bg-white border-b border-slate-100 shadow-xs px-4 py-3">
+      <!-- Product Info Bar (buyer only, sticky below header) -->
+      <div v-if="chatProduct && !isStoreOwner" class="bg-white border-b border-slate-100 shadow-xs px-4 py-3 sticky top-14 z-20">
         <div class="max-w-4xl mx-auto flex items-center gap-3">
           <div class="w-14 h-14 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
             <img
-              v-if="chatProduct.images?.find(i => i.is_primary)"
+              v-if="chatProduct.variants?.[0]?.images?.[0]"
+              :src="chatProduct.variants[0].images[0].image_url || chatProduct.variants[0].images[0].image_path"
+              class="w-full h-full object-cover"
+            />
+            <img
+              v-else-if="chatProduct.images?.find(i => i.is_primary)"
               :src="chatProduct.images.find(i => i.is_primary).image_path"
               class="w-full h-full object-cover"
             />
             <Icon v-else icon="solar:box-bold" class="text-slate-300 text-xl w-full h-full flex items-center justify-center" />
           </div>
-          <div class="min-w-0 flex-1">
-            <h4 class="text-sm font-bold text-slate-800 truncate leading-tight">{{ chatProduct.name }}</h4>
-            <div class="flex items-center gap-2 mt-0.5">
-              <span class="text-sm font-black text-primary">Rp{{ parseFloat(chatProduct.price || 0).toLocaleString('id-ID') }}</span>
-              <span class="text-[10px] text-slate-400">Stok: {{ chatProduct.stock }}</span>
-            </div>
+            <div class="min-w-0 flex-1">
+              <h4 class="text-sm font-bold text-slate-800 truncate leading-tight">{{ chatProduct.name }}</h4>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span v-if="chatProduct.variants?.length > 0" class="text-sm font-black text-primary">
+                  Rp{{ formatPrice(chatProduct.min_variant_price) }}
+                  <template v-if="chatProduct.variants.length > 1">
+                    - Rp{{ formatPrice(Math.max(...chatProduct.variants.map(v => parseFloat(v.price)))) }}
+                  </template>
+                </span>
+                <span v-else class="text-sm font-black text-primary">Rp{{ formatPrice(chatProduct.price) }}</span>
+                <span class="text-[10px] text-slate-400">Stok: {{ chatProduct.total_stock || chatProduct.stock }}</span>
+              </div>
             <div v-if="chatProduct.product_type === 'pre_order'" class="flex items-center gap-1.5 mt-1">
               <span class="text-[10px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md flex items-center gap-1">
                 <i class="pi pi-clock text-[9px]"></i> PRE-ORDER
@@ -380,7 +533,42 @@ const isNewDay = (index) => {
               <p class="text-[10px] text-slate-400 font-semibold px-1" :class="msg.is_mine ? 'text-right' : 'text-left'">
                 {{ msg.is_mine ? 'Anda' : (msg.user?.name || 'Penjual') }}
               </p>
+
+              <!-- Image message -->
+              <div v-if="msg.type === 'image'" class="rounded-2xl overflow-hidden shadow-xs cursor-pointer" @click="openImageViewer(msg.image_url)">
+                <img :src="msg.image_url" alt="Foto" class="max-w-full max-h-64 object-cover" />
+              </div>
+
+              <!-- Location message -->
               <div
+                v-else-if="msg.type === 'location'"
+                class="overflow-hidden rounded-2xl shadow-xs cursor-pointer max-w-[240px]"
+                @click="openLocationMap(msg.latitude, msg.longitude)"
+              >
+                <div class="relative w-full h-[140px] bg-slate-200">
+                  <img
+                    :src="`https://staticmap.openstreetmap.de/staticmap.php?center=${msg.latitude},${msg.longitude}&zoom=15&size=240x140&markers=${msg.latitude},${msg.longitude},red-pushpin`"
+                    alt="Peta Lokasi"
+                    class="w-full h-full object-cover"
+                    @error="(e) => e.target.style.display = 'none'"
+                  />
+                  <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none">
+                    <Icon icon="solar:map-point-bold-duotone" class="text-4xl" />
+                    <span class="text-[10px] font-bold mt-1">{{ parseFloat(msg.latitude).toFixed(5) }}, {{ parseFloat(msg.longitude).toFixed(5) }}</span>
+                  </div>
+                </div>
+                <div
+                  class="px-3 py-2 flex items-center gap-1.5 text-xs font-bold"
+                  :class="msg.is_mine ? 'bg-primary text-white' : 'bg-white text-slate-700 border-t border-slate-100'"
+                >
+                  <Icon icon="solar:map-point-bold-duotone" class="text-sm shrink-0" />
+                  <span>Lihat di Google Maps</span>
+                </div>
+              </div>
+
+              <!-- Text message bubble -->
+              <div
+                v-else
                 class="px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-xs"
                 :class="msg.is_mine
                   ? 'bg-primary text-white rounded-br-md'
@@ -388,6 +576,18 @@ const isNewDay = (index) => {
               >
                 <p class="whitespace-pre-wrap">{{ msg.text }}</p>
               </div>
+
+              <!-- Caption for image/location -->
+              <div
+                v-if="msg.text && (msg.type === 'image' || msg.type === 'location')"
+                class="px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-xs"
+                :class="msg.is_mine
+                  ? 'bg-primary text-white rounded-br-md'
+                  : 'bg-white text-slate-800 border border-slate-100 rounded-bl-md'"
+              >
+                <p class="whitespace-pre-wrap">{{ msg.text }}</p>
+              </div>
+
               <p class="text-[10px] text-slate-300 px-1" :class="msg.is_mine ? 'text-right' : 'text-left'">{{ formatTime(msg.created_at) }}</p>
             </div>
           </div>
@@ -395,25 +595,65 @@ const isNewDay = (index) => {
       </div>
 
       <div class="px-4 py-3 border-t border-slate-200 bg-white">
-        <div class="max-w-4xl mx-auto flex items-end gap-2">
-          <Textarea
-            v-model="newText"
-            rows="1"
-            autoResize
-            placeholder="Tulis pesan..."
-            class="flex-1 !bg-slate-50 !border-slate-200 !rounded-2xl text-sm"
-            :disabled="sending"
-            @keydown="handleKeydown"
-          />
-          <Button
-            icon="pi pi-send"
-            severity="primary"
-            rounded
-            class="!w-10 !h-10 !rounded-xl shrink-0"
-            :loading="sending"
-            :disabled="!newText.trim()"
-            @click="sendMessage"
-          />
+        <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden" @change="onImageSelected" />
+        <div class="max-w-4xl mx-auto space-y-2">
+          <div class="flex flex-wrap gap-1.5">
+            <button v-for="tpl in quickReplies" :key="tpl"
+                    class="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-colors"
+                    @click="newText = tpl; sendMessage()">
+              {{ tpl }}
+            </button>
+          </div>
+
+          <div v-if="imagePreviewUrl" class="relative inline-block">
+            <img :src="imagePreviewUrl" alt="Preview" class="h-20 rounded-xl object-cover border border-slate-200" />
+            <button
+              class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-slate-700 text-white rounded-full flex items-center justify-center text-[10px] shadow"
+              @click="clearImagePreview"
+            >
+              <Icon icon="solar:close-circle-bold" class="text-xs" />
+            </button>
+          </div>
+
+          <div class="flex items-end gap-2">
+            <Button
+              icon="pi pi-camera"
+              severity="secondary"
+              text
+              rounded
+              class="!w-10 !h-10 shrink-0"
+              :disabled="sending"
+              @click="selectImage"
+            />
+            <Button
+              icon="pi pi-map-marker"
+              severity="secondary"
+              text
+              rounded
+              class="!w-10 !h-10 shrink-0"
+              :loading="sendingLocation"
+              :disabled="sending"
+              @click="sendLocation"
+            />
+            <Textarea
+              v-model="newText"
+              rows="1"
+              autoResize
+              placeholder="Tulis pesan..."
+              class="flex-1 !bg-slate-50 !border-slate-200 !rounded-2xl text-sm"
+              :disabled="sending"
+              @keydown="handleKeydown"
+            />
+            <Button
+              icon="pi pi-send"
+              severity="primary"
+              rounded
+              class="!w-10 !h-10 !rounded-xl shrink-0"
+              :loading="sending"
+              :disabled="!newText.trim() && !imageFile"
+              @click="sendMessage"
+            />
+          </div>
         </div>
       </div>
     </template>

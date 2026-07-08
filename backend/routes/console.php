@@ -9,4 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('perkasa:close-pre-orders')->everyMinute()->withoutOverlapping();
+Schedule::command('perkasa:daily-report')->dailyAt('00:00')->withoutOverlapping();
 

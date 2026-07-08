@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Notifications\NewOrderNotification;
 use App\Services\WebPushService;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -20,19 +21,31 @@ class CheckoutController extends Controller
     {
         $directProductId = $request->input('product_id');
         $directQuantity = intval($request->input('quantity', 1));
+        $directVariantId = $request->input('product_variant_id');
 
         $grouped = [];
         $isDirect = false;
         $cart = null;
 
         if ($directProductId) {
-            $product = \App\Models\Product::with(['store.deliveryFees', 'store.alumniProfile'])->find($directProductId);
+            $product = \App\Models\Product::with(['store.deliveryFees', 'store.alumniProfile', 'variants'])->find($directProductId);
             if (! $product || $product->status === 'inactive') {
                 return response()->json(['message' => 'Produk tidak aktif atau tidak tersedia.'], 400);
             }
-            if ($product->stock < $directQuantity || $product->status === 'out_of_stock') {
+
+            $variant = null;
+            $availableStock = $product->total_stock;
+            if ($directVariantId) {
+                $variant = $product->variants->find($directVariantId);
+                if (! $variant) {
+                    return response()->json(['message' => 'Varian produk tidak ditemukan.'], 400);
+                }
+                $availableStock = $variant->stock;
+            }
+
+            if ($availableStock < $directQuantity || $product->status === 'out_of_stock') {
                 if ($product->product_type !== 'pre_order') {
-                    return response()->json(['message' => "Stok produk {$product->name} tidak mencukupi. Hanya tersedia {$product->stock} unit."], 400);
+                    return response()->json(['message' => "Stok produk {$product->name} tidak mencukupi. Hanya tersedia {$availableStock} unit."], 400);
                 }
             }
             $store = $product->store;
@@ -46,12 +59,14 @@ class CheckoutController extends Controller
             $mockItem = new \stdClass();
             $mockItem->product = $product;
             $mockItem->quantity = $directQuantity;
+            $mockItem->product_variant_id = $directVariantId;
+            $mockItem->variant_name = $variant?->name;
 
             $grouped[$store->id][] = $mockItem;
             $isDirect = true;
         } else {
             $cart = $request->user()->cart()->firstOrCreate();
-            $cart->load(['items.product.store.deliveryFees', 'items.product.store.alumniProfile']);
+            $cart->load(['items.product.store.deliveryFees', 'items.product.store.alumniProfile', 'items.product.variants']);
 
             if ($cart->items->isEmpty()) {
                 return response()->json(['message' => 'Keranjang belanja kosong.'], 400);
@@ -63,9 +78,18 @@ class CheckoutController extends Controller
                 if (! $product || $product->status === 'inactive') {
                     return response()->json(['message' => "Produk {$product?->name} tidak aktif atau tidak tersedia."], 400);
                 }
-                if ($product->stock < $item->quantity || $product->status === 'out_of_stock') {
+
+                $stockToCheck = $product->total_stock;
+                if ($item->product_variant_id) {
+                    $variant = $product->variants->find($item->product_variant_id);
+                    if ($variant) {
+                        $stockToCheck = $variant->stock;
+                    }
+                }
+
+                if ($stockToCheck < $item->quantity || $product->status === 'out_of_stock') {
                     if ($product->product_type !== 'pre_order') {
-                        return response()->json(['message' => "Stok produk {$product->name} tidak mencukupi. Hanya tersedia {$product->stock} unit."], 400);
+                        return response()->json(['message' => "Stok produk {$product->name} tidak mencukupi. Hanya tersedia {$stockToCheck} unit."], 400);
                     }
                 }
                 $store = $product->store;
@@ -111,7 +135,7 @@ class CheckoutController extends Controller
                     // Calculate subtotal
                     $subtotal = 0;
                     foreach ($items as $item) {
-                        $subtotal += floatval($item->product->price) * $item->quantity;
+                        $subtotal += floatval($item->product->current_price) * $item->quantity;
                     }
 
                     // Calculate delivery fee
@@ -174,26 +198,47 @@ class CheckoutController extends Controller
                         $productFresh = $product->fresh();
                         $isPreOrder = $productFresh->product_type === 'pre_order';
                         if (! $isPreOrder) {
-                            if ($productFresh->stock < $item->quantity || $productFresh->status === 'inactive') {
+                            $stockAvailable = $productFresh->total_stock;
+                            $variantToReduce = null;
+                            if (! empty($item->product_variant_id)) {
+                                $variantToReduce = \App\Models\ProductVariant::find($item->product_variant_id);
+                                if ($variantToReduce) {
+                                    $stockAvailable = $variantToReduce->stock;
+                                }
+                            }
+                            if ($stockAvailable < $item->quantity || $productFresh->status === 'inactive') {
                                 throw new \Exception("Stok produk {$product->name} tidak mencukupi atau produk telah dinonaktifkan. Checkout dibatalkan.");
                             }
+                        }
+
+                        $variantName = $item->variant_name ?? null;
+                        if (! $variantName && ! empty($item->product_variant_id)) {
+                            $v = \App\Models\ProductVariant::find($item->product_variant_id);
+                            $variantName = $v?->name;
                         }
 
                         OrderItem::create([
                             'order_id' => $order->id,
                             'product_id' => $product->id,
+                            'product_variant_id' => $item->product_variant_id ?? null,
+                            'variant_name' => $variantName,
                             'name' => $product->name,
-                            'price' => floatval($product->price),
+                            'price' => floatval($product->current_price),
                             'quantity' => $item->quantity,
                         ]);
 
                         // Reduce stock (skip for pre-order)
                         if (! $isPreOrder) {
-                            $newStock = $productFresh->stock - $item->quantity;
-                            $productFresh->update([
-                                'stock' => $newStock,
-                                'status' => $newStock === 0 ? 'out_of_stock' : $productFresh->status,
-                            ]);
+                            if (isset($variantToReduce) && $variantToReduce) {
+                                $newStock = $variantToReduce->stock - $item->quantity;
+                                $variantToReduce->update(['stock' => $newStock]);
+                            } else {
+                                $newStock = $productFresh->stock - $item->quantity;
+                                $productFresh->update([
+                                    'stock' => $newStock,
+                                    'status' => $newStock === 0 ? 'out_of_stock' : $productFresh->status,
+                                ]);
+                            }
                         }
                     }
 
@@ -233,5 +278,27 @@ class CheckoutController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 400);
         }
+    }
+
+    public function validateVoucher(Request $request)
+    {
+        $request->validate(['code' => 'required|string', 'subtotal' => 'required|numeric']);
+
+        $voucher = Voucher::where('code', strtoupper($request->code))->first();
+
+        if (! $voucher || ! $voucher->isValid()) {
+            return response()->json(['message' => 'Kode voucher tidak valid atau sudah kadaluarsa.'], 400);
+        }
+
+        $discount = $voucher->calculateDiscount((float) $request->subtotal);
+        if ($discount <= 0) {
+            return response()->json(['message' => 'Subtotal belum memenuhi minimal pembelian untuk voucher ini.'], 400);
+        }
+
+        return response()->json([
+            'voucher' => ['code' => $voucher->code, 'type' => $voucher->type, 'value' => $voucher->value],
+            'discount' => $discount,
+            'message' => 'Voucher valid! Diskon Rp' . number_format($discount, 0, ',', '.'),
+        ]);
     }
 }

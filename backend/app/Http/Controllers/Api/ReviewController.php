@@ -10,8 +10,10 @@ use App\Models\Product;
 use App\Models\Review;
 use App\Models\Store;
 use App\Notifications\NewReviewNotification;
+use App\Services\ImageService;
 use App\Services\WebPushService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class ReviewController extends Controller
@@ -21,7 +23,7 @@ class ReviewController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Review::with(['user.profile']);
+        $query = Review::with(['user.profile', 'photos', 'orderItem']);
 
         if ($request->has('product_id') && $request->product_id) {
             $query->where('reviewable_type', Product::class)
@@ -46,44 +48,43 @@ class ReviewController extends Controller
         $reviewableType = null;
         $reviewableId = null;
 
-        if ($type !== 'product') {
-            return response()->json([
-                'message' => 'Tipe ulasan tidak valid.',
-            ], 400);
+        if ($type === 'product') {
+            if (! $request->order_item_id) {
+                return response()->json(['message' => 'ID item pesanan wajib disertakan.'], 400);
+            }
+
+            $orderItem = OrderItem::with('order.store')->findOrFail($request->order_item_id);
+            $order = $orderItem->order;
+
+            if ($order->user_id !== $request->user()->id) {
+                return response()->json(['message' => 'Anda tidak memiliki wewenang untuk mengulas pesanan ini.'], 403);
+            }
+            if ($order->status !== 'selesai') {
+                return response()->json(['message' => 'Ulasan hanya dapat dibuat setelah status pesanan selesai.'], 400);
+            }
+            if (Review::where('order_item_id', $request->order_item_id)->exists()) {
+                return response()->json(['message' => 'Anda sudah mengulas item pesanan ini.'], 400);
+            }
+
+            $orderItemId = $orderItem->id;
+            $storeId = $order->store_id;
+            $reviewableType = Product::class;
+            $reviewableId = $orderItem->product_id;
+        } elseif ($type === 'store') {
+            $store = Store::findOrFail($request->reviewable_id);
+            if ($store->status !== 'active') {
+                return response()->json(['message' => 'Toko tidak aktif.'], 400);
+            }
+            if ($store->alumniProfile?->user_id === $request->user()->id) {
+                return response()->json(['message' => 'Anda tidak dapat mengulas toko sendiri.'], 400);
+            }
+
+            $storeId = $store->id;
+            $reviewableType = Store::class;
+            $reviewableId = $store->id;
+        } else {
+            return response()->json(['message' => 'Tipe ulasan tidak valid.'], 400);
         }
-
-        if (! $request->order_item_id) {
-            return response()->json([
-                'message' => 'ID item pesanan wajib disertakan untuk mengulas produk.',
-            ], 400);
-        }
-
-        $orderItem = OrderItem::with('order.store')->findOrFail($request->order_item_id);
-        $order = $orderItem->order;
-
-        if ($order->user_id !== $request->user()->id) {
-            return response()->json([
-                'message' => 'Anda tidak memiliki wewenang untuk mengulas pesanan ini.',
-            ], 403);
-        }
-
-        if ($order->status !== 'selesai') {
-            return response()->json([
-                'message' => 'Ulasan hanya dapat dibuat setelah status pesanan selesai.',
-            ], 400);
-        }
-
-        $exists = Review::where('order_item_id', $request->order_item_id)->exists();
-        if ($exists) {
-            return response()->json([
-                'message' => 'Anda sudah mengulas item pesanan ini.',
-            ], 400);
-        }
-
-        $orderItemId = $orderItem->id;
-        $storeId = $order->store_id;
-        $reviewableType = Product::class;
-        $reviewableId = $orderItem->product_id;
 
         $review = Review::create([
             'user_id' => $request->user()->id,
@@ -94,6 +95,17 @@ class ReviewController extends Controller
             'rating' => $request->rating,
             'comment' => $request->comment,
         ]);
+
+        if ($request->hasFile('photos')) {
+            $imageService = new ImageService;
+            foreach ($request->file('photos') as $i => $file) {
+                $path = $imageService->storeAsWebP($file, 'review_photos');
+                $review->photos()->create([
+                    'image_path' => $path,
+                    'is_primary' => $i === 0,
+                ]);
+            }
+        }
 
         activity()
             ->performedOn($review)
@@ -119,7 +131,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Ulasan berhasil disimpan.',
-            'review' => $review->load(['user.profile']),
+            'review' => $review->load(['user.profile', 'photos']),
         ], 201);
     }
 
@@ -143,7 +155,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' => 'Ulasan berhasil dibalas.',
-            'review' => $review->load(['user.profile']),
+            'review' => $review->load(['user.profile', 'photos']),
         ]);
     }
 }

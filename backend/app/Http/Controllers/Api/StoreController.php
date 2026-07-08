@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Store;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -215,7 +216,8 @@ class StoreController extends Controller
             Storage::disk('public')->delete($oldPath);
         }
 
-        $path = $request->file('logo')->store('store_logos', 'public');
+        $path = (new ImageService)->storeAsWebP($request->file('logo'), 'store_logos');
+
         $store->update([
             'logo' => asset('storage/'.$path),
         ]);
@@ -249,7 +251,7 @@ class StoreController extends Controller
             Storage::disk('public')->delete($oldPath);
         }
 
-        $path = $request->file('banner')->store('store_banners', 'public');
+        $path = (new ImageService)->storeAsWebP($request->file('banner'), 'store_banners');
         $store->update([
             'banner' => asset('storage/'.$path),
         ]);

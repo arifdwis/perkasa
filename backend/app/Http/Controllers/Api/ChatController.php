@@ -10,9 +10,11 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Models\User;
 use App\Notifications\NewMessageNotification;
+use App\Services\ImageService;
 use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
@@ -61,6 +63,8 @@ class ChatController extends Controller
                 'product:id,name,slug,price,stock,product_category_id,product_type,pre_order_deadline,pre_order_estimated_ship',
                 'product.images',
                 'product.category',
+                'product.variants',
+                'product.variants.images',
                 'participants.user:id,name',
             ])
             ->findOrFail($id);
@@ -200,19 +204,42 @@ class ChatController extends Controller
     public function sendMessage(Request $request, $id)
     {
         $request->validate([
-            'text' => 'required|string|max:2000',
+            'text' => 'nullable|string|max:2000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
+
+        if (! $request->filled('text') && ! $request->hasFile('image') && ! $request->filled('latitude')) {
+            return response()->json(['message' => 'Pesan tidak boleh kosong.'], 422);
+        }
 
         $userId = $request->user()->id;
         $conversation = Conversation::whereHas('participants', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         })->findOrFail($id);
 
-        $message = Message::create([
+        $data = [
             'conversation_id' => $conversation->id,
             'user_id' => $userId,
-            'text' => $request->text,
-        ]);
+            'type' => 'text',
+        ];
+
+        if ($request->hasFile('image')) {
+            $path = (new ImageService)->storeAsWebP($request->file('image'), 'chat/images');
+            $data['type'] = 'image';
+            $data['image_path'] = $path;
+            $data['text'] = $request->text ?: null;
+        } elseif ($request->filled('latitude') && $request->filled('longitude')) {
+            $data['type'] = 'location';
+            $data['latitude'] = $request->latitude;
+            $data['longitude'] = $request->longitude;
+            $data['text'] = $request->text ?: null;
+        } else {
+            $data['text'] = $request->text;
+        }
+
+        $message = Message::create($data);
 
         $conversation->update(['last_message_id' => $message->id]);
 
@@ -230,12 +257,19 @@ class ChatController extends Controller
             $otherUser = User::find($otherParticipant->user_id);
             if ($otherUser) {
                 $otherUser->notify(new NewMessageNotification($conversation, $message));
+
+                $preview = match ($message->type) {
+                    'image' => '[Foto]',
+                    'location' => '[Lokasi]',
+                    default => mb_strimwidth($message->text, 0, 100, '...'),
+                };
+
                 $store = $conversation->store;
                 $isStoreOwner = $otherUser->id === ($store->alumniProfile->user_id ?? null);
                 app(WebPushService::class)->sendToUser(
                     $otherUser->id,
                     'Chat Baru: ' . ($message->user->name ?? 'Pengguna'),
-                    mb_strimwidth($message->text, 0, 100, '...'),
+                    $preview,
                     '/logo_unmul.png',
                     $isStoreOwner ? '/seller/chat/' . $conversation->id : '/buyer/chat/' . $conversation->id
                 );

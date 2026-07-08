@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 
 class SellerOrderController extends Controller
@@ -93,6 +94,7 @@ class SellerOrderController extends Controller
         $order = Order::with([
             'user.profile',
             'items.product.primaryImage',
+            'items.product.variants.images',
             'items.review',
             'statusLogs.changer',
         ])->findOrFail($id);
@@ -406,5 +408,97 @@ class SellerOrderController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => 'Gagal memperbarui status pesanan.'], 500);
         }
+    }
+
+    public function dailyReport(Request $request)
+    {
+        $profile = $request->user()->profile;
+        if (! $profile || ! $profile->store) {
+            return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
+        }
+
+        $store = $profile->store;
+        $date = $request->get('date', Carbon::today()->toDateString());
+        $targetDate = Carbon::parse($date);
+        $prevDate = $targetDate->copy()->subDay();
+
+        $orders = Order::where('store_id', $store->id)
+            ->whereDate('created_at', $targetDate)
+            ->get();
+
+        $prevOrders = Order::where('store_id', $store->id)
+            ->whereDate('created_at', $prevDate)
+            ->get();
+
+        $totalRevenue = $orders->sum('total');
+        $totalOrders = $orders->count();
+        $completedOrders = $orders->where('status', 'selesai')->count();
+        $processingOrders = $orders->whereIn('status', ['diproses', 'dalam_pengantaran'])->count();
+        $cancelledOrders = $orders->where('status', 'dibatalkan')->count();
+        $pendingOrders = $orders->where('status', 'menunggu_konfirmasi')->count();
+        $codTotal = $orders->sum('total');
+
+        $prevRevenue = $prevOrders->sum('total');
+        $prevOrdersCount = $prevOrders->count();
+
+        $revenueChange = $prevRevenue > 0
+            ? round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1)
+            : ($totalRevenue > 0 ? 100 : 0);
+
+        $orderChange = $prevOrdersCount > 0
+            ? round((($totalOrders - $prevOrdersCount) / $prevOrdersCount) * 100, 1)
+            : ($totalOrders > 0 ? 100 : 0);
+
+        $hourlyBreakdown = $orders->groupBy(function ($order) {
+            return Carbon::parse($order->created_at)->format('H');
+        })->map(function ($group) {
+            return [
+                'count' => $group->count(),
+                'revenue' => $group->sum('total'),
+            ];
+        })->sortKeys();
+
+        $orderIds = $orders->pluck('id');
+        $topProducts = OrderItem::whereIn('order_id', $orderIds)
+            ->select('product_id', DB::raw('SUM(quantity) as total_qty'), DB::raw('SUM(quantity * price) as total_revenue'))
+            ->groupBy('product_id')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->with('product:id,name,slug')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'product_id' => $item->product_id,
+                    'name' => $item->product?->name ?? '-',
+                    'total_qty' => (int) $item->total_qty,
+                    'total_revenue' => (float) $item->total_revenue,
+                ];
+            });
+
+        $paymentBreakdown = $orders->groupBy('payment_method')->map->count();
+
+        return response()->json([
+            'date' => $targetDate->toDateString(),
+            'day_name' => $targetDate->translatedFormat('l'),
+            'formatted_date' => $targetDate->translatedFormat('d M Y'),
+            'summary' => [
+                'total_orders' => $totalOrders,
+                'total_revenue' => $codTotal,
+                'completed_orders' => $completedOrders,
+                'processing_orders' => $processingOrders,
+                'cancelled_orders' => $cancelledOrders,
+                'pending_orders' => $pendingOrders,
+                'average_order_value' => $totalOrders > 0 ? round($codTotal / $totalOrders) : 0,
+            ],
+            'comparison' => [
+                'revenue_change_pct' => $revenueChange,
+                'order_change_pct' => $orderChange,
+                'prev_orders' => $prevOrdersCount,
+                'prev_revenue' => $prevRevenue,
+            ],
+            'hourly' => $hourlyBreakdown,
+            'top_products' => $topProducts,
+            'payment' => $paymentBreakdown,
+        ]);
     }
 }

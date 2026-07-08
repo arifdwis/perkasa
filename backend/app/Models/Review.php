@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasUuid7;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Review extends Model
@@ -58,5 +59,10 @@ class Review extends Model
     public function reviewable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function photos(): HasMany
+    {
+        return $this->hasMany(ReviewPhoto::class);
     }
 }

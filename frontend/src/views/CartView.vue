@@ -233,7 +233,7 @@ onMounted(() => { checkVerification(); cartStore.fetchCart() })
                     class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary cursor-pointer shrink-0 self-center"
                   />
                   <div class="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
-                    <img v-if="item.primary_image" :src="item.primary_image.image_path" class="w-full h-full object-cover" />
+                    <img v-if="item.variant_image || item.primary_image?.image_path" :src="item.variant_image || item.primary_image.image_path" class="w-full h-full object-cover" />
                     <Icon v-else icon="solar:box-bold-duotone" class="text-slate-300 text-2xl" />
                   </div>
 

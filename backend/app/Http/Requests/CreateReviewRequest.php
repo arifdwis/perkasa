@@ -21,10 +21,12 @@ class CreateReviewRequest extends FormRequest
     {
         return [
             'order_item_id' => ['nullable', 'string', 'exists:order_items,id'],
-            'reviewable_type' => ['required', 'string', 'in:product'],
+            'reviewable_type' => ['required', 'string', 'in:product,store'],
             'reviewable_id' => ['required', 'string'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:1000'],
+            'photos' => ['nullable', 'array', 'max:5'],
+            'photos.*' => ['image', 'mimes:jpeg,png,jpg,gif,webp', 'max:5120'],
         ];
     }
 }

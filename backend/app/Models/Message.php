@@ -16,10 +16,19 @@ class Message extends Model
         'type',
         'text',
         'product_id',
+        'image_path',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:7',
+        'longitude' => 'decimal:7',
     ];
 
     protected $appends = [
         'is_mine',
+        'image_url',
     ];
 
     public function conversation(): BelongsTo
@@ -44,5 +53,14 @@ class Message extends Model
         }
 
         return $this->user_id === auth()->id();
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->image_path);
     }
 }

@@ -38,8 +38,48 @@ const form = ref({
   pre_order_deadline: null,
   pre_order_estimated_ship: null,
   pre_order_min_qty: 1,
-  pre_order_max_qty: 10
+  pre_order_max_qty: 10,
+  is_flash_sale: false,
+  flash_sale_price: 0,
+  flash_sale_start: null,
+  flash_sale_end: null
 })
+
+const variants = ref([])
+
+const addVariant = () => {
+  variants.value.push({ name: '', price: form.value.price, stock: 0, images: [], imageFiles: [] })
+}
+
+const removeVariant = (index) => {
+  variants.value.splice(index, 1)
+}
+
+const hasVariants = computed(() => variants.value.filter(v => v.name.trim()).length > 0)
+
+const totalVariantStock = computed(() => variants.value.reduce((sum, v) => sum + (typeof v.stock === 'number' ? v.stock : 0), 0))
+
+const selectVariantImage = (idx) => {
+  const input = document.getElementById(`variant-img-input-${idx}`)
+  input?.click()
+}
+
+const onVariantImageSelected = (e, idx) => {
+  const files = Array.from(e.target.files || [])
+  const variant = variants.value[idx]
+  files.forEach(f => {
+    variant.images.push(URL.createObjectURL(f))
+    variant.imageFiles.push(f)
+  })
+  e.target.value = ''
+}
+
+const removeVariantImage = (vIdx, imgIdx) => {
+  const variant = variants.value[vIdx]
+  URL.revokeObjectURL(variant.images[imgIdx])
+  variant.images.splice(imgIdx, 1)
+  variant.imageFiles.splice(imgIdx, 1)
+}
 
 const productTypeOptions = ref([
   { label: 'Regular (Stok Fisik)', value: 'regular' },
@@ -85,9 +125,18 @@ const fetchProduct = async () => {
       pre_order_estimated_ship: p.pre_order_estimated_ship || null,
       pre_order_min_qty: p.pre_order_min_qty || 1,
       pre_order_max_qty: p.pre_order_max_qty || 10,
+      is_flash_sale: p.is_flash_sale || false,
+      flash_sale_price: p.flash_sale_price || 0,
+      flash_sale_start: p.flash_sale_start || null,
+      flash_sale_end: p.flash_sale_end || null,
     }
     primaryImage.value = p.images?.find(img => img.is_primary) || null
     galleryImages.value = p.images?.filter(img => !img.is_primary) || []
+    variants.value = (p.variants || []).map(v => ({
+      name: v.name, price: parseFloat(v.price), stock: parseInt(v.stock),
+      images: (v.images || []).map(img => img.image_url),
+      imageFiles: [],
+    }))
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat data produk.', life: 3000 })
   } finally { loading.value = false }
@@ -210,7 +259,7 @@ const deleteGalleryImage = (imageId) => {
 }
 
 const handleSave = async () => {
-  if (!form.value.name.trim() || !form.value.product_category_id || form.value.price === null || form.value.stock === null) {
+  if (!form.value.name.trim() || !form.value.product_category_id || form.value.price === null || (!hasVariants.value && form.value.stock === null)) {
     toast.add({ severity: 'warn', summary: 'Input Wajib', detail: 'Semua kolom bertanda * wajib diisi.', life: 3000 })
     return
   }
@@ -220,8 +269,8 @@ const handleSave = async () => {
       return
     }
   }
-  if (!isEdit.value && !localPrimaryFile.value) {
-    toast.add({ severity: 'warn', summary: 'Foto Utama Wajib', detail: 'Silakan pilih foto utama untuk produk baru.', life: 3000 })
+  if (!isEdit.value && !localPrimaryFile.value && !hasVariants.value) {
+    toast.add({ severity: 'warn', summary: 'Foto Utama Wajib', detail: 'Pilih foto utama atau tambahkan varian dengan foto.', life: 3000 })
     return
   }
 
@@ -240,14 +289,33 @@ const handleSave = async () => {
       delete payload.pre_order_min_qty
       delete payload.pre_order_max_qty
     }
+    if (!payload.is_flash_sale) {
+      delete payload.flash_sale_price
+      delete payload.flash_sale_start
+      delete payload.flash_sale_end
+    } else {
+      if (payload.flash_sale_start instanceof Date) payload.flash_sale_start = payload.flash_sale_start.toISOString()
+      if (payload.flash_sale_end instanceof Date) payload.flash_sale_end = payload.flash_sale_end.toISOString()
+    }
+
+    if (variants.value.length > 0) {
+      payload.variants = variants.value.filter(v => v.name.trim()).map(v => ({
+        name: v.name.trim(),
+        price: parseFloat(v.price) || payload.price,
+        stock: parseInt(v.stock) || 0,
+      }))
+    }
+
+    let savedProduct
 
     if (isEdit.value) {
-      await axios.put(`/seller/products/${productId.value}`, payload)
+      const res = await axios.put(`/seller/products/${productId.value}`, payload)
+      savedProduct = res.data.product
       toast.add({ severity: 'success', summary: 'Sukses', detail: 'Produk berhasil diperbarui.', life: 3000 })
-      router.push({ name: 'SellerProducts' })
     } else {
       const response = await axios.post('/seller/products', payload)
-      const newId = response.data.product.id
+      savedProduct = response.data.product
+      const newId = savedProduct.id
       if (localPrimaryFile.value) {
         const fd = new FormData()
         fd.append('image', localPrimaryFile.value)
@@ -258,9 +326,24 @@ const handleSave = async () => {
         for (const f of localGalleryFiles.value) fd.append('images[]', f.file)
         await axios.post(`/seller/products/${newId}/gallery`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       }
-      toast.add({ severity: 'success', summary: 'Sukses', detail: 'Produk baru berhasil dibuat.', life: 4000 })
-      router.push({ name: 'SellerProducts' })
     }
+
+    // Upload variant images
+    const savedVariants = savedProduct?.variants || []
+    for (let i = 0; i < savedVariants.length; i++) {
+      const vData = variants.value[i]
+      if (vData?.imageFiles?.length > 0) {
+        const vid = savedVariants[i].id
+        for (const file of vData.imageFiles) {
+          const fd = new FormData()
+          fd.append('image', file)
+          await axios.post(`/seller/products/${savedProduct.id}/variants/${vid}/image`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+        }
+      }
+    }
+
+    toast.add({ severity: 'success', summary: 'Sukses', detail: isEdit.value ? 'Produk berhasil diperbarui.' : 'Produk baru berhasil dibuat.', life: 4000 })
+    router.push({ name: 'SellerProducts' })
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Gagal Menyimpan', detail: err.response?.data?.message || 'Terjadi kesalahan.', life: 3000 })
   } finally { saving.value = false }
@@ -325,11 +408,14 @@ const handleSave = async () => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Harga Jual (Rp) *</label>
-                    <InputNumber v-model="form.price" placeholder="Contoh: 15000" class="w-full text-sm" />
+                    <div class="relative">
+                      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none z-10">Rp</span>
+                      <InputNumber v-model="form.price" placeholder="Contoh: 15000" class="w-full text-sm" inputClass="!pl-8" />
+                    </div>
                   </div>
                   <div class="flex flex-col gap-1.5">
                     <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Stok Tersedia *</label>
-                    <InputNumber v-model="form.stock" placeholder="Contoh: 25" class="w-full text-sm" />
+                    <InputNumber v-model="form.stock" :placeholder="hasVariants ? `Total: ${totalVariantStock} pcs (dari varian)` : 'Contoh: 25'" class="w-full text-sm" :disabled="hasVariants" />
                   </div>
                 </div>
                 <div class="flex flex-col gap-1.5">
@@ -363,6 +449,63 @@ const handleSave = async () => {
                     <div class="flex flex-col gap-1.5">
                       <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Max Qty/Buyer</label>
                       <InputNumber v-model="form.pre_order_max_qty" :min="1" class="w-full text-sm" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Variants -->
+                <div class="space-y-3 pt-2 border-t border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Varian Produk</span>
+                    <Button icon="pi pi-plus" label="Tambah Varian" severity="secondary" size="small" class="text-[10px] font-bold !py-1.5 !px-3 !rounded-xl" :disabled="variants.length >= 10" @click="addVariant" />
+                  </div>
+                  <p class="text-[10px] text-slate-400">Tambahkan varian seperti ukuran atau warna dengan harga & stok berbeda.</p>
+                  <div v-for="(v, idx) in variants" :key="idx" class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                    <div class="flex items-center gap-2">
+                      <InputText v-model="v.name" placeholder="Nama varian (cth: Merah)" class="flex-1 min-w-0 text-xs" />
+                      <InputText v-model.number="v.price" placeholder="Harga" inputmode="numeric" class="w-24 text-xs" />
+                      <InputText v-model.number="v.stock" placeholder="Stok" inputmode="numeric" class="w-16 text-xs" />
+                      <Button icon="pi pi-times" severity="danger" text rounded size="small" class="!w-7 !h-7 shrink-0" @click="removeVariant(idx)" />
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <input :id="`variant-img-input-${idx}`" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onVariantImageSelected($event, idx)" />
+                      <button class="text-[10px] font-bold text-slate-500 border border-dashed border-slate-300 rounded-lg px-2 py-1 hover:border-primary/40 hover:text-primary" @click="selectVariantImage(idx)">
+                        <i class="pi pi-camera mr-1"></i>Foto
+                      </button>
+                      <div v-if="v.images.length > 0" class="flex gap-1">
+                        <img v-for="(img, iidx) in v.images" :key="iidx" :src="img" class="w-8 h-8 rounded-lg object-cover border border-slate-200" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2 border-t border-slate-100">
+                  <Checkbox id="isFlashSale" v-model="form.is_flash_sale" :binary="true" />
+                  <div class="flex-1">
+                    <label for="isFlashSale" class="text-sm font-semibold text-slate-700 cursor-pointer">Flash Sale (Diskon Terbatas)</label>
+                    <p v-if="form.is_flash_sale" class="text-[10px] text-slate-400 mt-0.5">Produk akan tampil dengan harga diskon & timer countdown</p>
+                  </div>
+                </div>
+
+                <div v-if="form.is_flash_sale" class="space-y-3 p-4 bg-red-50/50 rounded-2xl border border-red-200">
+                  <p class="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="pi pi-bolt"></i> Konfigurasi Flash Sale
+                  </p>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Harga Flash Sale *</label>
+                      <InputNumber v-model="form.flash_sale_price" :min="0" class="w-full text-sm" />
+                    </div>
+                    <div class="flex flex-col gap-1.5" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Mulai Tgl *</label>
+                      <DatePicker v-model="form.flash_sale_start" showTime hourFormat="24" placeholder="Mulai" class="w-full text-sm" />
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Berakhir Tgl *</label>
+                      <DatePicker v-model="form.flash_sale_end" showTime hourFormat="24" placeholder="Berakhir" class="w-full text-sm" />
                     </div>
                   </div>
                 </div>

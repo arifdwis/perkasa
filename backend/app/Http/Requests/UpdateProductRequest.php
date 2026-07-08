@@ -26,6 +26,14 @@ class UpdateProductRequest extends FormRequest
             'pre_order_estimated_ship' => ['required_if:product_type,pre_order', 'date', 'after_or_equal:pre_order_deadline'],
             'pre_order_min_qty' => ['nullable', 'integer', 'min:1'],
             'pre_order_max_qty' => ['nullable', 'integer', 'gte:pre_order_min_qty'],
+            'is_flash_sale' => ['nullable', 'boolean'],
+            'flash_sale_price' => ['required_if:is_flash_sale,true', 'nullable', 'numeric', 'min:0'],
+            'flash_sale_start' => ['required_if:is_flash_sale,true', 'nullable', 'date'],
+            'flash_sale_end' => ['required_if:is_flash_sale,true', 'nullable', 'date', 'after:flash_sale_start'],
+            'variants' => ['nullable', 'array', 'max:10'],
+            'variants.*.name' => ['required', 'string', 'max:100'],
+            'variants.*.price' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.stock' => ['nullable', 'integer', 'min:0'],
         ];
     }
 

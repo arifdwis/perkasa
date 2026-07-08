@@ -28,9 +28,15 @@ class NewMessageNotification extends Notification
         $senderName = $this->message->user?->name ?? 'Pengguna';
         $storeName = $this->conversation->store?->name ?? 'Toko';
 
+        $preview = match ($this->message->type) {
+            'image' => '[Foto]',
+            'location' => '[Lokasi]',
+            default => mb_strimwidth($this->message->text ?? '', 0, 100, '...'),
+        };
+
         return [
             'title' => 'Pesan Baru',
-            'message' => $senderName.': '.mb_strimwidth($this->message->text, 0, 100, '...'),
+            'message' => $senderName.': '.$preview,
             'conversation_id' => $this->conversation->id,
             'store_name' => $storeName,
             'type' => 'new_message',

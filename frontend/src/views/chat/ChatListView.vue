@@ -114,7 +114,15 @@ const formatTime = (date) => {
                   <Icon icon="solar:box-linear" class="text-[10px]" /> {{ convo.product.name }}
                 </span>
                 <span :class="{ 'font-semibold text-slate-700': convo.unread_count > 0 }">
-                  {{ convo.last_message?.text || 'Mulai percakapan' }}
+                  <template v-if="convo.last_message?.type === 'image'">
+                    <Icon icon="solar:camera-bold" class="text-[10px] inline mr-0.5" /> Foto
+                  </template>
+                  <template v-else-if="convo.last_message?.type === 'location'">
+                    <Icon icon="solar:map-point-bold" class="text-[10px] inline mr-0.5" /> Lokasi
+                  </template>
+                  <template v-else>
+                    {{ convo.last_message?.text || 'Mulai percakapan' }}
+                  </template>
                 </span>
               </p>
               <span
