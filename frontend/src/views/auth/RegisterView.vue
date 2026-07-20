@@ -38,12 +38,12 @@ const isLoading = ref(false)
 const currentYear = new Date().getFullYear()
 const tahunMasukOptions = computed(() => {
   const list = []
-  for (let y = currentYear; y >= 1990; y--) list.push({ label: String(y), value: y })
+  for (let y = currentYear; y >= 1950; y--) list.push({ label: String(y), value: y })
   return list
 })
 const tahunLulusOptions = computed(() => {
   const list = []
-  for (let y = currentYear + 5; y >= 1990; y--) list.push({ label: String(y), value: y })
+  for (let y = currentYear + 5; y >= 1950; y--) list.push({ label: String(y), value: y })
   return list
 })
 

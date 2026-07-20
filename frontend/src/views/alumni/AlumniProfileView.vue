@@ -597,15 +597,6 @@ onUnmounted(() => { destroyMap() })
         </div>
         <div class="p-6 space-y-4">
           <div class="flex items-center justify-between text-sm">
-            <span class="text-slate-500 font-medium">Verifikasi Email</span>
-            <span v-if="user.email_verified_at" class="text-emerald-600 font-bold flex items-center gap-1 text-xs">
-              <i class="pi pi-check-circle"></i> Terverifikasi
-            </span>
-            <span v-else class="text-amber-600 font-bold flex items-center gap-1 text-xs">
-              <i class="pi pi-exclamation-circle"></i> Belum Verifikasi
-            </span>
-          </div>
-          <div class="flex items-center justify-between text-sm">
             <span class="text-slate-500 font-medium">Status Alumni</span>
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold" :class="statusPill(profile?.status_verifikasi)">
               {{ statusLabel(profile?.status_verifikasi) }}

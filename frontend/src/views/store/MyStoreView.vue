@@ -657,7 +657,7 @@ const formatPrice = (val) => parseFloat(val || 0).toLocaleString('id-ID')
                 </p>
                 <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-2">
                   <Button size="small" severity="secondary" label="Profil" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'StoreProfile', params: { id: store.id } })">
-                    <template #icon><Icon icon="solar:external-link-bold" class="text-sm" /></template>
+                    <template #icon><Icon icon="solar:eye-bold-duotone" class="text-sm" /></template>
                   </Button>
                   <Button size="small" severity="secondary" label="Dashboard" icon-pos="left" class="!text-[11px] !font-bold !rounded-xl" @click="router.push({ name: 'SellerHome' })">
                     <template #icon><Icon icon="solar:chart-square-bold-duotone" class="text-sm" /></template>

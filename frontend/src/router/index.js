@@ -207,8 +207,14 @@ const routes = [
 
       if (userMode === 'admin' && isAdmin) {
         return { name: 'AdminDashboard' }
-      } else if (userMode === 'seller' && isStoreActive) {
-        return { name: 'SellerHome' }
+      } else if (userMode === 'seller') {
+        if (isStoreActive) {
+          return { name: 'SellerHome' }
+        } else if (isSeller) {
+          return { name: 'SellerStore' }
+        } else {
+          return { name: 'BuyerHome' }
+        }
       } else {
         return { name: 'BuyerHome' }
       }
@@ -231,8 +237,14 @@ const routes = [
 
       if (userMode === 'admin' && isAdmin) {
         return { name: 'AdminDashboard' }
-      } else if (userMode === 'seller' && isStoreActive) {
-        return { name: 'SellerHome' }
+      } else if (userMode === 'seller') {
+        if (isStoreActive) {
+          return { name: 'SellerHome' }
+        } else if (isSeller) {
+          return { name: 'SellerStore' }
+        } else {
+          return { name: 'BuyerHome' }
+        }
       } else {
         return { name: 'BuyerHome' }
       }
@@ -250,6 +262,7 @@ router.beforeEach((to, from) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const permissions = JSON.parse(localStorage.getItem('permissions') || '[]')
+  const userMode = localStorage.getItem('userMode') || 'buyer'
 
   const isAdmin = permissions.includes('super_admin') || permissions.includes('admin_marketplace') || permissions.includes('*')
   const isSeller = user?.roles?.some(r => r.name === 'alumni_penjual') || false
@@ -259,11 +272,16 @@ router.beforeEach((to, from) => {
   // 1. Guest Only Routes
   if (to.matched.some(record => record.meta.guestOnly)) {
     if (token) {
-      const userMode = localStorage.getItem('userMode')
       if (userMode === 'admin' && isAdmin) {
         return { name: 'AdminDashboard' }
-      } else if (userMode === 'seller' && isStoreActive) {
-        return { name: 'SellerHome' }
+      } else if (userMode === 'seller') {
+        if (isStoreActive) {
+          return { name: 'SellerHome' }
+        } else if (isSeller) {
+          return { name: 'SellerStore' }
+        } else {
+          return { name: 'BuyerHome' }
+        }
       } else {
         return { name: 'BuyerHome' }
       }
@@ -278,8 +296,8 @@ router.beforeEach((to, from) => {
     }
   }
 
-  // 3. Admin — block from accessing buyer/seller routes
-  if (isAdmin && (to.path.startsWith('/buyer') || to.path.startsWith('/seller'))) {
+  // 3. Admin — block from accessing buyer/seller routes when in admin mode
+  if (isAdmin && userMode === 'admin' && (to.path.startsWith('/buyer') || to.path.startsWith('/seller'))) {
     return { name: 'AdminDashboard' }
   }
 
@@ -296,18 +314,27 @@ router.beforeEach((to, from) => {
       return true
     }
 
-    if (!isSeller || !isStoreActive) {
+    if (!isSeller) {
       return { name: 'BuyerHome' }
+    }
+
+    if (!isStoreActive) {
+      return { name: 'SellerStore' }
     }
   }
 
   // 5. Handle Legacy Path Redirects (Avoid breaking links)
   if (to.path === '/') {
-    const userMode = localStorage.getItem('userMode')
     if (userMode === 'admin' && isAdmin) {
       return { name: 'AdminDashboard' }
-    } else if (userMode === 'seller' && isStoreActive) {
-      return { name: 'SellerHome' }
+    } else if (userMode === 'seller') {
+      if (isStoreActive) {
+        return { name: 'SellerHome' }
+      } else if (isSeller) {
+        return { name: 'SellerStore' }
+      } else {
+        return { name: 'BuyerHome' }
+      }
     } else {
       return { name: 'BuyerHome' }
     }
