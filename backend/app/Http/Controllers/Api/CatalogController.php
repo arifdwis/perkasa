@@ -37,7 +37,7 @@ class CatalogController extends Controller
      */
     private function searchProducts(Request $request)
     {
-        $query = Product::with(['store', 'category', 'primaryImage'])
+        $query = Product::with(['store', 'category', 'primaryImage', 'images', 'variants', 'variants.images'])
             ->whereHas('store', function ($q) {
                 $q->where('status', 'active');
             })

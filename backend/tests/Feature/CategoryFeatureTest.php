@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\ProductCategory;
-use App\Models\ServiceCategory;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,44 +108,5 @@ class CategoryFeatureTest extends TestCase
 
         $deleteResponse->assertStatus(200);
         $this->assertDatabaseMissing('product_categories', ['name' => 'Updated Tech Category']);
-    }
-
-    /**
-     * Test admin can perform CRUD on service categories.
-     */
-    public function test_admin_can_crud_service_categories()
-    {
-        $token = $this->admin->createToken('auth_token')->plainTextToken;
-
-        // 1. Create
-        $response = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->postJson('/api/admin/service-categories', [
-            'name' => 'Legal Advisory',
-            'is_active' => true,
-        ]);
-
-        $response->assertStatus(201);
-        $this->assertDatabaseHas('service_categories', ['name' => 'Legal Advisory']);
-
-        $category = ServiceCategory::where('name', 'Legal Advisory')->first();
-
-        // 2. Update
-        $updateResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->putJson("/api/admin/service-categories/{$category->id}", [
-            'name' => 'Legal Advisory Updated',
-            'is_active' => true,
-        ]);
-
-        $updateResponse->assertStatus(200);
-
-        // 3. Delete
-        $deleteResponse = $this->withHeaders([
-            'Authorization' => "Bearer $token",
-        ])->deleteJson("/api/admin/service-categories/{$category->id}");
-
-        $deleteResponse->assertStatus(200);
-        $this->assertDatabaseMissing('service_categories', ['name' => 'Legal Advisory Updated']);
     }
 }

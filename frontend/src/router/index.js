@@ -63,9 +63,13 @@ const routes = [
         component: () => import('../views/store/StoreProfileView.vue')
       },
       {
-        path: 'products/:slug',
+        path: 'products/:storeSlug/:slug',
         name: 'ProductDetail',
         component: () => import('../views/product/ProductDetailView.vue')
+      },
+      {
+        path: 'products/:slug',
+        redirect: to => ({ name: 'ProductDetail', params: { storeSlug: 'store', slug: to.params.slug } }),
       },
       {
         path: 'notifications',
@@ -76,6 +80,16 @@ const routes = [
         path: 'profile',
         name: 'AlumniProfile',
         component: () => import('../views/alumni/AlumniProfileView.vue')
+      },
+      {
+        path: 'chat',
+        name: 'BuyerChatList',
+        component: () => import('../views/chat/ChatListView.vue')
+      },
+      {
+        path: 'chat/:id',
+        name: 'ChatDetail',
+        component: () => import('../views/chat/ChatDetailView.vue')
       }
     ]
   },
@@ -117,6 +131,16 @@ const routes = [
         component: () => import('../views/store/order/SellerOrdersView.vue')
       },
       {
+        path: 'daily-report',
+        name: 'DailyReport',
+        component: () => import('../views/store/DailyReportView.vue')
+      },
+      {
+        path: 'vouchers',
+        name: 'SellerVouchers',
+        component: () => import('../views/store/VoucherView.vue')
+      },
+      {
         path: 'finance',
         name: 'SellerFinance',
         component: () => import('../views/store/SellerFinanceView.vue')
@@ -130,6 +154,16 @@ const routes = [
         path: 'orders/:id',
         name: 'SellerOrderDetail',
         component: () => import('../views/order/OrderDetailView.vue')
+      },
+      {
+        path: 'chat',
+        name: 'SellerChatList',
+        component: () => import('../views/chat/ChatListView.vue')
+      },
+      {
+        path: 'chat/:id',
+        name: 'SellerChatDetail',
+        component: () => import('../views/chat/ChatDetailView.vue')
       }
     ]
   },

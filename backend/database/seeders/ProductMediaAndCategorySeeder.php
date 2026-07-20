@@ -5,16 +5,11 @@ namespace Database\Seeders;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\ProductImage;
-use App\Models\Service;
-use App\Models\ServiceImage;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class ProductMediaAndCategorySeeder extends Seeder
 {
-    /**
-     * Normalize demo product categories and attach at least two relevant dummy images.
-     */
     public function run(): void
     {
         $this->call(CategorySeeder::class);
@@ -58,39 +53,6 @@ class ProductMediaAndCategorySeeder extends Seeder
             });
 
         $this->command?->info("{$updatedProducts} produk dirapikan dengan minimal {$updatedImages} gambar relevan.");
-
-        $updatedServices = 0;
-        $updatedServiceImages = 0;
-
-        Service::query()
-            ->with(['category', 'images'])
-            ->orderBy('name')
-            ->get()
-            ->each(function ($service) use (&$updatedServices, &$updatedServiceImages) {
-                $match = $this->matchService($service->name);
-                $imageUrls = $this->imageUrls($match['query'], $service->slug);
-
-                ServiceImage::updateOrCreate(
-                    [
-                        'service_id' => $service->id,
-                        'is_primary' => true,
-                    ],
-                    ['image_path' => $imageUrls[0]]
-                );
-
-                ServiceImage::updateOrCreate(
-                    [
-                        'service_id' => $service->id,
-                        'is_primary' => false,
-                    ],
-                    ['image_path' => $imageUrls[1]]
-                );
-
-                $updatedServices++;
-                $updatedServiceImages += 2;
-            });
-
-        $this->command?->info("{$updatedServices} jasa dirapikan dengan minimal {$updatedServiceImages} gambar relevan.");
     }
 
     private function matchProduct(string $name, ?string $fallbackCategory): array
@@ -118,11 +80,6 @@ class ProductMediaAndCategorySeeder extends Seeder
 
     private function imageUrls(string $query, string $slug): array
     {
-        $safeQuery = collect(explode(',', $query))
-            ->map(fn ($part) => Str::slug(trim($part)))
-            ->filter()
-            ->implode(',');
-
         $seed = crc32($slug);
 
         return [
@@ -196,31 +153,6 @@ class ProductMediaAndCategorySeeder extends Seeder
             ['category' => 'Pertanian', 'query' => 'compost fertilizer,garden,farming', 'keywords' => ['pupuk', 'kompos']],
             ['category' => 'Pertanian', 'query' => 'chili seeds,garden,farming', 'keywords' => ['benih cabai', 'cabai rawit']],
             ['category' => 'Pertanian', 'query' => 'potting soil,garden,plant', 'keywords' => ['media tanam']],
-        ];
-    }
-
-    private function matchService(string $name): array
-    {
-        $normalizedName = Str::lower($name);
-        $serviceKeywords = [
-            ['query' => 'accounting,finance,audit', 'keywords' => ['audit', 'laporan keuangan', 'lk umkm']],
-            ['query' => 'design,instagram,graphic', 'keywords' => ['desain', 'feed', 'instagram']],
-            ['query' => 'tax,consulting,document', 'keywords' => ['pajak', 'spt']],
-            ['query' => 'photography,camera,product', 'keywords' => ['fotografi', 'foto']],
-        ];
-
-        foreach ($serviceKeywords as $rule) {
-            foreach ($rule['keywords'] as $keyword) {
-                if (Str::contains($normalizedName, $keyword)) {
-                    return [
-                        'query' => $rule['query'],
-                    ];
-                }
-            }
-        }
-
-        return [
-            'query' => 'consulting,service',
         ];
     }
 }

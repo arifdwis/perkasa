@@ -10,7 +10,9 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: null,
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       manifest: {
         name: 'Marketplace Alumni FEB Universitas Mulawarman',
         short_name: 'Marketplace Alumni FEB',
@@ -39,11 +41,10 @@ export default defineConfig({
             purpose: 'maskable'
           }
         ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2,ttf}'],
-        cleanupOutdatedCaches: true
       }
     })
   ],
+  preview: {
+    allowedHosts: ['.loca.lt', 'localhost']
+  }
 })

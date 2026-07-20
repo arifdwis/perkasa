@@ -212,6 +212,19 @@ const handleExport = async (type, format) => {
         <Button icon="pi pi-refresh" severity="secondary" text rounded size="small" class="!w-9 !h-9" @click="fetchFinance" :loading="loading" />
       </div>
 
+      <div class="bg-gradient-to-r from-primary to-emerald-700 rounded-2xl shadow-sm p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <Icon icon="solar:document-text-bold-duotone" class="text-white text-lg" />
+          </div>
+          <div class="text-white">
+            <p class="text-sm font-extrabold">Laporan Penjualan Harian</p>
+            <p class="text-[10px] text-white/70 font-medium">Lihat ringkasan penjualan per hari</p>
+          </div>
+        </div>
+        <Button label="Lihat" icon="pi pi-arrow-right" size="small" class="!bg-white !text-primary !text-[10px] !font-bold !px-3 !rounded-xl" @click="router.push({ name: 'DailyReport' })" />
+      </div>
+
       <!-- Filter & Export Toolbar -->
       <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 space-y-4">
         <div class="flex flex-wrap items-end gap-3">

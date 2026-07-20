@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
@@ -33,6 +33,7 @@ const selectedProdi = ref(null)
 const angkatan = ref('')
 const tahunLulus = ref('')
 const selectedKecamatan = ref(null)
+const selectedKelurahan = ref(null)
 const selectedCategory = ref(null)
 const priceMin = ref('')
 const priceMax = ref('')
@@ -41,15 +42,29 @@ const selectedSort = ref('latest')
 const showFilterDrawer = ref(false)
 const categories = ref([])
 const locations = ref({ kecamatan: [], kelurahan: [] })
+
+const kelurahanOptions = computed(() => {
+  if (!selectedKecamatan.value) return []
+  const list = locations.value.kelurahan?.[selectedKecamatan.value] || []
+  return list.map(k => ({ label: k, value: k }))
+})
+
 const favoritedIds = ref(new Set())
 const isLoggedIn = ref(false)
 const isVerified = ref(false)
+
+watch(selectedKecamatan, (newVal) => {
+  if (!newVal) {
+    selectedKelurahan.value = null
+  }
+})
 
 const appliedSearch = ref('')
 const appliedProdi = ref(null)
 const appliedAngkatan = ref('')
 const appliedTahunLulus = ref('')
 const appliedKecamatan = ref(null)
+const appliedKelurahan = ref(null)
 const appliedPriceMin = ref('')
 const appliedPriceMax = ref('')
 
@@ -94,6 +109,7 @@ const activeFilterCount = computed(() => {
   if (appliedAngkatan.value) count++
   if (appliedTahunLulus.value) count++
   if (appliedKecamatan.value) count++
+  if (appliedKelurahan.value) count++
   if (selectedCategory.value) count++
   if (appliedPriceMin.value || appliedPriceMax.value) count++
   if (selectedSort.value !== 'latest') count++
@@ -158,6 +174,7 @@ const fetchCatalog = async (page = 1) => {
       tahun_masuk: appliedAngkatan.value ? parseInt(appliedAngkatan.value) || undefined : undefined,
       tahun_lulus: appliedTahunLulus.value ? parseInt(appliedTahunLulus.value) || undefined : undefined,
       kecamatan: appliedKecamatan.value || undefined,
+      kelurahan: appliedKelurahan.value || undefined,
       sort: selectedSort.value
     }
 
@@ -202,6 +219,7 @@ const applyFilters = () => {
   appliedAngkatan.value = angkatan.value
   appliedTahunLulus.value = tahunLulus.value
   appliedKecamatan.value = selectedKecamatan.value
+  appliedKelurahan.value = selectedKelurahan.value
   appliedPriceMin.value = priceMin.value
   appliedPriceMax.value = priceMax.value
   showFilterDrawer.value = false
@@ -215,6 +233,7 @@ const resetFilters = () => {
   angkatan.value = ''
   tahunLulus.value = ''
   selectedKecamatan.value = null
+  selectedKelurahan.value = null
   selectedCategory.value = null
   priceMin.value = ''
   priceMax.value = ''
@@ -224,6 +243,7 @@ const resetFilters = () => {
   appliedAngkatan.value = ''
   appliedTahunLulus.value = ''
   appliedKecamatan.value = null
+  appliedKelurahan.value = null
   appliedPriceMin.value = ''
   appliedPriceMax.value = ''
   pagination.value.page = 1
@@ -236,7 +256,8 @@ const removeFilter = (key) => {
     case 'prodi': selectedProdi.value = null; appliedProdi.value = null; break
     case 'angkatan': angkatan.value = ''; appliedAngkatan.value = ''; break
     case 'lulus': tahunLulus.value = ''; appliedTahunLulus.value = ''; break
-    case 'kecamatan': selectedKecamatan.value = null; appliedKecamatan.value = null; break
+    case 'kecamatan': selectedKecamatan.value = null; appliedKecamatan.value = null; selectedKelurahan.value = null; appliedKelurahan.value = null; break
+    case 'kelurahan': selectedKelurahan.value = null; appliedKelurahan.value = null; break
     case 'category': selectedCategory.value = null; break
     case 'price': priceMin.value = ''; priceMax.value = ''; appliedPriceMin.value = ''; appliedPriceMax.value = ''; break
   }
@@ -281,6 +302,7 @@ const toggleFavorite = async (event, item, type) => {
 
 const showQtyDialog = ref(false)
 const selectedProduct = ref(null)
+const selectedDialogVariant = ref(null)
 const qtyToBuy = ref(1)
 
 const openQtyDialog = (item) => {
@@ -294,14 +316,15 @@ const openQtyDialog = (item) => {
   }
 
   selectedProduct.value = item
+  selectedDialogVariant.value = item.variants?.find(v => v.stock > 0) || item.variants?.[0] || null
   qtyToBuy.value = 1
   showQtyDialog.value = true
 }
 
 const confirmAddToCart = async () => {
   if (!selectedProduct.value) return
-
-  const res = await cartStore.addToCart(selectedProduct.value.id, qtyToBuy.value)
+  const variantId = selectedDialogVariant.value?.id || null
+  const res = await cartStore.addToCart(selectedProduct.value.id, qtyToBuy.value, variantId)
   if (res.success) {
     toast.add({ severity: 'success', summary: 'Keranjang', detail: 'Produk berhasil ditambahkan ke keranjang.', life: 2000 })
     showQtyDialog.value = false
@@ -340,6 +363,55 @@ const formatPrice = (val) => {
   return parseFloat(val || 0).toLocaleString('id-ID')
 }
 
+const itemStock = (item) => item.total_stock ?? item.stock ?? 0
+
+const catalogImageIndex = ref({})
+let catalogCarouselTimer = null
+
+const getItemImages = (item) => {
+  const result = []
+  if (item.primary_image) result.push(item.primary_image.image_path)
+  if (item.primary_image_url && !result.length) result.push(item.primary_image_url)
+  if (item.images) item.images.forEach(img => result.push(img.image_path))
+  if (item.variants) {
+    item.variants.forEach(v => {
+      if (v.images) v.images.forEach(img => result.push(img.image_url || img.image_path))
+    })
+  }
+  return result
+}
+
+const getCurrentImage = (item) => {
+  const images = getItemImages(item)
+  if (!images.length) return item.primary_image?.image_path || item.primary_image_url || null
+  const idx = catalogImageIndex.value[item.id] ?? 0
+  return images[idx]
+}
+
+const hasMultipleCatalogImages = (item) => getItemImages(item).length > 1
+
+const startCatalogCarousel = () => {
+  stopCatalogCarousel()
+  catalogCarouselTimer = setInterval(() => {
+    const updated = { ...catalogImageIndex.value }
+    items.value.forEach(item => {
+      const images = getItemImages(item)
+      if (images.length > 1) {
+        const current = catalogImageIndex.value[item.id] ?? 0
+        updated[item.id] = (current + 1) % images.length
+      }
+    })
+    catalogImageIndex.value = updated
+  }, 3000)
+}
+
+const stopCatalogCarousel = () => {
+  if (catalogCarouselTimer) { clearInterval(catalogCarouselTimer); catalogCarouselTimer = null }
+}
+
+onMounted(startCatalogCarousel)
+onUnmounted(stopCatalogCarousel)
+
 const categoryLabel = (id) => {
   const cat = categories.value.find(c => c.value === id)
   return cat ? cat.label : id
@@ -375,13 +447,14 @@ onMounted(async () => {
   }
   await fetchLocations()
   await fetchFavorites()
-  cartStore.fetchCart()
+  await cartStore.fetchCart()
   fetchCatalog()
 })
 
 const navigateToDetail = (item) => {
   if (activeTab.value === 'product') {
-    router.push({ name: 'ProductDetail', params: { slug: item.slug } })
+    const storeSlug = (item.store?.name || 'store').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    router.push({ name: 'ProductDetail', params: { storeSlug, slug: item.slug } })
   } else if (activeTab.value === 'store') {
     router.push({ name: 'StoreProfile', params: { id: item.id } })
   }
@@ -516,6 +589,11 @@ watch(selectedSort, () => {
                     <Select v-model="selectedKecamatan" :options="locations.kecamatan.map(k => ({ label: k, value: k }))" optionLabel="label" optionValue="value" placeholder="Semua Kecamatan" class="w-full text-xs" showClear />
                   </div>
 
+                  <div class="flex flex-col gap-2">
+                    <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Kelurahan</label>
+                    <Select v-model="selectedKelurahan" :options="kelurahanOptions" optionLabel="label" optionValue="value" placeholder="Semua Kelurahan" class="w-full text-xs" showClear :disabled="!selectedKecamatan" />
+                  </div>
+
                   <div v-if="activeTab === 'product'" class="flex flex-col gap-2">
                     <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rentang Harga</label>
                     <div class="grid grid-cols-2 gap-2">
@@ -598,6 +676,11 @@ watch(selectedSort, () => {
                 {{ appliedKecamatan }}
                 <button @click="removeFilter('kecamatan')" class="hover:text-red-500"><Icon icon="solar:close-bold" class="text-xs" /></button>
               </Tag>
+              <Tag v-if="appliedKelurahan" severity="secondary" class="!text-xs !px-2.5 !py-1 !rounded-lg flex items-center gap-1.5">
+                <Icon icon="solar:map-point-bold" class="text-xs" />
+                {{ appliedKelurahan }}
+                <button @click="removeFilter('kelurahan')" class="hover:text-red-500"><Icon icon="solar:close-bold" class="text-xs" /></button>
+              </Tag>
               <Tag v-if="selectedCategory" severity="secondary" class="!text-xs !px-2.5 !py-1 !rounded-lg flex items-center gap-1.5">
                 {{ categoryLabel(selectedCategory) }}
                 <button @click="removeFilter('category')" class="hover:text-red-500"><Icon icon="solar:close-bold" class="text-xs" /></button>
@@ -628,10 +711,20 @@ watch(selectedSort, () => {
                     class="bg-slate-100 relative overflow-hidden flex items-center justify-center shrink-0"
                     :class="viewMode === 'grid' ? 'aspect-square w-full' : 'w-28 h-28 sm:w-36 sm:h-36'"
                   >
-                    <img v-if="item.primary_image" :src="item.primary_image.image_path" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    <img v-if="getCurrentImage(item)" :src="getCurrentImage(item)" alt="Cover" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" :key="catalogImageIndex[item.id] ?? 0" />
                     <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300">
                       <Icon icon="solar:box-bold-duotone" class="text-3xl mb-1" />
                       <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tidak ada foto</span>
+                    </div>
+
+                    <!-- Dots -->
+                    <div v-if="hasMultipleCatalogImages(item)" class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+                      <span
+                        v-for="(img, idx) in getItemImages(item)"
+                        :key="idx"
+                        class="w-1.5 h-1.5 rounded-full transition-all duration-300"
+                        :class="(catalogImageIndex[item.id] ?? 0) === idx ? 'bg-white w-3 shadow-sm' : 'bg-white/50'"
+                      ></span>
                     </div>
 
                     <button
@@ -649,6 +742,14 @@ watch(selectedSort, () => {
                     <span v-if="item.is_featured"
                           class="absolute top-2.5 left-2.5 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">
                       PROMO
+                    </span>
+                    <span v-if="item.product_type === 'pre_order'"
+                          class="absolute bottom-2.5 left-2.5 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                      <i class="pi pi-clock text-[9px]"></i> PRE-ORDER
+                    </span>
+                    <span v-if="item.is_flash_sale_active"
+                          class="absolute bottom-2.5 left-2.5 text-[9px] font-black text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                      <i class="pi pi-bolt text-[9px]"></i> FLASH SALE
                     </span>
                   </div>
 
@@ -670,8 +771,11 @@ watch(selectedSort, () => {
                       </div>
 
                       <div class="pt-0.5">
+                        <span v-if="item.is_flash_sale_active" class="block text-[10px] text-slate-400 line-through font-medium leading-none">
+                          Rp{{ formatPrice(item.price) }}
+                        </span>
                         <strong class="text-base font-black text-slate-900">
-                          Rp {{ formatPrice(item.price) }}
+                          Rp {{ formatPrice(item.current_price || item.price) }}
                         </strong>
                       </div>
                     </div>
@@ -688,12 +792,16 @@ watch(selectedSort, () => {
                         </span>
                       </div>
 
-                      <template v-if="activeTab === 'product' && item.stock > 0">
-                        <div v-if="getCartItem(item.id)" class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-100 shrink-0 select-none">
-                          <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-6 h-6 p-0 text-xs flex items-center justify-center" @click.stop="decreaseCartQty(getCartItem(item.id))" />
-                          <span class="w-5 text-center text-xs font-bold text-slate-800">{{ getCartItem(item.id).quantity }}</span>
-                          <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-6 h-6 p-0 text-xs flex items-center justify-center" :disabled="getCartItem(item.id).quantity >= item.stock" @click.stop="increaseCartQty(getCartItem(item.id), item.stock)" />
-                        </div>
+                      <template v-if="activeTab === 'product' && itemStock(item) > 0">
+                        <Button
+                          v-if="getCartItem(item.id)"
+                          icon="pi pi-shopping-cart"
+                          label="Cek Keranjang"
+                          severity="secondary"
+                          size="small"
+                          class="text-[10px] font-bold !py-1.5 !px-3 !rounded-xl shrink-0"
+                          @click.stop="router.push({ name: 'Cart' })"
+                        />
                         <Button
                           v-else
                           icon="pi pi-shopping-cart"
@@ -705,7 +813,7 @@ watch(selectedSort, () => {
                         />
                       </template>
 
-                      <span v-else-if="activeTab === 'product' && item.stock <= 0"
+                      <span v-else-if="activeTab === 'product' && itemStock(item) <= 0"
                             class="text-[10px] font-black text-red-500 bg-red-50 px-2 py-1 rounded-md shrink-0">
                         HABIS
                       </span>
@@ -861,6 +969,11 @@ watch(selectedSort, () => {
           <Select v-model="selectedKecamatan" :options="locations.kecamatan.map(k => ({ label: k, value: k }))" optionLabel="label" optionValue="value" placeholder="Semua Kecamatan" class="w-full text-xs" showClear />
         </div>
 
+        <div class="flex flex-col gap-2">
+          <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Kelurahan</label>
+          <Select v-model="selectedKelurahan" :options="kelurahanOptions" optionLabel="label" optionValue="value" placeholder="Semua Kelurahan" class="w-full text-xs" showClear :disabled="!selectedKecamatan" />
+        </div>
+
         <div v-if="activeTab === 'product'" class="flex flex-col gap-2">
           <label class="text-[11px] font-black text-slate-400 uppercase tracking-wider">Rentang Harga</label>
           <div class="grid grid-cols-2 gap-2">
@@ -899,16 +1012,30 @@ watch(selectedSort, () => {
       <div v-if="selectedProduct" class="space-y-5 pt-2">
         <div class="flex gap-3 items-center">
           <div class="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex items-center justify-center shrink-0">
-            <img v-if="selectedProduct.primary_image" :src="selectedProduct.primary_image.image_path" alt="Cover" class="w-full h-full object-cover" />
+            <img v-if="selectedDialogVariant?.images?.[0]" :src="selectedDialogVariant.images[0].image_url || selectedDialogVariant.images[0].image_path" alt="Cover" class="w-full h-full object-cover" />
+            <img v-else-if="selectedProduct.primary_image" :src="selectedProduct.primary_image.image_path" alt="Cover" class="w-full h-full object-cover" />
             <Icon v-else icon="solar:box-bold-duotone" class="text-slate-300 text-2xl" />
           </div>
           <div class="min-w-0">
             <h4 class="text-xs font-bold text-slate-800 line-clamp-1 leading-snug">{{ selectedProduct.name }}</h4>
             <span class="block text-xs font-extrabold text-primary mt-1">
-              Rp {{ formatPrice(selectedProduct.price) }}
+              Rp {{ formatPrice(selectedDialogVariant?.price || selectedProduct.current_price || selectedProduct.price) }}
             </span>
-            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ selectedProduct.stock }} pcs</span>
+            <span class="block text-xs text-slate-400 font-bold mt-0.5">Stok Tersedia: {{ selectedDialogVariant?.stock || selectedProduct.total_stock || selectedProduct.stock }} pcs</span>
           </div>
+        </div>
+
+        <div v-if="selectedProduct.variants?.length > 0" class="flex flex-wrap gap-2">
+          <button
+            v-for="v in selectedProduct.variants"
+            :key="v.id"
+            class="text-[10px] font-bold px-2 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5"
+            :class="selectedDialogVariant?.id === v.id ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40'"
+            @click="selectedDialogVariant = (selectedDialogVariant?.id === v.id ? null : v)"
+          >
+            <img v-if="v.images?.length" :src="v.images[0]?.image_url || v.images[0]?.image_path" class="w-6 h-6 rounded object-cover border" :class="selectedDialogVariant?.id === v.id ? 'border-white/30' : 'border-slate-200'" />
+            <span>{{ v.name }}</span>
+          </button>
         </div>
 
         <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
@@ -917,7 +1044,7 @@ watch(selectedSort, () => {
           <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-100 flex-shrink-0 shadow-sm">
             <Button icon="pi pi-minus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy <= 1" @click="qtyToBuy--" />
             <span class="w-7 text-center text-xs font-bold text-slate-800">{{ qtyToBuy }}</span>
-            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy >= selectedProduct.stock" @click="qtyToBuy++" />
+            <Button icon="pi pi-plus" severity="secondary" text rounded size="small" class="w-7 h-7" :disabled="qtyToBuy >= (selectedDialogVariant?.stock || selectedProduct.total_stock || selectedProduct.stock)" @click="qtyToBuy++" />
           </div>
         </div>
 

@@ -24,6 +24,7 @@ const toast = useToast()
 
 const directProductId = computed(() => route.query.product_id ? route.query.product_id : null)
 const directQuantity = computed(() => route.query.quantity ? parseInt(route.query.quantity) : 1)
+const directVariantId = computed(() => route.query.product_variant_id || null)
 const isDirectCheckout = computed(() => !!directProductId.value)
 
 const directProduct = ref(null)
@@ -53,6 +54,8 @@ const groupedItems = computed(() => {
     if (!directProduct.value) return []
     const prod = directProduct.value
     const store = prod.store
+    const variant = directVariantId.value ? prod.variants?.find(v => v.id === directVariantId.value) : null
+    const itemPrice = variant ? parseFloat(variant.price) : parseFloat(prod.current_price || prod.price)
     return [
       {
         store_id: store.id,
@@ -65,10 +68,12 @@ const groupedItems = computed(() => {
           {
             id: 'direct',
             product_id: prod.id,
-            name: prod.name,
+            product_variant_id: directVariantId.value || null,
+            variant_name: variant?.name || null,
+            name: variant ? `${prod.name} - ${variant.name}` : prod.name,
             quantity: directQuantity.value,
-            price: parseFloat(prod.price),
-            subtotal: parseFloat(prod.price) * directQuantity.value
+            price: itemPrice,
+            subtotal: itemPrice * directQuantity.value
           }
         ]
       }
@@ -80,7 +85,9 @@ const groupedItems = computed(() => {
 const subtotal = computed(() => {
   if (isDirectCheckout.value) {
     if (!directProduct.value) return 0
-    return parseFloat(directProduct.value.price) * directQuantity.value
+    const variant = directVariantId.value ? directProduct.value.variants?.find(v => v.id === directVariantId.value) : null
+    const price = variant ? parseFloat(variant.price) : parseFloat(directProduct.value.current_price || directProduct.value.price)
+    return price * directQuantity.value
   }
   return cartStore.subtotal
 })
@@ -206,9 +213,33 @@ const totalDeliveryFee = computed(() => {
   return total
 })
 
+// Voucher
+const voucherCode = ref('')
+const voucherLoading = ref(false)
+const voucherDiscount = ref(0)
+const voucherError = ref('')
+const validVoucher = ref(null)
+
+const applyVoucher = async () => {
+  if (!voucherCode.value.trim()) return
+  voucherLoading.value = true
+  voucherError.value = ''
+  voucherDiscount.value = 0
+  try {
+    const res = await axios.post('/checkout/validate-voucher', {
+      code: voucherCode.value.trim(),
+      subtotal: subtotal.value
+    })
+    voucherDiscount.value = res.data.discount
+    validVoucher.value = res.data.voucher
+  } catch (err) {
+    voucherError.value = err.response?.data?.message || 'Voucher tidak valid.'
+  } finally { voucherLoading.value = false }
+}
+
 // Final payment total
 const grandTotal = computed(() => {
-  return subtotal.value + totalDeliveryFee.value
+  return Math.max(0, subtotal.value + totalDeliveryFee.value - voucherDiscount.value)
 })
 
 const handleCheckout = async () => {
@@ -249,6 +280,7 @@ const handleCheckout = async () => {
     if (isDirectCheckout.value) {
       checkoutData.product_id = directProductId.value
       checkoutData.quantity = directQuantity.value
+      if (directVariantId.value) checkoutData.product_variant_id = directVariantId.value
     }
 
     const response = await axios.post('/checkout', checkoutData)
@@ -696,6 +728,24 @@ onMounted(async () => {
               <div>
                 <h4 class="font-bold text-amber-800 text-xs">Cash on Delivery (COD)</h4>
                 <p class="text-[11px] text-amber-700 leading-relaxed">Bayar tunai langsung ke kurir alumni saat pesanan tiba.</p>
+              </div>
+            </div>
+
+            <!-- Voucher -->
+            <div class="border-t border-b border-slate-100 py-3 space-y-2">
+              <div class="flex gap-2">
+                <InputText v-model="voucherCode" placeholder="Kode voucher (opsional)" class="flex-1 text-xs h-10 !rounded-xl" @keyup.enter="applyVoucher" />
+                <Button label="Pakai" :loading="voucherLoading" :disabled="!voucherCode.trim()" size="small" class="text-[10px] font-bold !rounded-xl !px-4" @click="applyVoucher" />
+              </div>
+              <p v-if="voucherError" class="text-[10px] text-red-500 font-bold">{{ voucherError }}</p>
+              <div v-if="voucherDiscount > 0" class="flex justify-between text-emerald-600">
+                <span class="text-xs font-bold">
+                  Diskon Voucher {{ voucherCode.toUpperCase() }}
+                  <span class="text-[10px] font-normal text-emerald-500">
+                    ({{ validVoucher?.type === 'percentage' ? validVoucher.value + '%' : 'Rp' + (validVoucher?.value || 0).toLocaleString('id-ID') }})
+                  </span>
+                </span>
+                <span class="text-xs font-bold">-Rp{{ voucherDiscount.toLocaleString('id-ID') }}</span>
               </div>
             </div>
 

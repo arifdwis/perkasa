@@ -32,12 +32,11 @@ export const useCartStore = defineStore('cart', {
         this.loading = false
       }
     },
-    async addToCart(productId, quantity = 1) {
+    async addToCart(productId, quantity = 1, variantId = null) {
       try {
-        await axios.post('/cart/items', {
-          product_id: productId,
-          quantity: quantity
-        })
+        const payload = { product_id: productId, quantity: quantity }
+        if (variantId) payload.product_variant_id = variantId
+        await axios.post('/cart/items', payload)
         await this.fetchCart()
         return { success: true }
       } catch (err) {
@@ -46,11 +45,25 @@ export const useCartStore = defineStore('cart', {
       }
     },
     async updateItemQuantity(itemId, quantity) {
+      // Optimistic update
+      for (const group of this.groupedItems) {
+        const item = group.items.find(i => i.id === itemId)
+        if (item) {
+          const oldQty = item.quantity
+          item.quantity = quantity
+          item.subtotal = item.price * quantity
+          this.subtotal += item.price * (quantity - oldQty)
+          let count = 0
+          this.groupedItems.forEach(g => g.items.forEach(i => count += i.quantity))
+          this.cartCount = count
+          break
+        }
+      }
       try {
         await axios.put(`/cart/items/${itemId}`, { quantity })
-        await this.fetchCart()
         return { success: true }
       } catch (err) {
+        await this.fetchCart()
         const msg = err.response?.data?.message || 'Gagal memperbarui kuantitas.'
         return { success: false, message: msg }
       }

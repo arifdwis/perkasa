@@ -5,9 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Store;
 use App\Models\Product;
-use App\Models\Service;
 use App\Models\ProductCategory;
-use App\Models\ServiceCategory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Review;
@@ -243,37 +241,7 @@ class DemoDataSeeder extends Seeder
             ]);
         }
 
-        // 6. Seed Services (10 Jasa)
-        $this->command->info('Creating 10 Dummy Services...');
-        $serviceCategories = ServiceCategory::all();
-        $serviceTemplates = [
-            ['name' => 'Jasa Audit & Penyusunan LK UMKM', 'price' => 500000, 'desc' => 'Membantu penyusunan laporan keuangan neraca & laba rugi bulanan.'],
-            ['name' => 'Jasa Desain Feed Promosi Instagram', 'price' => 150000, 'desc' => 'Desain postingan grafis promosi produk instagram bisnis Anda.'],
-            ['name' => 'Jasa Konsultasi Pajak SPT Tahunan', 'price' => 250000, 'desc' => 'Pendampingan pelaporan SPT tahunan orang pribadi / badan.'],
-            ['name' => 'Fotografi Katalog Produk UMKM', 'price' => 300000, 'desc' => 'Jasa foto produk studio mini agar jualan Anda tampil profesional.'],
-        ];
-
-        for ($j = 1; $j <= 10; $j++) {
-            $category = $serviceCategories[$j % $serviceCategories->count()];
-            $tpl = $serviceTemplates[$j % count($serviceTemplates)];
-            $store = $stores[$j % count($stores)];
-
-            $name = $tpl['name'] . ' ' . $j;
-
-            Service::create([
-                'store_id' => $store->id,
-                'service_category_id' => $category->id,
-                'name' => $name,
-                'slug' => Str::slug($name . '-' . uniqid()),
-                'description' => $tpl['desc'] . ' Melayani pengerjaan cepat dan terpercaya.',
-                'price_from' => $tpl['price'],
-                'lokasi_layanan' => 'Samarinda & Online',
-                'status' => 'active',
-                'is_featured' => ($j % 3 === 0),
-            ]);
-        }
-
-        // 7. Seed completed orders & reviews for stats visualization
+        // 6. Seed completed orders & reviews for stats visualization
         $this->command->info('Seeding Order History for Dashboards...');
         $defaultBuyer = User::where('email', 'buyer@perkasa.test')->first();
         if ($defaultBuyer) {

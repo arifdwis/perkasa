@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
+import { useAuthStore } from '../../stores/auth'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
@@ -13,11 +14,13 @@ import AppNavbar from '../../components/AppNavbar.vue'
 import LoadingState from '../../components/LoadingState.vue'
 import EmptyState from '../../components/EmptyState.vue'
 import Dialog from 'primevue/dialog'
+import Textarea from 'primevue/textarea'
 import { useCartStore } from '../../stores/cart'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const authStore = useAuthStore()
 const cartStore = useCartStore()
 
 const storeId = route.params.id
@@ -31,6 +34,9 @@ const productsLoading = ref(false)
 const favoritedIds = ref(new Set())
 const isLoggedIn = ref(false)
 const isVerified = ref(false)
+
+const isStoreOwner = ref(false)
+const isFollowing = ref(false)
 
 const checkAuth = () => {
   const token = localStorage.getItem('token')
@@ -48,6 +54,7 @@ const fetchFavorites = async () => {
     const ids = new Set()
     response.data.products?.forEach(p => ids.add(p.id))
     favoritedIds.value = ids
+    isFollowing.value = (response.data.stores || []).some(s => s.id === store.value?.id)
   } catch (err) {
     console.error('Failed to load favorites', err)
   }
@@ -70,6 +77,7 @@ const fetchStoreProfile = async () => {
   try {
     const response = await axios.get(`/stores/${storeId}`)
     store.value = response.data.store
+    isStoreOwner.value = authStore.user?.id === store.value?.alumni_profile?.user_id
     
     // Fetch products and favorites in parallel after store details are successfully loaded
     await Promise.all([
@@ -92,6 +100,51 @@ const fetchStoreProfile = async () => {
 const showQtyDialog = ref(false)
 const selectedProduct = ref(null)
 const qtyToBuy = ref(1)
+const showStoreRatingDialog = ref(false)
+const storeRating = ref(5)
+const storeRatingComment = ref('')
+const submittingStoreRating = ref(false)
+
+const openStoreRating = () => {
+  showStoreRatingDialog.value = true
+}
+
+const submitStoreRating = async () => {
+  if (!store.value?.id) return
+  submittingStoreRating.value = true
+  try {
+    await axios.post('/reviews', {
+      reviewable_type: 'store',
+      reviewable_id: store.value.id,
+      rating: storeRating.value,
+      comment: storeRatingComment.value || undefined,
+    })
+    toast.add({ severity: 'success', summary: 'Terima kasih!', detail: 'Rating toko berhasil dikirim.', life: 3000 })
+    showStoreRatingDialog.value = false
+    storeRating.value = 5
+    storeRatingComment.value = ''
+    // Refresh to update average rating
+    await fetchStoreProfile()
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal mengirim rating.', life: 3000 })
+  } finally {
+    submittingStoreRating.value = false
+  }
+}
+
+const toggleFollow = async () => {
+  if (!isLoggedIn.value) return
+  try {
+    const res = await axios.post('/favorites/toggle', {
+      favoritable_id: store.value.id,
+      favoritable_type: 'store'
+    })
+    isFollowing.value = res.data.favorited
+    toast.add({ severity: 'success', summary: isFollowing.value ? 'Mengikuti' : 'Berhenti', detail: isFollowing.value ? 'Anda mengikuti toko ini.' : 'Berhenti mengikuti.', life: 2000 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal.', life: 2000 })
+  }
+}
 
 const openQtyDialog = (item) => {
   if (!isLoggedIn.value) {
@@ -227,6 +280,9 @@ onMounted(() => {
                 <span>{{ store.name }}</span>
                 <Tag value="ACTIVE MERCHANT" severity="success" class="text-xs font-bold w-fit mx-auto sm:mx-0" />
               </h2>
+              <div class="mt-2">
+                <Button v-if="isLoggedIn && !isStoreOwner" :label="isFollowing ? 'Mengikuti' : 'Ikuti Toko'" :icon="isFollowing ? 'pi pi-check' : 'pi pi-bell'" :severity="isFollowing ? 'secondary' : 'primary'" size="small" outlined class="text-[10px] !font-bold !rounded-xl !py-1" @click="toggleFollow" />
+              </div>
             </div>
           </div>
           
@@ -242,6 +298,7 @@ onMounted(() => {
               <span class="text-slate-400">{{ store.reviews_count }} Ulasan</span>
             </div>
             <span v-else class="text-slate-400">Belum ada ulasan</span>
+            <Button v-if="isLoggedIn && !isStoreOwner" label="Beri Rating" icon="pi pi-star" size="small" outlined severity="warn" class="text-[10px] !font-bold !rounded-xl" @click="openStoreRating" />
             <span class="hidden sm:inline text-slate-300">|</span>
             <span class="flex items-center gap-1"><i class="pi pi-tag text-primary text-xs"></i> {{ store.kategori_usaha }}</span>
             <span class="flex items-center gap-1"><i class="pi pi-map-marker text-primary text-xs"></i> {{ store.kota }}{{ store.kecamatan ? ', ' + store.kecamatan : '' }}{{ store.kelurahan ? ', Kel. ' + store.kelurahan : '' }}</span>
@@ -316,7 +373,10 @@ onMounted(() => {
                         <div class="space-y-1.5">
                           <div class="flex justify-between items-center">
                             <span class="text-xs font-bold text-primary bg-primary-soft px-1.5 py-0.5 rounded">{{ item.category?.name }}</span>
-                            <Tag v-if="item.is_featured" value="PROMO" severity="warn" class="text-xs font-black" />
+                            <div class="flex items-center gap-1">
+                              <Tag v-if="item.product_type === 'pre_order'" value="PO" severity="warn" class="text-[9px] font-black !py-0 !px-1.5" />
+                              <Tag v-if="item.is_featured" value="PROMO" severity="warn" class="text-xs font-black" />
+                            </div>
                           </div>
                           
                           <h4 class="text-xs font-bold text-slate-850 line-clamp-2 leading-snug group-hover:text-primary transition-colors">{{ item.name }}</h4>
@@ -542,6 +602,22 @@ onMounted(() => {
           />
         </div>
       </div>
+    </Dialog>
+
+    <Dialog v-model:visible="showStoreRatingDialog" modal header="Beri Rating Toko" class="w-full max-w-sm mx-4" :breakpoints="{ '640px': '90vw' }" :draggable="false">
+      <div class="space-y-4 pt-2">
+        <div class="text-center">
+          <Rating v-model="storeRating" :stars="5" :cancel="false" class="gap-1" />
+          <p class="text-[10px] text-slate-400 mt-2">{{ storeRating }} dari 5 bintang</p>
+        </div>
+        <Textarea v-model="storeRatingComment" rows="3" placeholder="Tulis komentar (opsional)" class="w-full text-xs" />
+      </div>
+      <template #footer>
+        <div class="flex gap-2 justify-end">
+          <Button label="Batal" severity="secondary" outlined size="small" class="text-xs" @click="showStoreRatingDialog = false" />
+          <Button label="Kirim" size="small" class="text-xs" :loading="submittingStoreRating" @click="submitStoreRating" />
+        </div>
+      </template>
     </Dialog>
 
   </div>

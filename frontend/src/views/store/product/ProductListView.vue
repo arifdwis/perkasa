@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import Button from 'primevue/button'
+import Tag from 'primevue/tag'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { Icon } from '@iconify/vue'
@@ -116,6 +117,19 @@ onMounted(() => fetchProducts())
 
     <main class="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-5 w-full space-y-4">
 
+      <div class="bg-gradient-to-r from-primary to-emerald-700 rounded-2xl shadow-sm p-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <Icon icon="solar:ticket-bold-duotone" class="text-white text-lg" />
+          </div>
+          <div class="text-white">
+            <p class="text-sm font-extrabold">Kelola Voucher Diskon</p>
+            <p class="text-[10px] text-white/70 font-medium">Buat kode promo untuk pembeli</p>
+          </div>
+        </div>
+        <Button label="Lihat" icon="pi pi-arrow-right" size="small" class="!bg-white !text-primary !text-[10px] !font-bold !px-3 !rounded-xl" @click="router.push({ name: 'SellerVouchers' })" />
+      </div>
+
       <!-- Stats Row -->
       <div v-if="!loading" class="grid grid-cols-3 gap-2.5">
         <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex items-center gap-3">
@@ -164,23 +178,32 @@ onMounted(() => fetchProducts())
             class="bg-white rounded-2xl border border-slate-100 shadow-sm p-3.5 flex gap-3.5 items-center hover:border-primary/20 hover:shadow-md transition-all duration-200"
           >
             <div class="w-14 h-14 rounded-xl bg-slate-50 overflow-hidden shrink-0 border border-slate-100 flex items-center justify-center">
-              <img v-if="p.primary_image" :src="p.primary_image.image_path" alt="" class="w-full h-full object-cover" />
+              <img v-if="p.primary_image || p.primary_image_url" :src="p.primary_image?.image_path || p.primary_image_url" alt="" class="w-full h-full object-cover" />
               <Icon v-else icon="solar:image-linear" class="text-slate-300 text-xl" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-xs font-bold text-slate-800 line-clamp-1">{{ p.name }}</p>
               <p class="text-[10px] text-slate-400 font-medium">{{ p.category?.name || '-' }}</p>
               <div class="flex items-center gap-2 mt-1">
-                <span class="text-xs font-black text-primary">Rp{{ formatPrice(p.price) }}</span>
+                <span class="text-xs font-black text-primary">
+                  Rp{{ p.is_flash_sale_active ? formatPrice(p.flash_sale_price || p.current_price || p.price) : formatPrice(p.current_price || p.price) }}
+                </span>
+                <span v-if="p.is_flash_sale_active" class="text-[9px] text-slate-400 line-through font-medium">
+                  Rp{{ formatPrice(p.price) }}
+                </span>
                 <span class="text-[10px] font-bold"
-                  :class="p.stock === 0 ? 'text-rose-500 font-bold' : (p.stock <= 5 ? 'text-amber-600 font-bold' : 'text-slate-400')"
+                  :class="(p.total_stock ?? p.stock) === 0 ? 'text-rose-500 font-bold' : ((p.total_stock ?? p.stock) <= 5 ? 'text-amber-600 font-bold' : 'text-slate-400')"
                 >
-                  Stok {{ p.stock }}
+                  Stok {{ p.total_stock ?? p.stock }}
                 </span>
               </div>
             </div>
             <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2.5 shrink-0 ml-2">
-              <StatusTag :status="p.status" />
+              <div class="flex items-center gap-1">
+                <Tag v-if="p.is_flash_sale_active" value="FLASH SALE" severity="danger" class="text-[9px] font-black !py-0 !px-1.5" />
+                <Tag v-if="p.product_type === 'pre_order'" value="PRE-ORDER" severity="warn" class="text-[9px] font-black !py-0 !px-1.5" />
+                <StatusTag :status="p.status" />
+              </div>
               <div class="flex gap-1">
                 <Button icon="pi pi-pencil" size="small" severity="secondary" outlined class="!p-1.5 !w-7 !h-7" @click="openEdit(p.id)" />
                 <Button icon="pi pi-trash" size="small" severity="danger" outlined class="!p-1.5 !w-7 !h-7" @click="deleteProduct(p)" />

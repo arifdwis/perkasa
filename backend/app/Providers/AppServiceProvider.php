@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -37,5 +39,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('uploads', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());
         });
+
+        // Send web push on every database notification
+        Event::listen(NotificationSent::class, \App\Listeners\SendWebPushNotification::class);
     }
 }

@@ -112,11 +112,11 @@ onMounted(() => {
     <Toast />
     <AppNavbar />
 
-    <BuyerPageHeader icon="solar:heart-bold-duotone" title="Favorit Saya" subtitle="Produk dan toko yang Anda simpan.">
+    <BuyerPageHeader icon="solar:star-bold-duotone" title="Favorit Saya" subtitle="Produk dan toko yang Anda simpan.">
       <template #action>
         <span v-if="!loading && totalFavorites > 0"
               class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-full text-xs font-bold">
-          <Icon icon="solar:heart-bold" class="text-xs text-rose-500" />{{ totalFavorites }} item
+          <Icon icon="solar:star-bold" class="text-xs text-amber-500" />{{ totalFavorites }} item
         </span>
       </template>
     </BuyerPageHeader>
@@ -178,7 +178,7 @@ onMounted(() => {
                   title="Hapus dari Favorit"
                   @click="toggleFavorite($event, item, 'product')"
                 >
-                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
+                  <Icon icon="solar:star-bold" class="text-sm text-amber-500" />
                 </button>
               </div>
             </div>
@@ -202,7 +202,7 @@ onMounted(() => {
                   title="Hapus dari Favorit"
                   @click="toggleFavorite($event, item, 'store')"
                 >
-                  <Icon icon="solar:heart-bold" class="text-sm text-rose-500" />
+                  <Icon icon="solar:star-bold" class="text-sm text-amber-500" />
                 </button>
               </div>
             </div>

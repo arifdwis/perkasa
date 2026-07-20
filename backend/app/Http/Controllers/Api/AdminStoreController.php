@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Notifications\StoreVerificationNotification;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -79,6 +80,11 @@ class AdminStoreController extends Controller
         $user = $store->alumniProfile->user;
         if ($user) {
             $user->notify(new StoreVerificationNotification($status, $store->name));
+            $title = $status === 'active' ? 'Toko Disetujui!' : 'Toko Ditangguhkan';
+            $body = $status === 'active'
+                ? "Selamat! Toko '{$store->name}' Anda sudah aktif. Mulai jual produk sekarang."
+                : "Toko '{$store->name}' Anda ditangguhkan. Hubungi admin untuk info lebih lanjut.";
+            app(WebPushService::class)->sendToUser($user->id, $title, $body, '/logo_unmul.png', '/seller/store');
         }
 
         return response()->json([

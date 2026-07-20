@@ -7,6 +7,7 @@ use App\Imports\AlumniImport;
 use App\Models\AlumniProfile;
 use App\Models\AlumniVerification;
 use App\Notifications\AlumniVerificationNotification;
+use App\Services\WebPushService;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Validators\ValidationException;
@@ -153,6 +154,11 @@ class AlumniVerificationController extends Controller
 
         // Send notification (database + email)
         $profile->user->notify(new AlumniVerificationNotification($status, $request->reason));
+        $title = $status === 'verified' ? 'Akun Terverifikasi!' : 'Status Akun: ' . ucfirst($status);
+        $body = $status === 'verified'
+            ? 'Akun alumni Anda sudah terverifikasi. Selamat berbelanja di Perkasa FEB Unmul!'
+            : 'Status verifikasi alumni Anda: ' . $status . '. Hubungi admin jika ada pertanyaan.';
+        app(WebPushService::class)->sendToUser($profile->user->id, $title, $body, '/logo_unmul.png', '/buyer/home');
 
         return response()->json([
             'message' => "Status verifikasi alumni berhasil diperbarui menjadi {$status}.",

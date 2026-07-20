@@ -21,6 +21,8 @@ class CartController extends Controller
             'items.product.store.deliveryFees',
             'items.product.category',
             'items.product.primaryImage',
+            'items.product.variants',
+            'items.product.variants.images',
         ]);
 
         $groupedItems = [];
@@ -54,19 +56,33 @@ class CartController extends Controller
                 ];
             }
 
-            $itemPrice = floatval($product->price);
+            $variant = null;
+            if ($item->product_variant_id) {
+                $variant = $product->variants->find($item->product_variant_id);
+            }
+            $itemPrice = $variant ? floatval($variant->price) : floatval($product->current_price);
+            $itemStock = $variant ? (int) $variant->stock : (int) $product->total_stock;
+            $itemName = $variant ? $product->name . ' - ' . $variant->name : $product->name;
+            $itemImage = null;
+            if ($variant) {
+                $firstVariantImg = $variant->images->first();
+                $itemImage = $firstVariantImg ? \Illuminate\Support\Facades\Storage::disk('public')->url($firstVariantImg->image_path) : null;
+            }
             $itemSubtotal = $itemPrice * $item->quantity;
             $subtotal += $itemSubtotal;
 
             $groupedItems[$store->id]['items'][] = [
                 'id' => $item->id,
                 'product_id' => $product->id,
-                'name' => $product->name,
+                'product_variant_id' => $item->product_variant_id,
+                'variant_name' => $variant?->name,
+                'name' => $itemName,
                 'slug' => $product->slug,
                 'price' => $itemPrice,
-                'stock' => $product->stock,
+                'stock' => $itemStock,
                 'status' => $product->status,
                 'primary_image' => $product->primaryImage,
+                'variant_image' => $itemImage,
                 'category_name' => $product->category?->name,
                 'quantity' => $item->quantity,
                 'subtotal' => $itemSubtotal,
@@ -87,10 +103,20 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => ['required', 'uuid', 'exists:products,id'],
+            'product_variant_id' => ['nullable', 'uuid', 'exists:product_variants,id'],
             'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        $product = Product::with('store.alumniProfile')->find($request->product_id);
+        $product = Product::with(['store.alumniProfile', 'variants'])->find($request->product_id);
+
+        $variantId = $request->product_variant_id;
+        $variant = null;
+        if ($variantId) {
+            $variant = $product->variants->find($variantId);
+            if (! $variant) {
+                return response()->json(['message' => 'Varian produk tidak ditemukan.'], 400);
+            }
+        }
 
         // Ensure product is active and its store is active
         if ($product->status === 'inactive' || ! $product->store || $product->store->status !== 'active') {
@@ -102,8 +128,12 @@ class CartController extends Controller
             return response()->json(['message' => 'Anda tidak dapat membeli produk dari toko Anda sendiri.'], 400);
         }
 
-        // Check stock availability
-        if ($product->stock <= 0 || $product->status === 'out_of_stock') {
+        $isPreOrder = $product->product_type === 'pre_order';
+
+        $availableStock = $variant ? (int) $variant->stock : (int) $product->total_stock;
+
+        // Check stock availability (regular only)
+        if (! $isPreOrder && ($availableStock <= 0 || $product->status === 'out_of_stock')) {
             return response()->json(['message' => 'Produk out of stock tidak dapat masuk keranjang.'], 400);
         }
 
@@ -112,15 +142,23 @@ class CartController extends Controller
         // Check if item already exists in the cart
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $product->id)
+            ->where('product_variant_id', $variantId)
             ->first();
 
         $currentQuantity = $cartItem ? $cartItem->quantity : 0;
         $newQuantity = $currentQuantity + $request->quantity;
 
-        // Ensure total quantity does not exceed available stock
-        if ($newQuantity > $product->stock) {
+        // Ensure total quantity does not exceed available stock (regular only)
+        if (! $isPreOrder && $newQuantity > $availableStock) {
             return response()->json([
-                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit.",
+                'message' => "Stok tidak mencukupi. Hanya tersedia {$availableStock} unit.",
+            ], 400);
+        }
+
+        // Pre-order: check max quantity per buyer
+        if ($isPreOrder && $product->pre_order_max_qty && $newQuantity > $product->pre_order_max_qty) {
+            return response()->json([
+                'message' => "Maksimal pemesanan pre-order adalah {$product->pre_order_max_qty} unit per pembeli.",
             ], 400);
         }
 
@@ -130,7 +168,8 @@ class CartController extends Controller
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $product->id,
-                'quantity' => $newQuantity,
+                'product_variant_id' => $variantId,
+                'quantity' => $request->quantity,
             ]);
         }
 
@@ -160,10 +199,20 @@ class CartController extends Controller
             return response()->json(['message' => 'Produk tidak tersedia.'], 400);
         }
 
-        // Validate quantity against stock
-        if ($request->quantity > $product->stock) {
+        // Check stock (variant or product)
+        $availableStock = (int) $product->stock;
+        if ($cartItem->product_variant_id) {
+            $variant = \App\Models\ProductVariant::find($cartItem->product_variant_id);
+            if ($variant) {
+                $availableStock = (int) $variant->stock;
+            }
+        } elseif ($product->variants()->exists()) {
+            $availableStock = (int) $product->total_stock;
+        }
+
+        if ($request->quantity > $availableStock) {
             return response()->json([
-                'message' => "Stok tidak mencukupi. Hanya tersedia {$product->stock} unit.",
+                'message' => "Stok tidak mencukupi. Hanya tersedia {$availableStock} unit.",
             ], 400);
         }
 

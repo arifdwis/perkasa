@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,7 +76,7 @@ class AlumniProfileController extends Controller
             Storage::disk('public')->delete($profile->foto_profil);
         }
 
-        $path = $request->file('photo')->store('alumni/photos', 'public');
+        $path = (new ImageService)->storeAsWebP($request->file('photo'), 'alumni/photos');
         $profile->update(['foto_profil' => $path]);
 
         return response()->json([

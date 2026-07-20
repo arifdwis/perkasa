@@ -4,12 +4,14 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notification'
+import { useChatStore } from '../stores/chat'
 import SellerBottomNav from '../components/SellerBottomNav.vue'
 import RoleModeSwitcher from '../components/RoleModeSwitcher.vue'
 import PWAInstallButton from '../components/PWAInstallButton.vue'
 import LoadingRedirect from '../components/LoadingRedirect.vue'
 import Button from 'primevue/button'
 import Popover from 'primevue/popover'
+import Dialog from 'primevue/dialog'
 import Drawer from 'primevue/drawer'
 import { Icon } from '@iconify/vue'
 
@@ -17,6 +19,7 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+const chatStore = useChatStore()
 
 const notifOp = ref()
 const redirecting = ref(false)
@@ -50,8 +53,12 @@ const logout = async () => {
   }
   authStore.clearAuth()
   redirecting.value = true
+  showLogoutDialog.value = false
   setTimeout(() => { window.location.href = '/login' }, 500)
 }
+
+const showLogoutDialog = ref(false)
+const confirmLogout = () => { showLogoutDialog.value = true }
 
 const pageTitle = computed(() => {
   const nameMap = {
@@ -121,12 +128,14 @@ const timeAgo = (dateString) => {
 
 onMounted(() => {
   notificationStore.fetchUnreadCount('seller')
+  chatStore.fetchUnreadCount()
   const pollInterval = setInterval(() => {
     if (!localStorage.getItem('token')) {
       clearInterval(pollInterval)
       return
     }
     notificationStore.fetchUnreadCount('seller')
+    chatStore.fetchUnreadCount()
   }, 30000)
 })
 </script>
@@ -187,12 +196,22 @@ onMounted(() => {
               </span>
             </button>
           </div>
-          <div class="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-extrabold text-xs flex items-center justify-center">
-            {{ authStore.user?.name?.substring(0, 2).toUpperCase() }}
-          </div>
+          <!-- Chat Button -->
+          <button
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+            @click="router.push({ name: 'SellerChatList' })"
+          >
+            <i class="pi pi-comments text-sm"></i>
+            <span
+              v-if="chatStore.unreadCount > 0"
+              class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
+            >
+              {{ chatStore.unreadCount }}
+            </span>
+          </button>
           <button
             class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
-            @click="logout"
+            @click="confirmLogout"
             title="Keluar"
           >
             <i class="pi pi-sign-out text-sm"></i>
@@ -216,12 +235,32 @@ onMounted(() => {
               </span>
             </button>
           </div>
+          <!-- Chat Button -->
+          <button
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors relative"
+            @click="router.push({ name: 'SellerChatList' })"
+          >
+            <i class="pi pi-comments text-sm"></i>
+            <span
+              v-if="chatStore.unreadCount > 0"
+              class="absolute -top-1 -right-1 bg-red-500 text-white font-bold text-[9px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-primary"
+            >
+              {{ chatStore.unreadCount }}
+            </span>
+          </button>
           <button
             class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
-            @click="mobileMenuOpen = true"
-            title="Menu"
+            @click="switchMode('buyer')"
+            title="Mode Belanja"
           >
-            <i class="pi pi-bars text-sm"></i>
+            <Icon icon="solar:shop-2-bold" class="text-sm" />
+          </button>
+          <button
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-colors"
+            @click="confirmLogout"
+            title="Keluar"
+          >
+            <i class="pi pi-sign-out text-sm"></i>
           </button>
         </div>
       </div>
@@ -318,7 +357,6 @@ onMounted(() => {
     >
       <div class="flex flex-col h-full justify-between text-xs pt-2">
         <div class="space-y-5">
-          <!-- User Info -->
           <div class="bg-gradient-to-br from-primary-dark via-primary to-emerald-900 text-white p-4 rounded-2xl shadow-md space-y-3 relative overflow-hidden select-none">
             <div class="absolute w-24 h-24 bg-white/5 rounded-full blur-2xl -top-8 -right-8 pointer-events-none"></div>
             <div class="flex items-center gap-3 relative z-10">
@@ -331,46 +369,12 @@ onMounted(() => {
               </div>
             </div>
           </div>
-
-          <!-- Mode Switcher -->
-          <div v-if="isSeller || isAdmin" class="space-y-2">
-            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">Pindah Mode</span>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
-                :class="userMode === 'buyer' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
-                @click="switchMode('buyer')"
-              >
-                <Icon icon="solar:shop-2-bold" class="text-sm" />
-                Belanja
-              </button>
-              <button
-                v-if="isSeller"
-                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
-                :class="userMode === 'seller' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
-                @click="switchMode('seller')"
-              >
-                <Icon icon="solar:box-bold" class="text-sm" />
-                Toko
-              </button>
-              <button
-                v-if="isAdmin"
-                class="px-3 py-2.5 rounded-xl text-[10px] font-extrabold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border"
-                :class="userMode === 'admin' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'"
-                @click="switchMode('admin')"
-              >
-                <Icon icon="solar:shield-keyhole-bold" class="text-sm" />
-                Admin
-              </button>
-            </div>
-          </div>
         </div>
 
-        <!-- Logout -->
         <div class="pt-4 border-t border-slate-100">
           <button
             class="w-full h-11 border border-red-200 hover:border-red-500 text-red-500 hover:bg-red-50/50 hover:text-red-600 font-extrabold text-xs tracking-wider uppercase rounded-xl transition-all flex items-center justify-center gap-2 bg-red-50/20"
-            @click="logout"
+            @click="confirmLogout"
           >
             <Icon icon="solar:sign-out-linear" class="text-base" />
             <span>Keluar / Logout</span>
@@ -381,5 +385,24 @@ onMounted(() => {
 
     <!-- Mobile Bottom Navigation -->
     <SellerBottomNav />
+
+    <Dialog
+      v-model:visible="showLogoutDialog"
+      modal
+      header="Konfirmasi Keluar"
+      class="w-full max-w-sm mx-4"
+      :breakpoints="{ '640px': '90vw' }"
+      :draggable="false"
+    >
+      <div class="space-y-2">
+        <p class="text-sm text-slate-600">Apakah Anda yakin ingin keluar dari akun?</p>
+      </div>
+      <template #footer>
+        <div class="flex gap-2 justify-end">
+          <Button label="Batal" severity="secondary" outlined size="small" class="text-xs font-bold" @click="showLogoutDialog = false" />
+          <Button label="Keluar" severity="danger" size="small" class="text-xs font-bold" @click="logout" />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>

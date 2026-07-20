@@ -7,12 +7,17 @@ use App\Http\Requests\CreateProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\ProductVariantImage;
 use App\Models\Store;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Services\WebPushService;
+use App\Models\Favorite;
 
 class ProductController extends Controller
 {
@@ -21,7 +26,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Product::with(['store', 'category', 'primaryImage'])
+        $query = Product::with(['store', 'category', 'primaryImage', 'images', 'variants', 'variants.images'])
             ->whereHas('store', function ($q) {
                 $q->where('status', 'active');
             })
@@ -36,6 +41,19 @@ class ProductController extends Controller
         if ($request->has('store_id') && $request->store_id) {
             $query->where('store_id', $request->store_id);
         }
+
+        // Exclude specific product
+        if ($request->has('exclude') && $request->exclude) {
+            $query->where('id', '!=', $request->exclude);
+        }
+
+        // Exclude products from specific store
+        if ($request->has('exclude_store') && $request->exclude_store) {
+            $query->where('store_id', '!=', $request->exclude_store);
+        }
+
+        // Per page
+        $perPage = min((int) $request->get('per_page', 12), 50);
 
         // Search by keyword
         if ($request->has('search') && $request->search) {
@@ -66,7 +84,7 @@ class ProductController extends Controller
                 break;
         }
 
-        $products = $query->paginate(15);
+        $products = $query->paginate($perPage);
 
         return response()->json($products);
     }
@@ -76,7 +94,7 @@ class ProductController extends Controller
      */
     public function show($slug)
     {
-        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images'])
+        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images', 'variants', 'variants.images'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -105,7 +123,7 @@ class ProductController extends Controller
      */
     public function showById($id)
     {
-        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images'])
+        $product = Product::with(['store.alumniProfile.user', 'store.deliveryFees', 'category', 'images', 'variants'])
             ->findOrFail($id);
 
         // If the store is not active or the product is inactive, restrict view to owner or admin
@@ -138,7 +156,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'Toko tidak ditemukan.'], 404);
         }
 
-        $products = Product::with(['category', 'primaryImage'])
+        $products = Product::with(['category', 'primaryImage', 'variants', 'variants.images'])
             ->where('store_id', $profile->store->id)
             ->latest()
             ->get();
@@ -157,10 +175,13 @@ class ProductController extends Controller
         $store = $profile->store;
 
         $data = $request->validated();
+        unset($data['variants']);
         $data['store_id'] = $store->id;
 
-        // Auto force status out_of_stock if stock is 0
-        if ($data['stock'] == 0) {
+        // Auto force status out_of_stock if stock is 0 (regular only), unless variants have stock
+        $isPreOrder = ($data['product_type'] ?? 'regular') === 'pre_order';
+        $hasVariantStock = $request->has('variants') && collect($request->variants)->sum('stock') > 0;
+        if ($data['stock'] == 0 && ! $isPreOrder && ! $hasVariantStock) {
             $data['status'] = 'out_of_stock';
         }
 
@@ -176,14 +197,41 @@ class ProductController extends Controller
 
         $product = Product::create($data);
 
+        if ($request->has('variants') && is_array($request->variants)) {
+            foreach ($request->variants as $i => $v) {
+                $product->variants()->create([
+                    'name' => $v['name'],
+                    'price' => $v['price'] ?? $product->price,
+                    'stock' => $v['stock'] ?? 0,
+                    'sort_order' => $i,
+                ]);
+            }
+        }
+
         activity()
             ->performedOn($product)
             ->log("Membuat produk baru bernama: {$product->name}");
 
+        // Notify store followers
+        $followerIds = Favorite::where('favoritable_type', 'App\Models\Store')
+            ->where('favoritable_id', $store->id)
+            ->pluck('user_id');
+        if ($followerIds->isNotEmpty()) {
+            $push = app(WebPushService::class);
+            foreach ($followerIds as $uid) {
+                $push->sendToUser($uid,
+                    'Produk Baru: ' . $store->name,
+                    $product->name . ' · Rp' . number_format($product->price, 0, ',', '.'),
+                    '/logo_unmul.png',
+                    '/buyer/products/' . $product->slug
+                );
+            }
+        }
+
         return response()->json([
             'message' => 'Produk berhasil dibuat.',
-            'product' => $product->load(['category']),
-        ], 210); // Laravel expects 201 for created generally, but 200/201 is fine
+            'product' => $product->load(['category', 'variants']),
+        ], 201);
     }
 
     /**
@@ -191,7 +239,7 @@ class ProductController extends Controller
      */
     public function sellerShow($id)
     {
-        $product = Product::with(['category', 'images'])->findOrFail($id);
+        $product = Product::with(['category', 'images', 'variants', 'variants.images'])->findOrFail($id);
         Gate::authorize('update', $product);
 
         return response()->json([
@@ -208,9 +256,12 @@ class ProductController extends Controller
         Gate::authorize('update', $product);
 
         $data = $request->validated();
+        unset($data['variants']);
 
-        // Auto force status out_of_stock if stock is 0
-        if ($data['stock'] == 0) {
+        // Auto force status out_of_stock if stock is 0 (regular only), unless variants have stock
+        $isPreOrder = ($data['product_type'] ?? $product->product_type) === 'pre_order';
+        $hasVariantStock = $request->has('variants') && collect($request->variants)->sum('stock') > 0;
+        if ($data['stock'] == 0 && ! $isPreOrder && ! $hasVariantStock) {
             $data['status'] = 'out_of_stock';
         }
 
@@ -228,13 +279,35 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        if ($request->has('variants')) {
+            $existingVariants = $product->variants()->with('images')->get()->keyBy('name');
+            $product->variants()->whereNotIn('name', collect($request->variants)->pluck('name'))->delete();
+            foreach ($request->variants as $i => $v) {
+                $variant = $existingVariants->get($v['name']);
+                if ($variant) {
+                    $variant->update([
+                        'price' => $v['price'] ?? $product->price,
+                        'stock' => $v['stock'] ?? 0,
+                        'sort_order' => $i,
+                    ]);
+                } else {
+                    $variant = $product->variants()->create([
+                        'name' => $v['name'],
+                        'price' => $v['price'] ?? $product->price,
+                        'stock' => $v['stock'] ?? 0,
+                        'sort_order' => $i,
+                    ]);
+                }
+            }
+        }
+
         activity()
             ->performedOn($product)
             ->log("Memperbarui detail produk: {$product->name}");
 
         return response()->json([
             'message' => 'Produk berhasil diperbarui.',
-            'product' => $product->load(['category', 'images']),
+            'product' => $product->load(['category', 'images', 'variants', 'variants.images']),
         ]);
     }
 
@@ -288,7 +361,7 @@ class ProductController extends Controller
             }
 
             // Store new file
-            $path = $request->file('image')->store('products/images', 'public');
+            $path = (new ImageService)->storeAsWebP($request->file('image'), 'products/images');
 
             ProductImage::create([
                 'product_id' => $product->id,
@@ -329,7 +402,7 @@ class ProductController extends Controller
         $uploadedImages = [];
         DB::transaction(function () use ($request, $product, &$uploadedImages) {
             foreach ($request->file('images') as $file) {
-                $path = $file->store('products/gallery', 'public');
+                $path = (new ImageService)->storeAsWebP($file, 'products/gallery');
                 $img = ProductImage::create([
                     'product_id' => $product->id,
                     'image_path' => asset('storage/'.$path),
@@ -344,6 +417,49 @@ class ProductController extends Controller
             'images' => $uploadedImages,
             'product' => $product->load('images'),
         ]);
+    }
+
+    public function uploadVariantImage(Request $request, $productId, $variantId)
+    {
+        $product = Product::with('variants')->findOrFail($productId);
+        Gate::authorize('update', $product);
+
+        $variant = $product->variants()->findOrFail($variantId);
+
+        $request->validate([
+            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        ]);
+
+        if ($variant->images()->count() >= 5) {
+            return response()->json(['message' => 'Maksimal 5 foto per varian.'], 422);
+        }
+
+        $path = (new ImageService)->storeAsWebP($request->file('image'), 'products/variants');
+
+        $isPrimary = $variant->images()->count() === 0;
+        $img = $variant->images()->create([
+            'image_path' => $path,
+            'is_primary' => $isPrimary,
+        ]);
+
+        return response()->json([
+            'message' => 'Foto varian berhasil diunggah.',
+            'image' => $img,
+        ], 201);
+    }
+
+    public function deleteVariantImage(Request $request, $productId, $variantId, $imageId)
+    {
+        $product = Product::findOrFail($productId);
+        Gate::authorize('update', $product);
+
+        $variant = $product->variants()->findOrFail($variantId);
+        $image = $variant->images()->findOrFail($imageId);
+
+        Storage::disk('public')->delete($image->image_path);
+        $image->delete();
+
+        return response()->json(['message' => 'Foto varian berhasil dihapus.']);
     }
 
     /**
