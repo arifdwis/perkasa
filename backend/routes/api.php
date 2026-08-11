@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\KoperasiRegistrationController;
+use App\Http\Controllers\Api\AdminKoperasiController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductCategoryController;
@@ -27,7 +29,15 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:login')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+
+    // Koperasi registration — step 1 and step 3
+    Route::post('/koperasi/register', [KoperasiRegistrationController::class, 'store']);
+    Route::post('/koperasi/buat-akun', [KoperasiRegistrationController::class, 'buatAkun']);
 });
+
+// Koperasi registration — step 2, throttled harder than login
+Route::post('/koperasi/cek', [KoperasiRegistrationController::class, 'cek'])
+    ->middleware('throttle:koperasi-cek');
 Route::get('/stores/{id}', [StoreController::class, 'show'])->where('id', '(?!my-store)[^/]+');
 Route::get('/product-categories', [ProductCategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
@@ -152,6 +162,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/alumni', [AlumniVerificationController::class, 'index']);
         Route::get('/admin/alumni/{id}', [AlumniVerificationController::class, 'show']);
         Route::post('/admin/alumni/{id}/verify', [AlumniVerificationController::class, 'verify']);
+
+        // Koperasi Membership Validation
+        Route::get('/admin/koperasi', [AdminKoperasiController::class, 'index']);
+        Route::get('/admin/koperasi/{id}', [AdminKoperasiController::class, 'show']);
+        Route::post('/admin/koperasi/{id}/verify', [AdminKoperasiController::class, 'verify']);
 
         // Admin Store Management
         Route::get('/admin/stores', [AdminStoreController::class, 'index']);

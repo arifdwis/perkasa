@@ -40,6 +40,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by($request->ip());
         });
 
+        // Koperasi activation lookup takes NIM + nama, which are guessable.
+        // Keep it tighter than login so it cannot be used to enumerate members.
+        RateLimiter::for('koperasi-cek', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
         // Send web push on every database notification
         Event::listen(NotificationSent::class, \App\Listeners\SendWebPushNotification::class);
     }

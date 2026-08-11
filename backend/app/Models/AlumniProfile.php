@@ -24,12 +24,17 @@ class AlumniProfile extends Model
         'foto_profil',
         'status_verifikasi',
         'badge_verified',
+        'is_koperasi_member',
+        'status_koperasi',
+        'koperasi_approved_at',
     ];
 
     protected $casts = [
         'badge_verified' => 'boolean',
         'latitude' => 'float',
         'longitude' => 'float',
+        'is_koperasi_member' => 'boolean',
+        'koperasi_approved_at' => 'datetime',
     ];
 
     /**

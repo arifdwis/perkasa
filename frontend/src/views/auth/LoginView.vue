@@ -9,11 +9,14 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Message from 'primevue/message'
 import LoadingRedirect from '../../components/LoadingRedirect.vue'
+import { koperasiAktivasiTerbuka, tautanDaftarKoperasiTerlihat } from '../../utils/featureFlags'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = ref('')
+// Accepts an email or a username — koperasi members sign in with the username
+// they chose during activation.
+const login = ref('')
 const password = ref('')
 const error = ref('')
 const isLoading = ref(false)
@@ -21,16 +24,16 @@ const redirecting = ref(false)
 
 const handleLogin = async () => {
   error.value = ''
-  if (!email.value || !password.value) {
-    error.value = 'Silakan isi email dan password Anda.'
+  if (!login.value || !password.value) {
+    error.value = 'Silakan isi email/username dan kata sandi Anda.'
     return
   }
 
   isLoading.value = true
-  
+
   try {
     const response = await axios.post('/login', {
-      email: email.value,
+      login: login.value.trim(),
       password: password.value
     })
 
@@ -106,17 +109,18 @@ const handleLogin = async () => {
 
           <!-- Form Fields -->
           <form @submit.prevent="handleLogin" class="space-y-4">
-            <!-- Email Input -->
+            <!-- Email or Username Input -->
             <div class="flex flex-col gap-1.5">
-              <label for="email" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Alamat Email</label>
+              <label for="login" class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Email atau Username</label>
               <div class="input-wrapper relative flex items-center">
                 <Icon icon="solar:letter-linear" class="absolute left-3.5 text-lg text-slate-400 z-10" />
-                <InputText 
-                  id="email" 
-                  v-model="email" 
-                  type="email" 
-                  placeholder="nama@email.com" 
-                  class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all" 
+                <InputText
+                  id="login"
+                  v-model="login"
+                  type="text"
+                  autocomplete="username"
+                  placeholder="nama@email.com atau username"
+                  class="w-full h-11 !pl-11 rounded-xl border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary text-xs font-semibold placeholder:text-slate-400 transition-all"
                 />
               </div>
             </div>
@@ -170,11 +174,21 @@ const handleLogin = async () => {
           </div>
 
           <!-- Footer Register Link -->
-          <div class="text-center text-xs text-slate-600">
-            Belum terdaftar sebagai alumni? <br class="sm:hidden" />
-            <router-link :to="{ name: 'Register' }" class="text-primary font-black hover:underline ml-1 hover:text-primary-hover transition-colors">
-              Daftar Sekarang
-            </router-link>
+          <div class="text-center text-xs text-slate-600 space-y-2">
+            <p>
+              Belum terdaftar sebagai alumni? <br class="sm:hidden" />
+              <router-link :to="{ name: 'Register' }" class="text-primary font-black hover:underline ml-1 hover:text-primary-hover transition-colors">
+                Daftar Sekarang
+              </router-link>
+            </p>
+            <p v-if="tautanDaftarKoperasiTerlihat" class="text-[11px] text-slate-400">
+              Anggota koperasi:
+              <router-link :to="{ name: 'KoperasiRegister' }" class="text-primary font-black hover:underline ml-1">Daftar</router-link>
+              <template v-if="koperasiAktivasiTerbuka">
+                ·
+                <router-link :to="{ name: 'KoperasiAktivasi' }" class="text-primary font-black hover:underline">Aktifkan akun</router-link>
+              </template>
+            </p>
           </div>
         </div>
       </div>

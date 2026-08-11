@@ -16,6 +16,27 @@ const routes = [
     meta: { guestOnly: true }
   },
 
+  // Koperasi membership — three separate steps. Step 2 and 3 are reached by
+  // the applicant, not chained automatically from step 1.
+  {
+    path: '/register/koperasi',
+    name: 'KoperasiRegister',
+    component: () => import('../views/auth/KoperasiRegisterView.vue'),
+    meta: { guestOnly: true }
+  },
+  {
+    path: '/register/koperasi/aktivasi',
+    name: 'KoperasiAktivasi',
+    component: () => import('../views/auth/KoperasiAktivasiView.vue'),
+    meta: { guestOnly: true }
+  },
+  {
+    path: '/register/koperasi/aktivasi/buat-akun',
+    name: 'KoperasiBuatAkun',
+    component: () => import('../views/auth/KoperasiBuatAkunView.vue'),
+    meta: { guestOnly: true }
+  },
+
   // Parent: Buyer App Layout Wrapper
   {
     path: '/buyer',
@@ -218,6 +239,11 @@ const routes = [
         path: 'finance',
         name: 'AdminFinance',
         component: () => import('../views/admin/AdminFinanceView.vue')
+      },
+      {
+        path: 'koperasi',
+        name: 'AdminKoperasi',
+        component: () => import('../views/admin/KoperasiListView.vue')
       }
     ]
   },

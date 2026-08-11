@@ -79,18 +79,26 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        // Accepts either key so older clients that only send `email` keep working.
+        $request->merge(['login' => $request->input('login') ?? $request->input('email')]);
+
         $request->validate([
-            'email' => ['required', 'string', 'email'],
+            'login' => ['required', 'string'],
             'password' => ['required', 'string'],
+        ], [
+            'login.required' => 'Email atau username wajib diisi.',
         ]);
 
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        $login = trim($request->input('login'));
+        $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        if (! Auth::attempt([$field => $login, 'password' => $request->password])) {
             return response()->json([
-                'message' => 'Email atau kata sandi salah.',
+                'message' => 'Email/username atau kata sandi salah.',
             ], 401);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
+        $user = User::where($field, $login)->firstOrFail();
 
         // Check if user is suspended
         if ($user->profile && $user->profile->status_verifikasi === 'suspended') {

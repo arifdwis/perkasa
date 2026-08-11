@@ -66,6 +66,13 @@ const handleLogout = async () => {
         Verifikasi Alumni
       </a>
 
+      <a v-if="showMenuItem('view_alumni_list')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+         :class="isRouteActive('AdminKoperasi') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
+         @click="router.push({ name: 'AdminKoperasi' })">
+        <Icon icon="solar:users-group-two-rounded-linear" class="text-lg" />
+        Anggota Koperasi
+      </a>
+
       <a v-if="showMenuItem('verify_store')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
          :class="isRouteActive('AdminStores') ? 'bg-primary text-white font-black' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'"
          @click="router.push({ name: 'AdminStores' })">

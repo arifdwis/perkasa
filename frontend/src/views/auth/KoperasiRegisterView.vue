@@ -1,19 +1,15 @@
 <script setup>
 import { ref, computed, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
 import Select from 'primevue/select'
 import Message from 'primevue/message'
-import LoadingRedirect from '../../components/LoadingRedirect.vue'
-import { tautanDaftarKoperasiTerlihat } from '../../utils/featureFlags'
+import { koperasiAktivasiTerbuka } from '../../utils/featureFlags'
 
-const router = useRouter()
-const redirecting = ref(false)
-
+// Step 1 of the koperasi flow: personal data only. Credentials are set later,
+// on the activation pages, which the applicant opens themselves.
 const form = ref({
   nim: '',
   name: '',
@@ -21,9 +17,7 @@ const form = ref({
   tahunMasuk: '',
   tahunLulus: '',
   email: '',
-  whatsapp: '',
-  password: '',
-  confirmPassword: ''
+  whatsapp: ''
 })
 
 const touched = reactive({
@@ -33,9 +27,7 @@ const touched = reactive({
   tahunMasuk: false,
   tahunLulus: false,
   email: false,
-  whatsapp: false,
-  password: false,
-  confirmPassword: false
+  whatsapp: false
 })
 
 const fieldErrors = reactive({
@@ -45,9 +37,7 @@ const fieldErrors = reactive({
   tahunMasuk: '',
   tahunLulus: '',
   email: '',
-  whatsapp: '',
-  password: '',
-  confirmPassword: ''
+  whatsapp: ''
 })
 
 const programStudiList = ref([
@@ -70,23 +60,6 @@ const tahunLulusOptions = computed(() => {
   const list = []
   for (let y = currentYear + 5; y >= 1950; y--) list.push({ label: String(y), value: y })
   return list
-})
-
-const passwordStrength = computed(() => {
-  const v = form.value.password
-  if (!v) return { score: 0, label: '', color: 'bg-slate-200', text: 'text-slate-400' }
-  let score = 0
-  if (v.length >= 8) score++
-  if (/[A-Z]/.test(v)) score++
-  if (/[0-9]/.test(v)) score++
-  if (/[^A-Za-z0-9]/.test(v)) score++
-  const map = [
-    { label: 'Lemah', color: 'bg-red-500', text: 'text-red-600' },
-    { label: 'Cukup', color: 'bg-amber-500', text: 'text-amber-600' },
-    { label: 'Baik', color: 'bg-lime-500', text: 'text-lime-600' },
-    { label: 'Kuat', color: 'bg-emerald-500', text: 'text-emerald-600' },
-  ]
-  return { score, ...map[score - 1] || map[0] }
 })
 
 const validateField = (field) => {
@@ -123,15 +96,6 @@ const validateField = (field) => {
       else if (!/^(08|\+628|628)\d{7,12}$/.test(v.replace(/[-\s]/g, '')))
         fieldErrors.whatsapp = 'Nomor WhatsApp tidak valid (08xx / +628xx).'
       break
-    case 'password':
-      if (!v) fieldErrors.password = 'Kata sandi wajib diisi.'
-      else if (v.length < 8) fieldErrors.password = 'Kata sandi minimal 8 karakter.'
-      else if (passwordStrength.value.score < 2) fieldErrors.password = 'Kata sandi terlalu lemah. Gunakan kombinasi huruf besar & angka.'
-      break
-    case 'confirmPassword':
-      if (!v) fieldErrors.confirmPassword = 'Konfirmasi sandi wajib diisi.'
-      else if (v !== form.value.password) fieldErrors.confirmPassword = 'Konfirmasi sandi tidak cocok.'
-      break
   }
 }
 
@@ -141,26 +105,17 @@ const onBlur = (field) => {
 }
 
 const onInput = (field) => {
-  if (touched[field]) {
-    validateField(field)
-  }
+  if (touched[field]) validateField(field)
 }
 
-const hasAnyError = computed(() => {
-  return Object.values(fieldErrors).some(e => e)
-})
+const hasAnyError = computed(() => Object.values(fieldErrors).some(e => e))
 
 const validateAll = () => {
-  const fields = Object.keys(fieldErrors)
-  fields.forEach(f => {
+  Object.keys(fieldErrors).forEach(f => {
     touched[f] = true
     validateField(f)
   })
   return !hasAnyError.value
-}
-
-const clearFieldErrors = () => {
-  Object.keys(fieldErrors).forEach(k => { fieldErrors[k] = '' })
 }
 
 const handleRegister = async () => {
@@ -172,31 +127,28 @@ const handleRegister = async () => {
   isLoading.value = true
 
   try {
-    const response = await axios.post('/register', {
+    const response = await axios.post('/koperasi/register', {
       name: form.value.name.trim(),
       email: form.value.email.trim(),
-      password: form.value.password,
+      whatsapp: form.value.whatsapp.trim(),
       nim: form.value.nim.trim(),
       program_studi: form.value.programStudi,
       tahun_masuk: form.value.tahunMasuk,
-      tahun_lulus: form.value.tahunLulus,
-      whatsapp: form.value.whatsapp.trim()
+      tahun_lulus: form.value.tahunLulus
     })
 
-    success.value = response.data.message || 'Registrasi berhasil! Silakan masuk.'
-    clearFieldErrors()
-
-    setTimeout(() => {
-      form.value = {
-        nim: '', name: '', programStudi: null, tahunMasuk: '', tahunLulus: '',
-        email: '', whatsapp: '', password: '', confirmPassword: ''
-      }
-    }, 100)
-
-    redirecting.value = true
-    setTimeout(() => {
-      window.location.href = '/login'
-    }, 1500)
+    // Deliberately no auto-redirect: activation is a separate step the
+    // applicant starts on their own, whenever they are ready. While activation
+    // is hidden, the API message would point at a page they cannot reach yet.
+    success.value = koperasiAktivasiTerbuka
+      ? (response.data.message || 'Pendaftaran tersimpan.')
+      : 'Data Anda sudah kami terima. Silakan tunggu tautan aktivasi untuk membuat akun Anda.'
+    Object.keys(fieldErrors).forEach(k => { fieldErrors[k] = '' })
+    form.value = {
+      nim: '', name: '', programStudi: null, tahunMasuk: '',
+      tahunLulus: '', email: '', whatsapp: ''
+    }
+    Object.keys(touched).forEach(k => { touched[k] = false })
   } catch (err) {
     if (err.response?.data?.errors) {
       const errors = err.response.data.errors
@@ -204,9 +156,9 @@ const handleRegister = async () => {
         const mappedKey = {
           program_studi: 'programStudi',
           tahun_masuk: 'tahunMasuk',
-          tahun_lulus: 'tahunLulus',
+          tahun_lulus: 'tahunLulus'
         }[key] || key
-        if (fieldErrors.hasOwnProperty(mappedKey)) {
+        if (Object.prototype.hasOwnProperty.call(fieldErrors, mappedKey)) {
           fieldErrors[mappedKey] = errors[key][0]
           touched[mappedKey] = true
         } else {
@@ -214,7 +166,7 @@ const handleRegister = async () => {
         }
       })
     } else {
-      error.value = err.response?.data?.message || 'Registrasi gagal. Coba lagi nanti.'
+      error.value = err.response?.data?.message || 'Pendaftaran gagal. Coba lagi nanti.'
     }
   } finally {
     isLoading.value = false
@@ -231,8 +183,6 @@ const inputClass = (field) => {
 
 <template>
   <div class="min-h-screen bg-slate-50 flex flex-col lg:flex-row font-sans">
-    <LoadingRedirect :visible="redirecting" message="Pendaftaran berhasil, mengalihkan..." />
-
     <!-- Left Brand Panel -->
     <aside class="hidden lg:flex lg:w-[44%] xl:w-[40%] bg-gradient-to-br from-primary-dark via-primary to-[#00463A] relative overflow-hidden flex-col justify-between p-10 xl:p-14 text-white">
       <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 60%, white 1px, transparent 1px); background-size: 48px 48px;"></div>
@@ -244,7 +194,7 @@ const inputClass = (field) => {
           <img src="/logo_unmul.png" alt="Logo Unmul" class="w-7 h-7 object-contain" />
         </div>
         <div class="leading-tight">
-          <p class="text-sm font-black tracking-tight">Marketplace Alumni FEB</p>
+          <p class="text-sm font-black tracking-tight">Koperasi Alumni FEB</p>
           <p class="text-[10px] font-bold uppercase tracking-widest text-white/60">Universitas Mulawarman</p>
         </div>
       </div>
@@ -252,50 +202,46 @@ const inputClass = (field) => {
       <div class="relative z-10 space-y-8 max-w-md">
         <div class="space-y-4">
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-white/10 border border-white/20 tracking-wider uppercase">
-            <Icon icon="solar:verified-check-bold" class="text-xs text-emerald-300" />
-            Jejaring Terverifikasi
+            <Icon icon="solar:users-group-rounded-bold" class="text-xs text-emerald-300" />
+            Keanggotaan Koperasi
           </span>
           <h1 class="text-3xl xl:text-4xl font-black leading-tight tracking-tight">
-            Bergabung dengan Ekosistem Bisnis Alumni FEB.
+            Daftar Jadi Anggota Koperasi Alumni FEB.
           </h1>
           <p class="text-sm text-white/70 leading-relaxed font-medium">
-            Daftar dengan NIM resmi Anda untuk mulai berbelanja, berjualan, dan membangun kemitraan bisnis di jejaring alumni terverifikasi.
+            {{ koperasiAktivasiTerbuka
+              ? 'Isi data diri Anda terlebih dahulu. Pembuatan username dan kata sandi dilakukan di langkah aktivasi, kapan pun Anda siap.'
+              : 'Isi data diri Anda untuk mendaftar sebagai anggota koperasi alumni. Tautan aktivasi akan dikirimkan agar Anda bisa membuat akun.' }}
           </p>
         </div>
 
-        <ul class="space-y-3">
+        <ol v-if="koperasiAktivasiTerbuka" class="space-y-3">
           <li class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
-              <Icon icon="solar:shield-check-bold-duotone" class="text-base text-emerald-300" />
-            </div>
+            <div class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0 border border-white/20 text-xs font-black">1</div>
             <div>
-              <p class="text-xs font-black">Verifikasi NIM Resmi</p>
-              <p class="text-[11px] text-white/60">Hanya alumni FEB Unmul terdaftar yang dapat bergabung.</p>
+              <p class="text-xs font-black">Isi Data Diri</p>
+              <p class="text-[11px] text-white/60">Data akademik dan kontak sesuai ijazah Anda.</p>
             </div>
           </li>
           <li class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
-              <Icon icon="solar:hand-money-bold-duotone" class="text-base text-amber-300" />
-            </div>
+            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-xs font-black text-white/60">2</div>
             <div>
-              <p class="text-xs font-black">Transaksi COD Aman</p>
-              <p class="text-[11px] text-white/60">Bayar tunai saat pesanan tiba, tanpa risiko penipuan online.</p>
+              <p class="text-xs font-black text-white/70">Aktivasi</p>
+              <p class="text-[11px] text-white/50">Cari data Anda dengan NIM dan nama.</p>
             </div>
           </li>
           <li class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
-              <Icon icon="solar:shop-2-bold-duotone" class="text-base text-sky-300" />
-            </div>
+            <div class="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 text-xs font-black text-white/60">3</div>
             <div>
-              <p class="text-xs font-black">Buka Toko Alumni</p>
-              <p class="text-[11px] text-white/60">Jual produk & jasa ke jaringan alumni yang sudah terverifikasi.</p>
+              <p class="text-xs font-black text-white/70">Buat Akun</p>
+              <p class="text-[11px] text-white/50">Tentukan username dan kata sandi untuk masuk.</p>
             </div>
           </li>
-        </ul>
+        </ol>
       </div>
 
       <div class="relative z-10 flex items-center gap-4 pt-6 border-t border-white/10 text-[10px] text-white/50 font-bold">
-        <span class="flex items-center gap-1"><Icon icon="solar:users-group-rounded-bold" class="text-sm" /> Jejaring Eksklusif</span>
+        <span class="flex items-center gap-1"><Icon icon="solar:shield-check-bold" class="text-sm" /> Divalidasi Admin</span>
         <span class="flex items-center gap-1"><Icon icon="solar:lock-keyhole-bold" class="text-sm" /> Data Terlindungi</span>
       </div>
     </aside>
@@ -303,11 +249,11 @@ const inputClass = (field) => {
     <!-- Right Form Panel -->
     <main class="flex-grow flex flex-col">
       <div class="lg:hidden bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between">
-        <router-link :to="{ name: 'Home' }" class="flex items-center gap-2">
+        <router-link :to="{ name: 'Login' }" class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
             <img src="/logo_unmul.png" alt="Logo Unmul" class="w-6 h-6 object-contain" />
           </div>
-          <span class="text-xs font-black text-primary tracking-tight">Marketplace Alumni FEB</span>
+          <span class="text-xs font-black text-primary tracking-tight">Koperasi Alumni FEB</span>
         </router-link>
         <router-link :to="{ name: 'Login' }" class="text-[11px] font-bold text-slate-500 hover:text-primary">Masuk</router-link>
       </div>
@@ -315,20 +261,46 @@ const inputClass = (field) => {
       <div class="flex-grow flex items-center justify-center px-5 py-8 sm:px-8 sm:py-12">
         <div class="w-full max-w-md space-y-6">
           <div class="space-y-2">
-            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Daftar Akun Alumni</h2>
+            <p v-if="koperasiAktivasiTerbuka" class="text-[10px] font-black text-primary uppercase tracking-widest">Langkah 1 dari 3</p>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight">Daftar Anggota Koperasi</h2>
             <p class="text-xs text-slate-500 leading-relaxed">
-              Lengkapi data registrasi dengan informasi yang sesuai ijazah. Akun akan diverifikasi oleh admin Perkasa.
+              {{ koperasiAktivasiTerbuka
+                ? 'Lengkapi data diri sesuai ijazah. Username dan kata sandi dibuat pada langkah aktivasi.'
+                : 'Lengkapi data diri sesuai ijazah. Tautan aktivasi akan dikirimkan kepada Anda untuk membuat akun.' }}
             </p>
           </div>
 
           <Transition name="fade-slide">
             <div class="space-y-2">
               <Message v-if="error" severity="error" closable @close="error = ''" class="text-xs">{{ error }}</Message>
-              <Message v-if="success" severity="success" class="text-xs">{{ success }}</Message>
             </div>
           </Transition>
 
-          <form @submit.prevent="handleRegister" class="space-y-5" novalidate>
+          <!-- Success state: point to activation, do not auto-redirect -->
+          <div v-if="success" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 space-y-3">
+            <div class="flex items-start gap-3">
+              <Icon icon="solar:check-circle-bold" class="text-2xl text-emerald-600 shrink-0" />
+              <div class="space-y-1">
+                <p class="text-sm font-black text-emerald-900">Pendaftaran tersimpan</p>
+                <p class="text-xs text-emerald-800 leading-relaxed">{{ success }}</p>
+              </div>
+            </div>
+            <template v-if="koperasiAktivasiTerbuka">
+              <router-link :to="{ name: 'KoperasiAktivasi' }"
+                class="flex items-center justify-center gap-2 w-full h-11 rounded-xl bg-primary text-white font-extrabold text-xs tracking-wider uppercase shadow-md shadow-primary/10 hover:opacity-90 transition-all">
+                <Icon icon="solar:key-bold" class="text-lg" />
+                Aktifkan Akun Sekarang
+              </router-link>
+              <p class="text-center text-[10px] text-emerald-700">
+                Bisa juga dilakukan nanti melalui menu Aktivasi Akun Koperasi.
+              </p>
+            </template>
+            <p v-else class="text-center text-[10px] text-emerald-700">
+              Tautan aktivasi akan dikirim melalui email atau WhatsApp yang Anda daftarkan.
+            </p>
+          </div>
+
+          <form v-else @submit.prevent="handleRegister" class="space-y-5" novalidate>
             <!-- Section: Akademik -->
             <fieldset class="space-y-3">
               <legend class="text-[10px] font-black text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-100 w-full">Data Akademik</legend>
@@ -436,54 +408,13 @@ const inputClass = (field) => {
               </div>
             </fieldset>
 
-            <!-- Keamanan -->
-            <fieldset class="space-y-3">
-              <legend class="text-[10px] font-black text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-100 w-full">Keamanan Akun</legend>
-
-              <div class="flex flex-col gap-1">
-                <label for="password" class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Kata Sandi *</label>
-                <div class="relative flex items-center">
-                  <Icon icon="solar:lock-password-bold" class="absolute left-3 text-base z-20 pointer-events-none" :class="fieldErrors.password && touched.password ? 'text-red-400' : 'text-slate-400'" />
-                  <Password id="password" v-model="form.password" placeholder="Min 8 karakter" toggleMask :feedback="false" class="w-full"
-                    inputClass="w-full h-10 !pl-9 rounded-xl text-xs font-semibold placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    :class="fieldErrors.password && touched.password ? '!border-red-400' : ''"
-                    @blur="onBlur('password')" @input="onInput('password')">
-                    <template #header>
-                      <div v-if="form.password" class="px-3 pt-2 pb-1">
-                        <div class="h-1 w-full rounded-full bg-slate-200 overflow-hidden">
-                          <div class="h-full rounded-full transition-all duration-300" :class="passwordStrength.color" :style="{ width: (passwordStrength.score * 25) + '%' }"></div>
-                        </div>
-                        <p class="text-[10px] font-bold mt-1" :class="passwordStrength.text">Kekuatan: {{ passwordStrength.label }}</p>
-                      </div>
-                    </template>
-                  </Password>
-                </div>
-                <p v-if="fieldErrors.password && touched.password" class="text-[10px] font-bold text-red-500 flex items-center gap-1">
-                  <Icon icon="solar:danger-circle-bold" class="text-xs" /> {{ fieldErrors.password }}
-                </p>
-              </div>
-
-              <div class="flex flex-col gap-1">
-                <label for="confirmPassword" class="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Konfirmasi Sandi *</label>
-                <div class="relative flex items-center">
-                  <Icon icon="solar:lock-keyhole-minimalistic-bold" class="absolute left-3 text-base z-20 pointer-events-none" :class="fieldErrors.confirmPassword && touched.confirmPassword ? 'text-red-400' : 'text-slate-400'" />
-                  <Password id="confirmPassword" v-model="form.confirmPassword" placeholder="Ulangi sandi" toggleMask :feedback="false" class="w-full"
-                    inputClass="w-full h-10 !pl-9 rounded-xl text-xs font-semibold placeholder:text-slate-400 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-                    @blur="onBlur('confirmPassword')" @input="onInput('confirmPassword')" />
-                </div>
-                <p v-if="fieldErrors.confirmPassword && touched.confirmPassword" class="text-[10px] font-bold text-red-500 flex items-center gap-1">
-                  <Icon icon="solar:danger-circle-bold" class="text-xs" /> {{ fieldErrors.confirmPassword }}
-                </p>
-              </div>
-            </fieldset>
-
             <Button type="submit" :loading="isLoading"
               class="w-full h-11 rounded-xl font-extrabold text-xs tracking-wider uppercase transition-all shadow-md shadow-primary/10"
               :disabled="isLoading">
               <template #default>
                 <div class="flex items-center justify-center gap-2">
                   <Icon icon="solar:user-plus-bold" class="text-lg" />
-                  <span>Daftar Sekarang</span>
+                  <span>Kirim Pendaftaran</span>
                 </div>
               </template>
             </Button>
@@ -496,13 +427,13 @@ const inputClass = (field) => {
           </form>
 
           <div class="text-center text-xs text-slate-600 pt-2 border-t border-slate-100 space-y-1">
-            <p>
-              Sudah punya akun alumni?
-              <router-link :to="{ name: 'Login' }" class="text-primary font-black hover:underline ml-1">Masuk di sini</router-link>
+            <p v-if="koperasiAktivasiTerbuka">
+              Sudah mendaftar koperasi?
+              <router-link :to="{ name: 'KoperasiAktivasi' }" class="text-primary font-black hover:underline ml-1">Aktifkan akun</router-link>
             </p>
-            <p v-if="tautanDaftarKoperasiTerlihat" class="text-slate-400">
-              Mendaftar sebagai anggota koperasi?
-              <router-link :to="{ name: 'KoperasiRegister' }" class="text-primary font-black hover:underline ml-1">Daftar koperasi</router-link>
+            <p class="text-slate-400">
+              Sudah punya akun?
+              <router-link :to="{ name: 'Login' }" class="text-primary font-black hover:underline ml-1">Masuk di sini</router-link>
             </p>
           </div>
         </div>
@@ -512,9 +443,6 @@ const inputClass = (field) => {
 </template>
 
 <style scoped>
-:deep(.p-password) { width: 100%; }
-:deep(.p-password-input) { width: 100% !important; }
-:deep(.p-password-panel) { width: 100% !important; border: none !important; box-shadow: none !important; background: transparent !important; }
 :deep(.p-select) { width: 100%; height: 2.5rem; }
 :deep(.p-select-label) { display: flex !important; align-items: center !important; font-size: 0.75rem; font-weight: 600; }
 
