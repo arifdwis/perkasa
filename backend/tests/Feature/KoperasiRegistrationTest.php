@@ -408,6 +408,135 @@ class KoperasiRegistrationTest extends TestCase
         ]);
     }
 
+    // --------------------------------------------------- tautan aktivasi admin
+
+    private function adminToken(): string
+    {
+        $admin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'admin.link@perkasa.test',
+            'password' => Hash::make('password123'),
+        ]);
+        $admin->assignRole('super_admin');
+
+        return $admin->createToken('test_token')->plainTextToken;
+    }
+
+    public function test_admin_can_issue_activation_link_and_it_creates_an_account()
+    {
+        $member = $this->existingMember();
+
+        $token = $this->withHeaders(['Authorization' => 'Bearer '.$this->adminToken()])
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")
+            ->assertStatus(200)
+            ->assertJsonStructure(['token', 'expires_at', 'name', 'whatsapp'])
+            ->json('token');
+
+        // The link resolves for the applicant, greeting them by name.
+        $this->getJson("/api/koperasi/aktivasi/{$token}")
+            ->assertStatus(200)
+            ->assertJson(['name' => 'Budi Santoso', 'nim' => '1801015001']);
+
+        $this->postJson('/api/koperasi/buat-akun', [
+            'token' => $token,
+            'username' => 'budi_santoso',
+            'password' => 'RahasiaKu123',
+            'password_confirmation' => 'RahasiaKu123',
+        ])->assertStatus(201);
+
+        $this->assertDatabaseHas('users', ['username' => 'budi_santoso']);
+
+        // Burned on use.
+        $this->assertDatabaseHas('koperasi_members', [
+            'id' => $member->id,
+            'token_aktivasi' => null,
+        ]);
+        $this->getJson("/api/koperasi/aktivasi/{$token}")->assertStatus(404);
+    }
+
+    public function test_reissuing_a_link_invalidates_the_previous_one()
+    {
+        $member = $this->existingMember();
+        $headers = ['Authorization' => 'Bearer '.$this->adminToken()];
+
+        $lama = $this->withHeaders($headers)
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")->json('token');
+        $baru = $this->withHeaders($headers)
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")->json('token');
+
+        $this->assertNotSame($lama, $baru);
+        $this->getJson("/api/koperasi/aktivasi/{$lama}")->assertStatus(404);
+        $this->getJson("/api/koperasi/aktivasi/{$baru}")->assertStatus(200);
+    }
+
+    public function test_expired_activation_link_is_rejected()
+    {
+        $member = $this->existingMember();
+        $headers = ['Authorization' => 'Bearer '.$this->adminToken()];
+
+        $token = $this->withHeaders($headers)
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")->json('token');
+
+        $member->update(['token_expires_at' => now()->subDay()]);
+
+        $this->getJson("/api/koperasi/aktivasi/{$token}")->assertStatus(404);
+
+        $this->postJson('/api/koperasi/buat-akun', [
+            'token' => $token,
+            'username' => 'budi_santoso',
+            'password' => 'RahasiaKu123',
+            'password_confirmation' => 'RahasiaKu123',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseMissing('users', ['username' => 'budi_santoso']);
+    }
+
+    public function test_cannot_issue_link_for_an_already_activated_registration()
+    {
+        $user = User::create([
+            'name' => 'Budi Santoso',
+            'username' => 'budi',
+            'email' => 'budi@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+        $member = $this->existingMember(['user_id' => $user->id]);
+
+        $this->withHeaders(['Authorization' => 'Bearer '.$this->adminToken()])
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")
+            ->assertStatus(422);
+    }
+
+    public function test_activation_token_is_never_exposed_by_the_detail_endpoint()
+    {
+        $member = $this->existingMember();
+        $headers = ['Authorization' => 'Bearer '.$this->adminToken()];
+
+        $this->withHeaders($headers)->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link");
+
+        $this->withHeaders($headers)
+            ->getJson("/api/admin/koperasi/{$member->id}")
+            ->assertStatus(200)
+            ->assertJson(['tautan_aktif' => true])
+            ->assertJsonMissingPath('member.token_aktivasi');
+    }
+
+    public function test_non_admin_cannot_issue_activation_link()
+    {
+        $member = $this->existingMember();
+
+        $user = User::create([
+            'name' => 'Alumni Biasa',
+            'email' => 'biasa2@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+        $user->assignRole('alumni_pembeli');
+        $token = $user->createToken('test_token')->plainTextToken;
+
+        $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->postJson("/api/admin/koperasi/{$member->id}/aktivasi-link")
+            ->assertStatus(403);
+    }
+
     public function test_non_admin_cannot_access_koperasi_admin_endpoints()
     {
         $user = User::create([

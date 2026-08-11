@@ -31,6 +31,9 @@ class KoperasiMember extends Model
         'approved_by',
         'user_id',
         'migrated_at',
+        'token_aktivasi',
+        'token_expires_at',
+        'token_diterbitkan_at',
     ];
 
     protected $casts = [
@@ -38,7 +41,15 @@ class KoperasiMember extends Model
         'tahun_lulus' => 'integer',
         'approved_at' => 'datetime',
         'migrated_at' => 'datetime',
+        'token_expires_at' => 'datetime',
+        'token_diterbitkan_at' => 'datetime',
     ];
+
+    /**
+     * The activation token is never sent to the public activation page — only
+     * to the admin who issues the link.
+     */
+    protected $hidden = ['token_aktivasi'];
 
     /**
      * The account created from this registration, once activated.
@@ -65,5 +76,15 @@ class KoperasiMember extends Model
     public function isActivated(): bool
     {
         return $this->user_id !== null;
+    }
+
+    /**
+     * Whether the admin-issued activation link is still usable.
+     */
+    public function hasLiveToken(): bool
+    {
+        return $this->token_aktivasi !== null
+            && ! $this->isActivated()
+            && ($this->token_expires_at === null || $this->token_expires_at->isFuture());
     }
 }

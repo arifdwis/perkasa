@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KoperasiMember;
 use App\Notifications\AlumniVerificationNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 /**
  * Admin validation of koperasi memberships.
@@ -53,7 +54,54 @@ class AdminKoperasiController extends Controller
     {
         $member = KoperasiMember::with(['user.profile', 'admin'])->findOrFail($id);
 
-        return response()->json(['member' => $member]);
+        return response()->json([
+            'member' => $member,
+            'tautan_aktif' => $member->hasLiveToken(),
+        ]);
+    }
+
+    /**
+     * How long an admin-issued activation link stays valid.
+     */
+    private const TOKEN_TTL_DAYS = 7;
+
+    /**
+     * Issue (or re-issue) the activation link for a registration.
+     *
+     * Returns the raw token so the admin can forward the link over WhatsApp.
+     * Re-issuing invalidates the previous link, which is the point: it is also
+     * how an admin revokes a link that went to the wrong number.
+     */
+    public function terbitkanTautan($id)
+    {
+        $member = KoperasiMember::findOrFail($id);
+
+        if ($member->isActivated()) {
+            return response()->json([
+                'message' => 'Pendaftar ini sudah membuat akun, tautan aktivasi tidak diperlukan lagi.',
+            ], 422);
+        }
+
+        $token = Str::random(64);
+
+        $member->update([
+            'token_aktivasi' => $token,
+            'token_expires_at' => now()->addDays(self::TOKEN_TTL_DAYS),
+            'token_diterbitkan_at' => now(),
+        ]);
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($member)
+            ->log("Menerbitkan tautan aktivasi koperasi untuk {$member->name}");
+
+        return response()->json([
+            'message' => 'Tautan aktivasi berhasil diterbitkan.',
+            'token' => $token,
+            'expires_at' => $member->token_expires_at,
+            'name' => $member->name,
+            'whatsapp' => $member->whatsapp,
+        ]);
     }
 
     /**

@@ -106,6 +106,52 @@ class KoperasiRegistrationController extends Controller
     }
 
     /**
+     * Resolve an activation token from either source.
+     *
+     * Two kinds exist: the long-lived one an admin issues and forwards over
+     * WhatsApp (persisted on the row), and the 15-minute one minted by the
+     * NIM + nama lookup (cache only). Both land on the same account creation.
+     */
+    private function resolveToken(string $token): ?KoperasiMember
+    {
+        $member = KoperasiMember::where('token_aktivasi', $token)
+            ->whereNull('user_id')
+            ->where(function ($q) {
+                $q->whereNull('token_expires_at')->orWhere('token_expires_at', '>', now());
+            })
+            ->first();
+
+        if ($member) {
+            return $member;
+        }
+
+        $memberId = Cache::get(self::TOKEN_CACHE_PREFIX.$token);
+
+        return $memberId ? KoperasiMember::find($memberId) : null;
+    }
+
+    /**
+     * Resolve an admin-issued activation link so the page can greet the
+     * applicant by name before asking for credentials.
+     */
+    public function showAktivasi(string $token)
+    {
+        $member = $this->resolveToken($token);
+
+        if (! $member || $member->isActivated()) {
+            return response()->json([
+                'message' => 'Tautan aktivasi tidak berlaku, sudah kedaluwarsa, atau sudah digunakan.',
+            ], 404);
+        }
+
+        return response()->json([
+            'name' => $member->name,
+            'nim' => $member->nim,
+            'email' => $member->email,
+        ]);
+    }
+
+    /**
      * Step 3 — set the credentials and promote the registration into a real
      * account. This is where the applicant "otomatis jadi data alumni".
      */
@@ -121,17 +167,15 @@ class KoperasiRegistrationController extends Controller
         ]);
 
         $cacheKey = self::TOKEN_CACHE_PREFIX.$request->token;
-        $memberId = Cache::get($cacheKey);
+        $member = $this->resolveToken($request->token);
 
-        if (! $memberId) {
+        if (! $member) {
             return response()->json([
-                'message' => 'Sesi aktivasi sudah kedaluwarsa. Silakan cari kembali data pendaftaran Anda.',
+                'message' => 'Tautan aktivasi tidak berlaku atau sudah kedaluwarsa. Hubungi admin koperasi untuk tautan baru.',
             ], 422);
         }
 
-        $member = KoperasiMember::find($memberId);
-
-        if (! $member || $member->isActivated()) {
+        if ($member->isActivated()) {
             Cache::forget($cacheKey);
 
             return response()->json([
@@ -162,12 +206,16 @@ class KoperasiRegistrationController extends Controller
                 'status_koperasi' => 'pending',
             ]);
 
-            $member->update(['user_id' => $user->id]);
+            // Single use — burn the admin-issued link as the account is made.
+            $member->update([
+                'user_id' => $user->id,
+                'token_aktivasi' => null,
+                'token_expires_at' => null,
+            ]);
 
             return $user;
         });
 
-        // Single use — the token dies with the account it created.
         Cache::forget($cacheKey);
 
         // Outside the transaction, and swallowed on failure: a broken

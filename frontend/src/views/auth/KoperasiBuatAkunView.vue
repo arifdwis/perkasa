@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import axios from 'axios'
 import Button from 'primevue/button'
@@ -9,11 +9,15 @@ import Password from 'primevue/password'
 import Message from 'primevue/message'
 import LoadingRedirect from '../../components/LoadingRedirect.vue'
 
-// Step 3: set the credentials. Reachable only with the token issued by step 2 —
-// landing here directly bounces back to the lookup page.
+// Step 3: set the credentials. Two ways in — an admin-issued link carrying the
+// token in the URL, or the NIM + nama lookup which leaves it in sessionStorage.
+// Landing here with neither bounces back to the lookup page.
 const router = useRouter()
+const route = useRoute()
 
 const session = ref(null)
+const memuat = ref(false)
+const tokenError = ref('')
 const redirecting = ref(false)
 
 const form = ref({ username: '', password: '', confirmPassword: '' })
@@ -23,7 +27,23 @@ const fieldErrors = reactive({ username: '', password: '', confirmPassword: '' }
 const error = ref('')
 const isLoading = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
+  const tokenDariTautan = route.params.token
+
+  if (tokenDariTautan) {
+    memuat.value = true
+    try {
+      const { data } = await axios.get(`/koperasi/aktivasi/${tokenDariTautan}`)
+      session.value = { token: tokenDariTautan, name: data.name, nim: data.nim, email: data.email }
+    } catch (err) {
+      tokenError.value = err.response?.data?.message
+        || 'Tautan aktivasi tidak berlaku, sudah kedaluwarsa, atau sudah digunakan.'
+    } finally {
+      memuat.value = false
+    }
+    return
+  }
+
   const raw = sessionStorage.getItem('koperasi_aktivasi')
   if (!raw) {
     router.replace({ name: 'KoperasiAktivasi' })
@@ -155,16 +175,44 @@ const inputClass = (field) => {
           <img src="/logo_unmul.png" alt="Logo Unmul" class="w-8 h-8 object-contain" />
           <span class="text-xs sm:text-sm font-black text-primary tracking-tight">Koperasi Alumni FEB</span>
         </router-link>
-        <button type="button" @click="kembaliKeAktivasi" class="text-[11px] font-bold text-slate-500 hover:text-primary">
+        <button v-if="!route.params.token" type="button" @click="kembaliKeAktivasi" class="text-[11px] font-bold text-slate-500 hover:text-primary">
           Ganti data
         </button>
+        <router-link v-else :to="{ name: 'Login' }" class="text-[11px] font-bold text-slate-500 hover:text-primary">Masuk</router-link>
       </div>
     </header>
 
-    <main v-if="session" class="flex-grow flex items-center justify-center px-5 py-10 sm:px-8">
+    <!-- Resolving an admin-issued link -->
+    <main v-if="memuat" class="flex-grow flex items-center justify-center px-5 py-10">
+      <div class="flex items-center gap-3 text-slate-500">
+        <i class="pi pi-spin pi-spinner text-xl"></i>
+        <span class="text-xs font-bold">Memeriksa tautan aktivasi...</span>
+      </div>
+    </main>
+
+    <!-- Link no longer usable -->
+    <main v-else-if="tokenError" class="flex-grow flex items-center justify-center px-5 py-10 sm:px-8">
+      <div class="w-full max-w-md space-y-5 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center mx-auto">
+          <Icon icon="solar:link-broken-bold" class="text-3xl text-red-500" />
+        </div>
+        <div class="space-y-2">
+          <h2 class="text-xl font-black text-slate-800 tracking-tight">Tautan tidak berlaku</h2>
+          <p class="text-xs text-slate-500 leading-relaxed">{{ tokenError }}</p>
+        </div>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Silakan hubungi admin koperasi untuk meminta tautan aktivasi baru.
+        </p>
+        <router-link :to="{ name: 'Login' }" class="inline-block text-primary font-black text-xs hover:underline">
+          Kembali ke halaman masuk
+        </router-link>
+      </div>
+    </main>
+
+    <main v-else-if="session" class="flex-grow flex items-center justify-center px-5 py-10 sm:px-8">
       <div class="w-full max-w-md space-y-6">
         <div class="space-y-2">
-          <p class="text-[10px] font-black text-primary uppercase tracking-widest">Langkah 3 dari 3</p>
+          <p v-if="!route.params.token" class="text-[10px] font-black text-primary uppercase tracking-widest">Langkah 3 dari 3</p>
           <h2 class="text-2xl font-black text-slate-800 tracking-tight">Buat Akun Anda</h2>
           <p class="text-xs text-slate-500 leading-relaxed">
             Tentukan username dan kata sandi untuk masuk ke aplikasi.

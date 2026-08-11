@@ -13,6 +13,7 @@ import AdminState from '../../components/admin/AdminState.vue'
 import AdminSlideOver from '../../components/admin/AdminSlideOver.vue'
 import AdminConfirmModal from '../../components/admin/AdminConfirmModal.vue'
 import AdminPaginator from '../../components/admin/AdminPaginator.vue'
+import { waLink, pesanAktivasi } from '../../utils/whatsapp'
 
 // All koperasi reads live in this one component. When koperasi_members is
 // merged into alumni_profiles, only fetchMembers/openDetail change source.
@@ -81,13 +82,51 @@ const openDetail = async (item) => {
   detailVisible.value = true
   detailLoading.value = true
   detailMember.value = null
+  tautan.value = null
   try {
     const response = await axios.get(`/admin/koperasi/${item.id}`)
     detailMember.value = response.data.member
+    tautanAktif.value = response.data.tautan_aktif
   } catch (err) {
     toast.add({ severity: 'error', summary: 'Gagal', detail: 'Data pendaftar tidak ditemukan.', life: 3000 })
     detailVisible.value = false
   } finally { detailLoading.value = false }
+}
+
+// Activation link. The raw token is only ever held here, in memory, right
+// after issuing it — it is never returned by the detail endpoint again.
+const tautan = ref(null)
+const tautanAktif = ref(false)
+const menerbitkan = ref(false)
+
+const terbitkanTautan = async () => {
+  menerbitkan.value = true
+  try {
+    const { data } = await axios.post(`/admin/koperasi/${detailMember.value.id}/aktivasi-link`)
+    const url = `${window.location.origin}/aktivasi/${data.token}`
+    tautan.value = {
+      url,
+      expiresAt: data.expires_at,
+      wa: waLink(data.whatsapp, pesanAktivasi({
+        nama: data.name,
+        tautan: url,
+        kedaluwarsa: data.expires_at
+      }))
+    }
+    tautanAktif.value = true
+    toast.add({ severity: 'success', summary: 'Tautan terbit', detail: 'Tautan aktivasi siap dikirim.', life: 3000 })
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Gagal', detail: err.response?.data?.message || 'Gagal menerbitkan tautan.', life: 4000 })
+  } finally { menerbitkan.value = false }
+}
+
+const salinTautan = async () => {
+  try {
+    await navigator.clipboard.writeText(tautan.value.url)
+    toast.add({ severity: 'success', summary: 'Disalin', detail: 'Tautan disalin ke clipboard.', life: 2000 })
+  } catch {
+    toast.add({ severity: 'warn', summary: 'Gagal menyalin', detail: 'Salin manual dari kotak di atas.', life: 3000 })
+  }
 }
 
 // Verify actions
@@ -192,14 +231,58 @@ const handleVerify = async () => {
           </div>
         </div>
 
+        <!-- Activation link: issue here, then forward over WhatsApp. -->
+        <div v-if="!detailMember.user_id" class="mb-6 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+          <div class="flex items-start gap-3">
+            <Icon icon="solar:link-circle-bold" class="text-xl text-primary shrink-0" />
+            <div class="text-xs text-slate-700 leading-relaxed">
+              <p class="font-black text-slate-800">Tautan aktivasi</p>
+              <p>Pendaftar belum punya akun. Terbitkan tautan lalu teruskan via WhatsApp
+                 agar ia dapat membuat username dan kata sandi.</p>
+              <p v-if="tautanAktif && !tautan" class="mt-1 text-emerald-700 font-bold">
+                Tautan aktif sudah pernah diterbitkan
+                <template v-if="detailMember.token_expires_at">
+                  (berlaku sampai {{ formatDate(detailMember.token_expires_at) }})
+                </template>.
+                Menerbitkan ulang akan membatalkan tautan sebelumnya.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            :label="tautanAktif ? 'Terbitkan Ulang Tautan' : 'Terbitkan Tautan Aktivasi'"
+            icon="pi pi-link" size="small" :loading="menerbitkan" :outlined="tautanAktif"
+            @click="terbitkanTautan" />
+
+          <!-- Shown once, right after issuing -->
+          <div v-if="tautan" class="space-y-2 pt-1">
+            <div class="flex items-center gap-2">
+              <InputText :model-value="tautan.url" readonly class="w-full !text-[11px] font-mono" @focus="e => e.target.select()" />
+              <Button icon="pi pi-copy" size="small" outlined title="Salin tautan" @click="salinTautan" />
+            </div>
+            <a :href="tautan.wa" target="_blank" rel="noopener"
+               class="flex items-center justify-center gap-2 w-full h-10 rounded-xl bg-[#25D366] text-white font-extrabold text-xs tracking-wider uppercase hover:opacity-90 transition-all">
+              <Icon icon="ic:baseline-whatsapp" class="text-lg" />
+              Kirim via WhatsApp
+            </a>
+            <p class="text-[10px] text-slate-500 text-center leading-relaxed">
+              Membuka WhatsApp Web dengan pesan sudah terformat ke {{ detailMember.whatsapp }} —
+              Anda tinggal menekan kirim. Berlaku sampai {{ formatDate(tautan.expiresAt) }}, sekali pakai.
+            </p>
+            <p class="text-[10px] text-amber-700 text-center font-bold">
+              Salin sekarang bila perlu — tautan ini tidak ditampilkan lagi setelah panel ditutup.
+            </p>
+          </div>
+        </div>
+
         <!-- Approval is locked until activation: there is no alumni profile to
              mark verified before the applicant creates an account. -->
         <div v-if="!detailMember.user_id" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
           <Icon icon="solar:lock-keyhole-bold" class="text-xl text-amber-600 shrink-0" />
           <div class="text-xs text-amber-900 leading-relaxed">
             <p class="font-black">Belum bisa disetujui</p>
-            <p>Pendaftar ini belum menyelesaikan aktivasi, jadi belum punya akun dan profil alumni.
-               Persetujuan baru tersedia setelah ia membuat akun. Penolakan tetap bisa dilakukan.</p>
+            <p>Persetujuan baru tersedia setelah pendaftar membuat akun lewat tautan di atas.
+               Penolakan tetap bisa dilakukan.</p>
           </div>
         </div>
 

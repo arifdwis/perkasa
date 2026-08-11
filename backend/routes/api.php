@@ -38,6 +38,10 @@ Route::middleware('throttle:login')->group(function () {
 // Koperasi registration — step 2, throttled harder than login
 Route::post('/koperasi/cek', [KoperasiRegistrationController::class, 'cek'])
     ->middleware('throttle:koperasi-cek');
+
+// Resolve an admin-issued activation link
+Route::get('/koperasi/aktivasi/{token}', [KoperasiRegistrationController::class, 'showAktivasi'])
+    ->middleware('throttle:koperasi-cek');
 Route::get('/stores/{id}', [StoreController::class, 'show'])->where('id', '(?!my-store)[^/]+');
 Route::get('/product-categories', [ProductCategoryController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
@@ -166,6 +170,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Koperasi Membership Validation
         Route::get('/admin/koperasi', [AdminKoperasiController::class, 'index']);
         Route::get('/admin/koperasi/{id}', [AdminKoperasiController::class, 'show']);
+        Route::post('/admin/koperasi/{id}/aktivasi-link', [AdminKoperasiController::class, 'terbitkanTautan']);
         Route::post('/admin/koperasi/{id}/verify', [AdminKoperasiController::class, 'verify']);
 
         // Admin Store Management

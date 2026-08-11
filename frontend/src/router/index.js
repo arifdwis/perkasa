@@ -36,6 +36,15 @@ const routes = [
     component: () => import('../views/auth/KoperasiBuatAkunView.vue'),
     meta: { guestOnly: true }
   },
+  {
+    // Short link an admin issues and forwards over WhatsApp. Same page as
+    // KoperasiBuatAkun, but it reads the token from the URL instead of
+    // sessionStorage. Kept short because it is pasted into a chat message.
+    path: '/aktivasi/:token',
+    name: 'KoperasiAktivasiTautan',
+    component: () => import('../views/auth/KoperasiBuatAkunView.vue'),
+    meta: { guestOnly: true }
+  },
 
   // Parent: Buyer App Layout Wrapper
   {
